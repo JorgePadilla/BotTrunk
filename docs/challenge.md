@@ -2,18 +2,18 @@
 
 Sources: Algorand Foundation registration email (Sept 3, 2026 — Jorge is registered) and the official "how to build & submit" post: https://algorand.co/blog/the-x402-global-challenge-is-live-how-to-build-submit-your-entry. Official rules PDF: https://algorand.co/hubfs/x402%20competition%20Official%20Rules.pdf — still to be read for eligibility wording.
 
-## Timeline
+## Timeline (exact, from the Official Rules PDF — all times 11:45 pm Eastern)
 
-| When | What |
+| Date | What |
 |---|---|
-| Now | Build phase is live. Ship a paid x402 endpoint on Algorand MainNet and drive real usage. |
-| Until late September | **Submission window.** The form is emailed by the Foundation ("keep an eye on your inbox"). Exact date TBA. |
-| September → early October | Leaderboard period: usage is measured continuously. Keep driving real calls. |
-| Through October | Leaderboard closes; top 50 by usage *that also submitted* are reviewed. |
-| Mid-October | 10 finalists announced. |
-| Early November | Finalists present live at Devcon 8 India (remote allowed per earlier research — confirm in rules). |
+| Jun 12 → Sep 1, 2026 | Registration (done — Jorge is registered) |
+| Sep 2 → **Sep 29, 2026, 11:45 pm ET** | **Submission window** ("Final Presentation Registration"): project info + profile info must be in by then. The form is emailed by the Foundation. |
+| Sep 30 → Oct 8 | Leaderboard review and shortlist selection (top 50 by usage who also submitted) |
+| **Oct 9, 2026** | Shortlist / finalist notification |
+| **Nov 2, 2026** | Final presentation (Devcon 8 India; remote allowed per earlier research — confirm with the organizers when shortlisted) |
+| by Nov 12, 2026 | Winners announced by email (within 10 days of Nov 2) |
 
-Dates are "to be announced" per the email — check the inbox weekly and update this table.
+Build phase and usage measurement run continuously until the review; the email said "drive real usage through early October".
 
 ## Entry types
 
@@ -40,19 +40,24 @@ Dates are "to be announced" per the email — check the inbox weekly and update 
 - **Metadata the Bazaar enriches from:** site OpenGraph (title, description, logo), `llms.txt` / agentic files, well-known structures on the domain, and the merchant's NFD (Algorand name). Optional: register an NFD for BotTrunk.
 - **Leaderboard:** real MainNet USDC settled through GoPlausible; Composite entries are summed across endpoints sharing the payTo. View at https://facilitator.goplausible.xyz/dashboard/leaderboards (global-hackathon filter on). Catalogs: https://facilitator.goplausible.xyz/discovery/resources and `/discovery/merchants`. TestNet activity does not count; the entry appears only after the first real MainNet settlement.
 - **Reference code:** official demo server https://github.com/algorandfoundation/x402-demo/tree/main/x402-basic-tutorial · developer guide https://algorand.co/agentic-commerce/x402/developers · example https://dev.algorand.co/resources/x402-on-algorand/ · agent skills https://github.com/algorand-devrel/algorand-agent-skills · npm `@x402-avm/extensions` (Bazaar) and the Algorand x402 packages · Discord https://discord.com/invite/algorand.
-- Submission form: details "closer to the deadline" (late September). Watch the inbox.
+- Submission form: emailed by the Foundation; hard deadline **Sep 29, 2026, 11:45 pm ET**. Watch the inbox.
 
 ## How entries are judged
 
-Gate: be in the **top 50 by usage** on the leaderboard and have submitted. Then reviewed on:
+Gate: be in the **top 50 by usage** on the leaderboard and have submitted all requested information. Then four **evenly weighted** criteria (Official Rules):
 
-1. **Volume** — total USDC processed; how real and measurable the activity is.
-2. **Use-case quality** — x402 is core to the payment flow, not bolted on; clear value in pay-per-request, agentic payments, API monetization, data access or digital services.
-3. **Technical execution** — reliable endpoint, correct settlement.
-4. **Sustained potential** — a credible path to usage after the prize period.
-5. **Innovation** — a novel or technically meaningful use of x402.
+1. **Volume** — USDC processed through the endpoint; real, measurable activity.
+2. **Use-case quality** — x402 meaningfully integrated into the core payment flow (pay-per-request, agentic payments, API monetization, data access, digital services).
+3. **Sustained potential** — credible path to stay active beyond the competition.
+4. **Innovation** — novel or technically meaningful use of x402.
 
-What this means for BotTrunk: volume is the gate, so the seed data utilities (cheap, instant, agent-friendly) must be live on MainNet early and promoted hard; the MCP hub is the volume engine. "Not bolted on" is our strongest card — the marketplace *is* the payment flow. Sustained potential = the commission model and outside sellers.
+(The email also listed "technical execution"; the rules fold it into the above.)
+
+**Anti-manipulation (rules, verbatim in spirit):** the final leaderboard is reviewed for "artificial volume, wash transactions, repeated self-payments, or other activity intended to manipulate leaderboard results"; the Administrator can exclude or adjust any activity it deems inauthentic. **For BotTrunk:** one real self-payment to qualify is fine; volume must come from other people's agents. Never script self-calls to climb the board.
+
+**Eligibility notes:** 18+, English proficiency, not in a sanctioned jurisdiction (Honduras is fine), one team per person, one project per team, awards go to the Team Leader in USD/USDCa/ALGO (no tax gross-up), a wallet may be required to receive ALGO/USDCa.
+
+What this means for BotTrunk: volume is the gate, so the seed data utilities must be live on MainNet early and promoted hard; the MCP hub is the volume engine. "Not bolted on" is our strongest card — the marketplace *is* the payment flow. Sustained potential = the commission model and outside sellers.
 
 ## Prizes (100K USDC + 500K ALGO, terms apply)
 
