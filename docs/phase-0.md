@@ -15,7 +15,7 @@ Phase 0 produces no product features. It produces certainty, three registered na
 - [x] Register `bottrunk.com` — done Sept 3, 2026 (Namecheap, 5 years). Point nothing yet.
 - [x] Repo created: `github.com/JorgePadilla/BotTrunk` (Sept 3, public).
 - [ ] Push the monorepo (`git init -b main && git add -A && git commit && git push -u origin main`).
-- [ ] Ask GitHub Support to release the `bottrunk` org name (created + deleted Sept 3, now on hold; GitHub's usual hold is ~90 days → **Dec 2, 2026** at the latest, likely sooner via support). When released: create the org, transfer the repo (Settings → Transfer), install the Claude GitHub App on the org with "All repositories", `git remote set-url origin git@github.com:bottrunk/bottrunk.git`.
+- [x] GitHub Support ticket filed Sept 3 asking to release the `bottrunk` org name (GitHub confirms deleted org names are locked for **90 days → Dec 2, 2026**; Support may release it sooner). Watch the inbox / support.github.com → My Tickets. When released: create the org, transfer the repo (Settings → Transfer), install the Claude GitHub App on the org with "All repositories", `git remote set-url origin git@github.com:bottrunk/bottrunk.git`.
 - [ ] Read the challenge's official rules PDF and the submission guide linked from the registration email; record exact dates and the guide URL in `docs/challenge.md`.
 - [ ] Create an Algorand wallet for the gateway (Pera or Defly). Store the mnemonic in a password manager; never in the repo. Record the address as the Phase 0 `payTo`.
 - [ ] Fund it on TestNet: ALGO from the TestNet dispenser, then opt in to TestNet USDC (ASA `10458941`) and get test USDC from the faucet.
@@ -23,7 +23,7 @@ Phase 0 produces no product features. It produces certainty, three registered na
 
 ### B. Repo hygiene (½ hour)
 
-- [ ] `cd gateway && bundle install && bin/rails rails_icons:install --libraries=lucide && bin/setup && bin/rails test` — all green.
+- [ ] `cd gateway && bundle install && bin/rails rails_icons:install --library=lucide && bin/setup && bin/rails test` — all green.
 - [ ] `git init`, first commit, push to the org. Enable the CI workflow (`.github/workflows/ci.yml`).
 - [ ] Add `faraday`, `faraday-retry`, `webmock` (test) to the Gemfile.
 

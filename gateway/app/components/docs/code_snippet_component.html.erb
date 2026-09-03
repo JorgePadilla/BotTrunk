@@ -1,9 +1,9 @@
 <div class="rounded-field border hairline bg-base-200 overflow-hidden" data-controller="tabs" data-tabs-active-class="tab-active">
   <div class="flex items-center justify-between border-b hairline px-3">
-    <div role="tablist" class="tabs flex">
+    <div role="tablist" class="tabs tabs-border tabs-sm">
       <% languages.each_with_index do |lang, i| %>
         <button type="button" role="tab" data-tabs-target="tab" data-action="tabs#select" data-tabs-index-param="<%= i %>"
-                class="tab px-2 mr-3 h-auto py-2.5 text-[13px] font-medium border-b-2 -mb-px <%= i.zero? ? "tab-active border-base-content" : "border-transparent text-muted" %>"><%= lang %></button>
+                class="tab px-2 mr-3 font-medium <%= i.zero? ? "tab-active" : "text-muted" %>"><%= lang %></button>
       <% end %>
     </div>
   </div>

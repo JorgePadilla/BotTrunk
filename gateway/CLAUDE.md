@@ -12,7 +12,7 @@ Detailed rules load by path from `../.claude/rules/`: `services.md`, `ui.md`, `p
 
 ```
 bin/setup                                           # bundle, db:prepare
-bin/rails rails_icons:install --libraries=lucide    # once
+bin/rails rails_icons:install --library=lucide    # once
 bin/dev                                             # server + tailwind watcher
 bin/rails test  ·  bin/rails test:system            # unit/integration · browser
 bin/rubocop && bin/brakeman

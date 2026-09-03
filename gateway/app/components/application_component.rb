@@ -10,8 +10,9 @@ class ApplicationComponent < ViewComponent::Base
   private
 
   # Lucide icon as inline SVG (rails_icons). `icon("check", class: "size-4")`.
+  # Defaults: 16px box, 1.75 stroke — matches the mockups.
   def icon(name, **options)
-    helpers.icon(name, **options)
+    helpers.icon(name, **{ class: "size-4", stroke_width: "1.75" }.merge(options))
   end
 
   # Joins class fragments, dropping nils/false — `classes("btn", primary? && "btn-primary")`.

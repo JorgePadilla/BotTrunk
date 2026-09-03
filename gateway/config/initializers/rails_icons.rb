@@ -1,8 +1,12 @@
 RailsIcons.configure do |config|
   config.default_library = "lucide"
-  config.default_variant = "outline"
+  # config.default_variant = "" # Set a default variant for all libraries
 
-  # Stroke-based, 1.75px, 16px grid — matches the mockups.
-  config.libraries.lucide.outline.default.css = "size-4"
-  config.libraries.lucide.outline.default.stroke_width = "1.75"
+  # Override Lucide defaults
+  # config.libraries.lucide.default_variant = "" # Set a default variant for Lucide
+  # config.libraries.lucide.exclude_variants = [] # Exclude specific variants
+
+  # config.libraries.lucide.outline.default.css = "size-6"
+  # config.libraries.lucide.outline.default.stroke_width = "1.5"
+  # config.libraries.lucide.outline.default.data = {}
 end

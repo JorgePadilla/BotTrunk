@@ -6,7 +6,7 @@ The Rails 8.1 app behind bottrunk.com: service registry, x402 paywall + proxy, p
 
     cd gateway
     bundle install
-    bin/rails rails_icons:install --libraries=lucide   # downloads the Lucide SVGs into app/assets/svg/icons
+    bin/rails rails_icons:install --library=lucide   # downloads the Lucide SVGs into app/assets/svg/icons
     bin/setup                                          # db:prepare, clears logs/tmp
     bin/dev                                            # Rails on :3000 + tailwind watcher
 

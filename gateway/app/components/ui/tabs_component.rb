@@ -13,9 +13,9 @@ module Ui
     def active?(tab) = tab == @active
 
     def tab_classes(tab)
-      classes("tab px-1 mr-5 h-auto py-2.5 font-medium border-b-2 -mb-px",
+      classes("tab px-1 mr-5 font-medium",
               @size == :sm ? "text-[13px]" : "text-sm",
-              active?(tab) ? "tab-active border-base-content text-base-content" : "border-transparent text-muted")
+              active?(tab) ? "tab-active text-base-content" : "text-muted")
     end
   end
 end

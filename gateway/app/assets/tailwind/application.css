@@ -116,3 +116,10 @@
 /* Small semantic helpers used across components. Keep this list short. */
 @utility text-muted { color: color-mix(in oklab, var(--color-base-content) 60%, transparent); }
 @utility hairline { border-color: var(--color-base-300); }
+
+/* Theme toggle: show the sun in dark mode, the moon in light mode. */
+@layer components {
+  .theme-icon-dark { display: none; }
+  [data-theme="bottrunk-dark"] .theme-icon-dark { display: block; }
+  [data-theme="bottrunk-dark"] .theme-icon-light { display: none; }
+}
