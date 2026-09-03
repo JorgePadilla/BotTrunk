@@ -50,7 +50,7 @@ Build it as real code in its final place, not a throwaway script — the spike *
 
 ## Challenge facts
 
-Registered Sept 3, 2026. Everything known (timeline, entry types, checklist, judging, prizes) lives in `docs/challenge.md` — keep that file current as the Foundation announces dates. Short version: submit by **Sep 29, 2026, 11:45 pm ET** (form arrives by email), stay in the **top 50 by real usage** (self-payments are excluded), shortlist notified **Oct 9**, final presentation **Nov 2**, winners by Nov 12. We enter as **Composite**.
+Registered Sept 3, 2026. Everything known (timeline, entry types, checklist, judging, prizes) lives in `docs/challenge.md` — keep that file current as the Foundation announces dates. Short version: submit by **Sep 29, 2026, 11:45 pm ET** (form arrives by email), stay in the **top 50 by real usage** (self-payments are excluded), shortlist notified **Oct 9**, final presentation **Nov 2 (virtual)**, winners by Nov 12. We enter as **Composite**.
 
 ## Out of scope for Phase 0
 

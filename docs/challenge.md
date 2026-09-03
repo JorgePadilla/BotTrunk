@@ -10,7 +10,7 @@ Sources: Algorand Foundation registration email (Sept 3, 2026 — Jorge is regis
 | Sep 2 → **Sep 29, 2026, 11:45 pm ET** | **Submission window** ("Final Presentation Registration"): project info + profile info must be in by then. The form is emailed by the Foundation. |
 | Sep 30 → Oct 8 | Leaderboard review and shortlist selection (top 50 by usage who also submitted) |
 | **Oct 9, 2026** | Shortlist / finalist notification |
-| **Nov 2, 2026** | Final presentation (Devcon 8 India; remote allowed per earlier research — confirm with the organizers when shortlisted) |
+| **Nov 2, 2026** | Final presentation for the 10 shortlisted projects — **virtual** (Foundation email, Sept 3: no longer in person in Mumbai; same prizes and eligibility) |
 | by Nov 12, 2026 | Winners announced by email (within 10 days of Nov 2) |
 
 Build phase and usage measurement run continuously until the review; the email said "drive real usage through early October".
