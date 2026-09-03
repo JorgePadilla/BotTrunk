@@ -14,7 +14,7 @@ Phase 0 produces no product features. It produces certainty, three registered na
 
 - [x] Register `bottrunk.com` — done Sept 3, 2026 (Namecheap, 5 years). Point nothing yet.
 - [x] Repo created: `github.com/JorgePadilla/BotTrunk` (Sept 3, public).
-- [ ] Push the monorepo (`git init -b main && git add -A && git commit && git push -u origin main`).
+- [x] First push done (Sept 3). Later local commits are pushed with plain `git push`.
 - [x] GitHub Support ticket filed Sept 3 asking to release the `bottrunk` org name (GitHub confirms deleted org names are locked for **90 days → Dec 2, 2026**; Support may release it sooner). Watch the inbox / support.github.com → My Tickets. When released: create the org, transfer the repo (Settings → Transfer), install the Claude GitHub App on the org with "All repositories", `git remote set-url origin git@github.com:bottrunk/bottrunk.git`.
 - [ ] Read the challenge's official rules PDF and the submission guide linked from the registration email; record exact dates and the guide URL in `docs/challenge.md`.
 - [ ] Create an Algorand wallet for the gateway (Pera or Defly). Store the mnemonic in a password manager; never in the repo. Record the address as the Phase 0 `payTo`.
@@ -23,7 +23,8 @@ Phase 0 produces no product features. It produces certainty, three registered na
 
 ### B. Repo hygiene (½ hour)
 
-- [ ] `cd gateway && bundle install && bin/rails rails_icons:install --library=lucide && bin/setup && bin/rails test` — all green.
+- [x] `bundle install`, `rails_icons:install --library=lucide`, `bin/dev` — app boots (Sept 3; runs on port 5000 locally because 3000 is taken by another project). Catalog, service page, theme toggle and Lookbook verified in the browser.
+- [ ] `bin/rails test` — not run yet.
 - [ ] `git init`, first commit, push to the org. Enable the CI workflow (`.github/workflows/ci.yml`).
 - [ ] Add `faraday`, `faraday-retry`, `webmock` (test) to the Gemfile.
 
