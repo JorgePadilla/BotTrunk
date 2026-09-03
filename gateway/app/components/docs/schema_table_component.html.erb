@@ -1,0 +1,11 @@
+<table class="w-full text-sm">
+  <tbody>
+    <% fields.each do |field| %>
+      <tr class="border-b hairline align-top">
+        <td class="py-3 pr-4 w-40 font-mono"><%= field.name %></td>
+        <td class="py-3 pr-4 w-28 font-mono text-muted"><%= field.type %></td>
+        <td class="py-3 text-muted"><%= field.description %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>

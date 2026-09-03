@@ -1,0 +1,118 @@
+@import "tailwindcss";
+
+/* Don't scan the bundled plugin files for class names (keeps the build small). */
+@source not "./daisyui.mjs";
+@source not "./daisyui-theme.mjs";
+
+/* daisyUI v5 as a standalone plugin (no node_modules needed with tailwindcss-rails).
+   Update by re-downloading daisyui.mjs + daisyui-theme.mjs from
+   https://github.com/saadeghi/daisyui/releases/latest */
+@plugin "./daisyui.mjs" {
+  themes: false;
+  logs: false;
+}
+
+/* ---- BotTrunk themes: monochrome, spacious. Green only for paid/settled/verified. ---- */
+@plugin "./daisyui-theme.mjs" {
+  name: "bottrunk-light";
+  default: true;
+  color-scheme: light;
+
+  --color-base-100: #ffffff;
+  --color-base-200: #fafafa;
+  --color-base-300: #e5e5e5;
+  --color-base-content: #171717;
+
+  --color-primary: #171717;
+  --color-primary-content: #ffffff;
+  --color-secondary: #666666;
+  --color-secondary-content: #ffffff;
+  --color-accent: #171717;
+  --color-accent-content: #ffffff;
+  --color-neutral: #171717;
+  --color-neutral-content: #ffffff;
+
+  --color-info: #3b6fd6;
+  --color-info-content: #ffffff;
+  --color-success: #1a8f5c;
+  --color-success-content: #ffffff;
+  --color-warning: #b7791f;
+  --color-warning-content: #ffffff;
+  --color-error: #d0342c;
+  --color-error-content: #ffffff;
+
+  --radius-selector: 0.375rem;
+  --radius-field: 0.5rem;
+  --radius-box: 0.625rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 0;
+  --noise: 0;
+}
+
+@plugin "./daisyui-theme.mjs" {
+  name: "bottrunk-dark";
+  prefersdark: true;
+  color-scheme: dark;
+
+  --color-base-100: #000000;
+  --color-base-200: #0a0a0a;
+  --color-base-300: #262626;
+  --color-base-content: #ededed;
+
+  --color-primary: #ededed;
+  --color-primary-content: #000000;
+  --color-secondary: #8f8f8f;
+  --color-secondary-content: #000000;
+  --color-accent: #ededed;
+  --color-accent-content: #000000;
+  --color-neutral: #ededed;
+  --color-neutral-content: #000000;
+
+  --color-info: #6ea0ff;
+  --color-info-content: #000000;
+  --color-success: #3ecf8e;
+  --color-success-content: #000000;
+  --color-warning: #e2b04a;
+  --color-warning-content: #000000;
+  --color-error: #f0655f;
+  --color-error-content: #000000;
+
+  --radius-selector: 0.375rem;
+  --radius-field: 0.5rem;
+  --radius-box: 0.625rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 0;
+  --noise: 0;
+}
+
+/* ---- Type: Geist + Geist Mono, self-hosted from public/fonts (SIL OFL) ---- */
+@font-face {
+  font-family: "Geist";
+  src: url("/fonts/Geist-Variable.woff2") format("woff2");
+  font-weight: 100 900;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Geist Mono";
+  src: url("/fonts/GeistMono-Variable.woff2") format("woff2");
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+@theme {
+  --font-sans: "Geist", "Helvetica Neue", Arial, ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+
+@layer base {
+  html { -webkit-font-smoothing: antialiased; }
+  body { @apply bg-base-100 text-base-content font-sans; }
+}
+
+/* Small semantic helpers used across components. Keep this list short. */
+@utility text-muted { color: color-mix(in oklab, var(--color-base-content) 60%, transparent); }
+@utility hairline { border-color: var(--color-base-300); }

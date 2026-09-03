@@ -1,0 +1,119 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [staging, main]
+
+jobs:
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: gateway_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      RAILS_ENV: test
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/gateway_test
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install PostgreSQL 17 client
+        run: |
+          sudo apt-get remove -y --purge postgresql-client-16 || true
+          sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+          curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/pgdg.gpg
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client-17
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+          bundler-cache: true
+
+      - name: Create database
+        run: bundle exec rails db:create db:migrate
+
+      - name: Run tests
+        run: bundle exec rails test
+
+  # Los system tests van en un job aparte, a propósito.
+  #
+  # `bundle exec rails test` **no los incluye** —Rails los deja fuera salvo que
+  # se pida `test:system`— y por eso tres quedaron rojos en staging durante
+  # meses sin que ningún PR se enterara. Jorge, 2026-08-30: *"sí, agreguemos al
+  # CI"*.
+  #
+  # Aparte y no pegado al de arriba para que el rojo se lea: son 160 tests de
+  # navegador que tardan el doble que toda la suite normal, y mezclarlos
+  # esconde cuál de los dos falló.
+  system:
+    name: System Tests
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: gateway_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      RAILS_ENV: test
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/gateway_test
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install PostgreSQL 17 client
+        run: |
+          sudo apt-get remove -y --purge postgresql-client-16 || true
+          sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+          curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/pgdg.gpg
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client-17
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+          bundler-cache: true
+
+      - name: Create database
+        run: bundle exec rails db:create db:migrate
+
+      - name: Run system tests
+        run: bundle exec rails test:system
+
+      # La foto del fallo. Un system test rojo sin la captura obliga a
+      # reproducirlo a mano, y varios de estos dependen de una carrera que en
+      # otra máquina no se da.
+      - name: Subir capturas de los fallos
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: capturas-system-tests
+          path: tmp/screenshots/
+          if-no-files-found: ignore

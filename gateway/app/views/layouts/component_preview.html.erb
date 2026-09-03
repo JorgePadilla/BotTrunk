@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="<%= params[:theme].presence || "bottrunk-light" %>" data-controller="theme">
+  <head>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <%= csrf_meta_tags %>
+    <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
+    <%= javascript_importmap_tags %>
+  </head>
+  <body class="p-8">
+    <%= yield %>
+  </body>
+</html>

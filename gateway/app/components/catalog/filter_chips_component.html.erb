@@ -1,0 +1,5 @@
+<div class="flex items-center gap-2 flex-wrap">
+  <% chips.each do |label, value| %>
+    <%= link_to label, chip_path(value), class: chip_classes(value) %>
+  <% end %>
+</div>

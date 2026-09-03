@@ -1,0 +1,11 @@
+<div class="flex flex-col gap-5">
+  <%= render Catalog::PriceComponent.new(amount: service.price_usdc, size: :lg,
+        suffix: "USDC per call · p50 #{service.latency} · #{service.success_rate} success") %>
+  <dl class="flex flex-col gap-2.5 text-sm">
+    <% facts.each do |label, value| %>
+      <div class="flex justify-between gap-4"><dt class="text-muted"><%= label %></dt><dd><%= value %></dd></div>
+    <% end %>
+  </dl>
+  <%= render Ui::ButtonComponent.new(variant: :primary, class: "w-full", icon: "zap") { "Run a paid test call" } %>
+  <p class="text-xs text-muted text-center">Uses your connected wallet · settles in ~4 s</p>
+</div>

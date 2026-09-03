@@ -1,0 +1,73 @@
+<% content_for :title, "#{@service.name} — BotTrunk" %>
+<% content_for :nav_active, "Catalog" %>
+
+<div class="flex flex-col gap-12 py-12 md:py-16">
+  <nav class="flex items-center gap-2 text-sm text-muted" aria-label="Breadcrumb">
+    <%= link_to "Catalog", root_path, class: "hover:text-base-content" %><span>/</span>
+    <%= link_to @service.category, root_path(category: @service.category), class: "hover:text-base-content" %>
+  </nav>
+
+  <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-8">
+    <div class="flex flex-col gap-3.5 max-w-2xl">
+      <h1 class="text-4xl md:text-[40px] font-semibold tracking-[-0.03em] leading-[1.15]"><%= @service.name %></h1>
+      <p class="text-lg text-muted"><%= @service.description %></p>
+      <p class="font-mono text-sm text-muted mt-1">POST <%= @service.endpoint_url %></p>
+    </div>
+    <div class="flex gap-2.5" data-controller="clipboard" data-clipboard-text-value="<%= @service.endpoint_url %>">
+      <%= render Ui::ButtonComponent.new(icon: "copy", data: { action: "clipboard#copy" }) { tag.span("Copy endpoint", data: { clipboard_target: "label" }) } %>
+      <%= render Ui::ButtonComponent.new(variant: :primary, href: "/docs") { "Add to my agent" } %>
+    </div>
+  </div>
+
+  <%= render Ui::TabsComponent.new(tabs: %w[Overview Try\ it Schema Stats], active: "Overview") %>
+
+  <div class="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_360px] gap-12 lg:gap-20 items-start">
+    <section class="flex flex-col gap-12">
+      <div class="flex flex-col gap-3.5">
+        <h2 class="text-[22px] font-semibold tracking-tight">Call it</h2>
+        <%= render Docs::CodeSnippetComponent.new(snippets: {
+          "curl" => <<~SH.strip,
+            # Ask. You get a 402 with the payment requirements.
+            curl #{@service.endpoint_url} \\
+              -d '{"url": "https://example.com/pricing"}'
+
+            # Pay and retry. Any x402 client does this for you.
+            curl #{@service.endpoint_url} \\
+              -H "X-PAYMENT: <signed USDC transfer>" \\
+              -d '{"url": "https://example.com/pricing"}'
+          SH
+          "Python" => <<~PY.strip,
+            from x402.clients import requests as x402_requests
+
+            session = x402_requests.x402_http_adapter(account)
+            r = session.post("#{@service.endpoint_url}", json={"url": "https://example.com/pricing"})
+            print(r.json()["markdown"])
+          PY
+          "MCP" => <<~JSON.strip
+            { "mcpServers": { "bottrunk": { "url": "https://mcp.bottrunk.com" } } }
+            # then call the tool `#{@service.slug.tr("-", "_")}` from your agent
+          JSON
+        }) %>
+      </div>
+      <div class="flex flex-col gap-3.5">
+        <h2 class="text-[22px] font-semibold tracking-tight">Input</h2>
+        <%= render Docs::SchemaTableComponent.new(fields: @service.inputs) %>
+      </div>
+      <div class="flex flex-col gap-3.5">
+        <h2 class="text-[22px] font-semibold tracking-tight">Output</h2>
+        <%= render Docs::SchemaTableComponent.new(fields: @service.outputs) %>
+      </div>
+    </section>
+
+    <aside class="flex flex-col gap-10 lg:pt-1.5">
+      <%= render Catalog::PayPanelComponent.new(service: @service) %>
+      <hr class="hairline">
+      <%= render Gateway::CallTimelineComponent.new(stamp: "sample", steps: [
+        { title: "402 Payment Required", meta: "#{(@service.price_usdc * 1_000_000).to_i} µUSDC requested" },
+        { title: "Payment verified", meta: "X-PAYMENT · #{@service.facilitator}" },
+        { title: "Upstream responded", meta: "812 ms · 200 OK" },
+        { title: "Settled on-chain", meta: "txn 4KQ2…M9 · seller 90%" }
+      ]) %>
+    </aside>
+  </div>
+</div>

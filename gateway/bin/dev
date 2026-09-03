@@ -1,0 +1,7 @@
+#!/usr/bin/env ruby
+
+if !system("command -v foreman > /dev/null")
+  system("gem install foreman")
+end
+
+exec "foreman start -f Procfile.dev #{ARGV.join(' ')}"

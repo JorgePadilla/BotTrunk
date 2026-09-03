@@ -1,0 +1,20 @@
+<div class="rounded-field border hairline bg-base-200 overflow-hidden" data-controller="tabs" data-tabs-active-class="tab-active">
+  <div class="flex items-center justify-between border-b hairline px-3">
+    <div role="tablist" class="tabs flex">
+      <% languages.each_with_index do |lang, i| %>
+        <button type="button" role="tab" data-tabs-target="tab" data-action="tabs#select" data-tabs-index-param="<%= i %>"
+                class="tab px-2 mr-3 h-auto py-2.5 text-[13px] font-medium border-b-2 -mb-px <%= i.zero? ? "tab-active border-base-content" : "border-transparent text-muted" %>"><%= lang %></button>
+      <% end %>
+    </div>
+  </div>
+  <% each_snippet do |lang, code, i| %>
+    <div data-tabs-target="panel" <%= "hidden" unless i.zero? %> class="relative" data-controller="clipboard">
+      <pre class="font-mono text-[13px] leading-[1.7] p-5 overflow-x-auto" data-clipboard-target="source"><%= code %></pre>
+      <% if copy? %>
+        <button type="button" data-action="clipboard#copy" class="btn btn-ghost btn-xs absolute top-3 right-3 text-muted" aria-label="Copy">
+          <%= icon("copy", class: "size-3.5") %><span data-clipboard-target="label">Copy</span>
+        </button>
+      <% end %>
+    </div>
+  <% end %>
+</div>

@@ -1,0 +1,21 @@
+<header class="border-b hairline">
+  <div class="max-w-[1180px] mx-auto px-6 md:px-12 h-16 flex items-center justify-between gap-6">
+    <div class="flex items-center gap-9">
+      <%= link_to "/", class: "flex items-center gap-2.5", "aria-label": "BotTrunk home" do %>
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 3 3 20h18L12 3z"/></svg>
+        <span class="font-semibold tracking-tight">BotTrunk</span>
+      <% end %>
+      <nav class="hidden md:flex items-center gap-6">
+        <% links.each do |label, path| %>
+          <%= link_to label, path, class: link_classes(label) %>
+        <% end %>
+      </nav>
+    </div>
+    <div class="flex items-center gap-3">
+      <div class="hidden lg:block"><%= render Ui::SearchInputComponent.new %></div>
+      <%= render Ui::ThemeToggleComponent.new %>
+      <%= render Ui::ButtonComponent.new(size: :sm, href: "/docs") { "Connect agent" } %>
+      <%= render Ui::ButtonComponent.new(variant: :primary, size: :sm, href: "/sign_in") { "Sign in" } %>
+    </div>
+  </div>
+</header>

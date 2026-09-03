@@ -1,0 +1,5 @@
+<div role="tablist" class="tabs border-b hairline flex">
+  <% @tabs.each do |tab| %>
+    <a role="tab" class="<%= tab_classes(tab) %>" <%= "aria-selected=true" if active?(tab) %>><%= tab %></a>
+  <% end %>
+</div>
