@@ -14,8 +14,8 @@
       <p class="font-mono text-sm text-muted mt-1">POST <%= @service.endpoint_url %></p>
     </div>
     <div class="flex gap-2.5" data-controller="clipboard" data-clipboard-text-value="<%= @service.endpoint_url %>">
-      <%= render Ui::ButtonComponent.new(icon: "copy", data: { action: "clipboard#copy" }) { tag.span("Copy endpoint", data: { clipboard_target: "label" }) } %>
-      <%= render Ui::ButtonComponent.new(variant: :primary, href: "/docs") { "Add to my agent" } %>
+      <%= render(Ui::ButtonComponent.new(icon: "copy", data: { action: "clipboard#copy" })) { tag.span("Copy endpoint", data: { clipboard_target: "label" }) } %>
+      <%= render(Ui::ButtonComponent.new(variant: :primary, href: "/docs")) { "Add to my agent" } %>
     </div>
   </div>
 
@@ -40,7 +40,10 @@
             from x402.clients import requests as x402_requests
 
             session = x402_requests.x402_http_adapter(account)
-            r = session.post("#{@service.endpoint_url}", json={"url": "https://example.com/pricing"})
+            r = session.post(
+                "#{@service.endpoint_url}",
+                json={"url": "https://example.com/pricing"},
+            )
             print(r.json()["markdown"])
           PY
           "MCP" => <<~JSON.strip

@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module Ui
-  # <%= render Ui::ButtonComponent.new(variant: :primary, icon: "plug") { "Connect agent" } %>
+  # <%= render(Ui::ButtonComponent.new(variant: :primary, icon: "plug")) { "Connect agent" } %>
   # Renders an <a> when `href` is given, a <button> otherwise.
   class ButtonComponent < ApplicationComponent
     VARIANTS = { default: "btn", primary: "btn btn-primary", ghost: "btn btn-ghost", outline: "btn btn-outline" }.freeze

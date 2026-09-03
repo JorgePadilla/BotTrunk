@@ -15,3 +15,4 @@ paths:
 - Type: Geist (UI), `font-mono` for prices, endpoints, ids, code. Icons: Lucide via `icon("name", class: "size-4")`, stroke 1.75, never emoji.
 - JS: Stimulus only (`theme`, `clipboard`, `tabs` exist). No other framework or library.
 - The mockups are the spec: "BotTrunk Catalog" design canvas. Components mirror them 1:1.
+- Rendering a component with a block: write `render(Ui::ButtonComponent.new(...)) { "Label" }` (parentheses) or `<%= render X.new(...) do %>…<% end %>`. Braces without parentheses bind to `.new` and the content silently disappears.
