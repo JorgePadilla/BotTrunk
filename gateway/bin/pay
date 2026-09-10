@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+# Pay one BotTrunk endpoint from the agent wallet (Phase 0 spike).
+#
+#   bin/pay                      # scrape-markdown against the local server
+#   bin/pay pdf-extract          # another service
+#   bin/pay scrape-markdown '{"url":"https://example.com/pricing"}'
+#
+# Reads AGENT_WALLET_MNEMONIC from .env.local (git-ignored) if it isn't exported.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+
+if [ -z "${AGENT_WALLET_MNEMONIC:-}" ] && [ -f .env.local ]; then
+  set -a; . ./.env.local; set +a
+fi
+if [ -z "${AGENT_WALLET_MNEMONIC:-}" ]; then
+  echo "AGENT_WALLET_MNEMONIC is not set. Put it in gateway/.env.local as:" >&2
+  echo '  AGENT_WALLET_MNEMONIC="word1 word2 ... word25"' >&2
+  exit 1
+fi
+
+python3 -c "import algosdk, requests" 2>/dev/null || pip3 install --quiet py-algorand-sdk requests
+
+SLUG="${1:-scrape-markdown}"
+BODY="${2:-{\"url\":\"https://example.com\"}}"
+BASE="${BOTTRUNK_URL:-http://localhost:5000}"
+
+exec python3 script/x402_client.py "$BASE/s/$SLUG" "$BODY"
