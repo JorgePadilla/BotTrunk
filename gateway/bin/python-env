@@ -1,9 +1,24 @@
 #!/usr/bin/env bash
 # Ensures a project-local Python venv (.venv, git-ignored) with the spike's
 # dependencies, and prints the path to its python. Used by bin/pay and bin/agent-wallet.
-# Prefers a Python that has prebuilt wheels for pynacl/cffi (3.11–3.13).
+#
+# Uses `uv` when present (brew install uv) — it sidesteps pip/Homebrew problems
+# on macOS — and falls back to venv + pip otherwise.
 set -euo pipefail
 cd "$(dirname "$0")/.."
+
+if command -v uv >/dev/null 2>&1; then
+  if [ ! -x .venv/bin/python ]; then
+    rm -rf .venv
+    uv venv --python 3.12 .venv >&2
+  fi
+  if ! .venv/bin/python -c "import algosdk, requests" 2>/dev/null; then
+    echo "installing py-algorand-sdk + requests into .venv with uv (one time)" >&2
+    uv pip install --python .venv/bin/python py-algorand-sdk requests >&2
+  fi
+  echo "$PWD/.venv/bin/python"
+  exit 0
+fi
 
 pick_python() {
   for candidate in python3.12 python3.13 python3.11 python3; do
@@ -15,25 +30,17 @@ if [ ! -x .venv/bin/python ]; then
   rm -rf .venv
   PY="$(pick_python)"
   echo "creating .venv with $PY ($("$PY" --version))" >&2
-  if ! "$PY" -m venv .venv >&2; then
-    # Homebrew Pythons sometimes fail ensurepip; build the venv without pip and
-    # install into it with the system pip instead.
-    echo "ensurepip failed; creating the venv without pip" >&2
-    rm -rf .venv
-    "$PY" -m venv --without-pip .venv >&2
-  fi
+  "$PY" -m venv .venv >&2 || { rm -rf .venv; "$PY" -m venv --without-pip .venv >&2; }
 fi
 
 if ! .venv/bin/python -c "import algosdk, requests" 2>/dev/null; then
   echo "installing py-algorand-sdk + requests into .venv (one time)" >&2
-  # --use-deprecated=legacy-certs: pip's macOS truststore crashes on some builds
-  # ("invalid literal for int() with base 10: ''"); the classic certifi path is fine.
+  echo "(if pip crashes with \"invalid literal for int()\", run: brew install uv, then retry)" >&2
   PIP_FLAGS="--use-deprecated=legacy-certs"
   if [ -x .venv/bin/pip ]; then
     .venv/bin/pip install $PIP_FLAGS py-algorand-sdk requests >&2
   else
-    PY="$(pick_python)"
-    "$PY" -m pip --python .venv/bin/python install $PIP_FLAGS py-algorand-sdk requests >&2
+    "$(pick_python)" -m pip --python .venv/bin/python install $PIP_FLAGS py-algorand-sdk requests >&2
   fi
 fi
 echo "$PWD/.venv/bin/python"
