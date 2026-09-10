@@ -30,7 +30,7 @@ One Docker web service + one Postgres, described in `render.yaml` at the repo ro
 
 ## Incident log
 
-- **Sept 10, 2026 — first paid call on api.bottrunk.com returned 500.** Cause: no `calls` table in production; the Docker entrypoint's `db:prepare` never ran under Render's start command. The facilitator had already settled TestNet txn `CCBCWALZMR74D4IQWQTLLA3RENS2R246MAZABGNMOCWYY2A6UBEQ` (0.005 USDC, payer `LQAWG…KPFQ`) before the ledger write crashed, so that payment exists on-chain with no `calls` row. Fixes: `bin/render-start` + `preDeployCommand` run migrations; `Gateway::HandlePaidCall#record` shields the ledger so a settled call can never 500 (test added).
+- **Sept 10, 2026 — first paid call on api.bottrunk.com returned 500.** Cause: no `calls` table in production; the Docker entrypoint's `db:prepare` never ran under Render's start command. The facilitator had already settled TestNet txn `CCBCWALZMR74D4IQWQTLLA3RENS2R246MAZABGNMOCWYY2A6UBEQ` (0.005 USDC, payer `LQAWG…KPFQ`) before the ledger write crashed, so that payment exists on-chain with no `calls` row. A second attempt before the fix was deployed did the same: txn `3FVCICVJGRNASJI6QAIU5V7JWCKIS267OTHEG23BHO7IRNOPS6JA` (0.005 USDC). Both are TestNet; nothing to reconcile in real money. Fixes: `bin/render-start` + `preDeployCommand` run migrations; `Gateway::HandlePaidCall#record` shields the ledger so a settled call can never 500 (test added).
 
 ## Every later deploy
 
