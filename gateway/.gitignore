@@ -45,3 +45,7 @@ tools/**/__pycache__/
 # Ignore compiled assets (Tailwind output), keep the directory.
 /app/assets/builds/*
 !/app/assets/builds/.keep
+
+# Ignore key files for decrypting credentials and more.
+/config/*.key
+
