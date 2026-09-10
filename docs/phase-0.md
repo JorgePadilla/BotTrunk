@@ -24,7 +24,7 @@ Phase 0 produces no product features. It produces certainty, three registered na
 ### B. Repo hygiene (½ hour)
 
 - [x] `bundle install`, `rails_icons:install --library=lucide`, `bin/dev` — app boots (Sept 3; runs on port 5000 locally because 3000 is taken by another project). Catalog, service page, theme toggle and Lookbook verified in the browser.
-- [ ] `bin/rails db:prepare && bin/rails test` — spike code + tests written Sept 10; **run on the Mac and fix whatever the first run turns up**.
+- [x] `bin/rails db:prepare && bin/rails test` — 33 tests, 0 failures on the first run (Sept 10). Schema dumped and committed.
 - [ ] Enable the CI workflow (`.github/workflows/ci.yml`). (Org move waits for GitHub Support.)
 - [x] Add `faraday`, `faraday-retry`, `webmock` (test) to the Gemfile (Sept 10 — run `bundle`).
 
