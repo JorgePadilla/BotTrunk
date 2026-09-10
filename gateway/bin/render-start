@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# Render's start command. Migrates (idempotent), then serves. Kept as a script
+# so it runs the same whether Render invokes it through a shell or not.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+./bin/rails db:prepare
+exec ./bin/rails server

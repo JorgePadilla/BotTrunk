@@ -62,6 +62,15 @@ class PaidCallsControllerTest < ActionDispatch::IntegrationTest
     assert_equal 0, Call.count
   end
 
+  test "a settled call still returns 200 when the ledger blows up" do
+    stub_upstream(body: { ok: true }.to_json)
+    Call.stub(:create!, ->(*) { raise ActiveRecord::StatementInvalid, "relation calls does not exist" }) do
+      post paid_call_path("pdf-extract"), params: "{}", headers: { "Content-Type" => "application/json", "X-PAYMENT" => payment_header }
+    end
+    assert_response :success
+    assert_equal "TXID123", JSON.parse(Base64.strict_decode64(response.headers["X-PAYMENT-RESPONSE"]))["transaction"]
+  end
+
   test "unknown service is 404" do
     post paid_call_path("nope"), params: "{}", headers: { "Content-Type" => "application/json" }
     assert_response :not_found

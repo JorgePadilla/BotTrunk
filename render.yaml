@@ -6,7 +6,8 @@ services:
     runtime: docker
     rootDir: gateway
     dockerfilePath: ./Dockerfile
-    dockerCommand: ./bin/rails server
+    dockerCommand: ./bin/render-start
+    preDeployCommand: ./bin/rails db:prepare
     plan: starter
     region: ohio
     healthCheckPath: /up

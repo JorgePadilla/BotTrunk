@@ -31,14 +31,25 @@ module Gateway
       return payment_required(requirements, settled.error) if settled.failure?
 
       receipt = settled[:receipt]
-      recorded = Ledger::RecordTransaction.new(service: @service, requirements: requirements, receipt: receipt, upstream: upstream.data).call
-      Rails.logger.error("ledger: #{recorded.error}") if recorded.failure? # never fail a paid, settled call over bookkeeping
+      recorded = record(requirements, receipt, upstream) # never fail a paid, settled call over bookkeeping
 
       Result.success(status: upstream[:status], body: upstream[:body], content_type: upstream[:content_type],
                      headers: { Payments::Receipt::HEADER => receipt.to_header }, call: recorded[:call])
     end
 
     private
+
+    # The payment is already settled on-chain by the time we get here, so a
+    # ledger problem must not turn into an error for the payer. Log it loudly;
+    # the transaction id in the receipt lets us reconcile later.
+    def record(requirements, receipt, upstream)
+      result = Ledger::RecordTransaction.new(service: @service, requirements: requirements, receipt: receipt, upstream: upstream.data).call
+      Rails.logger.error("ledger: failed to record settled txn #{receipt.transaction}: #{result.error}") if result.failure?
+      result
+    rescue StandardError => e
+      Rails.logger.error("ledger: exception recording settled txn #{receipt.transaction}: #{e.class}: #{e.message}")
+      Result.failure(e.message, code: :ledger_error)
+    end
 
     def payment_required(requirements, error)
       body = Payments::BuildRequirements.body_for(service: @service, requirements: requirements).merge(error: error)
