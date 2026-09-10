@@ -81,6 +81,10 @@ What this means for BotTrunk: volume is the gate, so the seed data utilities mus
 
 (Email links are tracking URLs; paste the real ones here when opened.)
 
+## Project information form (Sept 10)
+
+Submitted via the Foundation's "complete your project information" form: name **BotTrunk**, one-liner "A pay-per-call marketplace where AI agents buy API and human services with USDC over x402 on Algorand — no accounts, no API keys, the payment is the credential", and a three-paragraph description (problem → how x402 on Algorand solves it → Composite entry, launch services, Rails, repo link). Confirmation received: "If you have anything further to add, please reach out." Official Rules re-read the same day: eligible (Honduras not excluded, §3b), IP stays with the entrant (§9), wash volume excluded (§14), MainNet endpoint via GoPlausible required for finalist consideration (§6).
+
 ## Project description used on the registration form (Sept 3)
 
 > BotTrunk is a pay-per-call marketplace for AI agents. Developers register any HTTP API with a price; BotTrunk hosts it behind an x402 paywall on Algorand, so agents pay USDC per request with no accounts, API keys or subscriptions, and sellers get settled instantly — including developers in Latin America that card-based platforms leave out. Every endpoint returns HTTP 402 with payment requirements, verifies and settles through the GoPlausible facilitator, proxies the call upstream, and records a commission ledger. An MCP hub exposes the whole catalog as payable tools for Claude, GPT and LangChain agents. We're launching with self-hosted data utilities (scrape-to-markdown, PDF extraction, screenshots) as a Composite entry, with human-fulfilled services (business verification in Honduras, local-context translation) next — the gateway doesn't care whether the fulfiller behind an endpoint is code or a person.
