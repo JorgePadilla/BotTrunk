@@ -1,7 +1,8 @@
 ---
 paths:
   - "gateway/app/services/payments/**"
-  - "gateway/app/middleware/**"
+  - "gateway/app/controllers/paid_calls_controller.rb"
+  - "gateway/app/services/gateway/**"
 ---
 # Payments and the x402 paywall
 

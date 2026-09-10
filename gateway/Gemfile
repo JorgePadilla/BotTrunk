@@ -36,6 +36,11 @@ gem "view_component"
 # Lucide icons as inline SVG: `icon("check", class: "size-4")`.
 gem "rails_icons"
 
+# ---- Payments / proxy (see docs/x402-algorand.md) ----
+# HTTP client for the x402 facilitator (/verify, /settle) and upstream proxying.
+gem "faraday"
+gem "faraday-retry"
+
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
   gem "debug", platforms: %i[ mri windows ], require: "debug/prelude"
@@ -59,4 +64,7 @@ group :test do
   # Use system testing [https://guides.rubyonrails.org/testing.html#system-testing]
   gem "capybara"
   gem "selenium-webdriver"
+
+  # Stub the facilitator and upstream APIs. No real HTTP in tests, ever.
+  gem "webmock"
 end

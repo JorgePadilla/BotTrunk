@@ -28,4 +28,19 @@ Then open:
 | Stimulus controllers | `app/javascript/controllers/` |
 | Catalog seed (temporary PORO) | `app/models/catalog/service.rb` |
 
+## The paid endpoint (Phase 0 spike)
+
+    bin/rails db:prepare                      # creates the `calls` table
+    bin/rails test                            # whole loop with a fake adapter + WebMock, no network
+    curl -i -X POST localhost:5000/s/scrape-markdown -H 'Content-Type: application/json' -d '{"url":"https://example.com"}'
+    # → 402 with `accepts[]` (payTo from credentials `algorand.pay_to`) and `extensions.bazaar`
+
+Pay it for real on TestNet with the payer wallet:
+
+    pip3 install py-algorand-sdk requests
+    export AGENT_WALLET_MNEMONIC="…25 words of the *agent* wallet…"     # or put it in .env.local (git-ignored)
+    python3 script/x402_client.py http://localhost:5000/s/scrape-markdown '{"url":"https://example.com"}'
+
+Flow and files: `docs/architecture.md` §4 and ADR 0008. Every value we learn from the real facilitator goes into `docs/x402-algorand.md`.
+
 Conventions: see `../CLAUDE.md`.

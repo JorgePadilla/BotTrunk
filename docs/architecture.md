@@ -11,7 +11,7 @@ BotTrunk is one Rails monolith (`gateway`) plus one thin, stateless sidecar (`mc
         │ MCP                │ HTTP + X-PAYMENT           │ Hotwire
    ┌────▼─────┐        ┌─────▼──────────────────────────────▼────┐
    │ mcp-hub  │ ─JSON─▶│ gateway (Rails 8.1)                      │
-   │ (TS)     │        │  Rack: X402Paywall                        │
+   │ (TS)     │        │  PaidCallsController → HandlePaidCall     │
    └──────────┘        │  Controllers → Services → Adapters → DB  │
                        └─────┬───────────────┬────────────────────┘
                              │ Faraday       │ Faraday
@@ -25,7 +25,6 @@ BotTrunk is one Rails monolith (`gateway`) plus one thin, stateless sidecar (`mc
 
 | Layer | Lives in | Knows about | Must not |
 |---|---|---|---|
-| Rack middleware | `app/middleware/` | headers, status codes, `Payments::*` services | touch models directly |
 | Controllers | `app/controllers/` | params, one service, rendering | contain business rules |
 | Services | `app/services/<domain>/` | models, adapters, other services | render, know about HTTP headers (except `payments/`) |
 | Adapters | `app/services/payments/adapters/`, `app/services/upstream/` | external APIs (facilitator, chains, upstream) | be called from controllers |
@@ -54,10 +53,10 @@ Until the schema exists, `Catalog::Service` (`app/models/catalog/service.rb`) is
 ```
 POST /s/:slug/:path
   │
-  ├─ X402Paywall#call(env)
-  │    ├─ no X-PAYMENT ──▶ Payments::BuildRequirements(service, endpoint)
-  │    │                     └─▶ 402, body {x402Version, accepts:[requirements], error}
-  │    └─ X-PAYMENT ─────▶ Payments::DecodePaymentHeader  (base64 JSON → Payments::Payload)
+  ├─ PaidCallsController#create ──▶ Gateway::HandlePaidCall  (ADR 0008)
+  │    ├─ no X-PAYMENT ──▶ Payments::BuildRequirements(service)
+  │    │                     └─▶ 402, body {x402Version, accepts:[requirements], extensions.bazaar, error}
+  │    └─ X-PAYMENT ─────▶ Payments::Payload.from_header  (base64 JSON → Payments::Payload)
   │                         Payments::VerifyPayment(payload, requirements)
   │                           └─▶ Adapters::Algorand#verify → POST facilitator /verify
   │                               failure ──▶ 402 again with error reason
@@ -89,14 +88,13 @@ app/
     result.rb
     catalog/     search.rb
     services/    register_service.rb publish_service.rb
-    payments/    build_requirements.rb decode_payment_header.rb verify_payment.rb settle_payment.rb
+    payments/    build_requirements.rb verify_payment.rb settle_payment.rb networks.rb
                  requirements.rb payload.rb receipt.rb        (value objects)
                  adapters/base.rb adapters/algorand.rb          (adapters/base_evm.rb later)
-    gateway/     proxy_call.rb
+    gateway/     handle_paid_call.rb proxy_call.rb
     upstream/    client.rb
     ledger/      record_transaction.rb
     payouts/     create_payout.rb
-  middleware/    x402_paywall.rb
   jobs/          settle_payment_job.rb payout_job.rb health_check_endpoint_job.rb
 ```
 

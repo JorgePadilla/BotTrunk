@@ -11,3 +11,4 @@ One file per decision. Format: Context → Decision → Consequences. Status is 
 | [0005](0005-minitest.md) | Minitest and fixtures |
 | [0006](0006-money-as-integers.md) | Money stored as integer atomic units |
 | [0007](0007-mcp-hub-sidecar.md) | The MCP hub is a stateless TypeScript sidecar |
+| [0008](0008-paywall-in-controller.md) | The x402 paywall is `PaidCallsController` + `Gateway::HandlePaidCall`, not Rack middleware |

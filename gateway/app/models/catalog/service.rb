@@ -8,8 +8,14 @@ module Catalog
   # Seller, Service, Endpoint, Call …), keep this public interface —
   # `all`, `find(slug)`, and the readers below — so no component changes.
   class Service < Data.define(:slug, :name, :summary, :description, :category, :provider, :price_usdc, :latency, :success_rate,
-                              :network, :asset, :facilitator, :inputs, :outputs)
+                              :network, :asset, :facilitator, :inputs, :outputs, :upstream_url)
     CATEGORIES = %w[Data Messaging Verification Translation].freeze
+
+    # Phase 0: every service proxies to httpbin so the paid loop can be exercised
+    # end to end before real upstreams exist.
+    DEFAULT_UPSTREAM = "https://httpbin.org/anything"
+
+    def initialize(upstream_url: DEFAULT_UPSTREAM, **attrs) = super
 
     def self.categories = CATEGORIES
 
@@ -18,6 +24,9 @@ module Catalog
     def self.find(slug) = SEED.find { |s| s.slug == slug }
 
     def endpoint_url = "https://api.bottrunk.com/s/#{slug}"
+
+    # Price in atomic units (µUSDC, 6 decimals) — the only form the payment layer uses.
+    def price_atomic = (BigDecimal(price_usdc.to_s) * 1_000_000).to_i
 
     def human_fulfilled? = provider == "Human-fulfilled"
 

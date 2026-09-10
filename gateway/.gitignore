@@ -49,3 +49,6 @@ tools/**/__pycache__/
 # Ignore key files for decrypting credentials and more.
 /config/*.key
 
+
+# Python bytecode from script/x402_client.py
+__pycache__/

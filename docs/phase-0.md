@@ -24,21 +24,21 @@ Phase 0 produces no product features. It produces certainty, three registered na
 ### B. Repo hygiene (½ hour)
 
 - [x] `bundle install`, `rails_icons:install --library=lucide`, `bin/dev` — app boots (Sept 3; runs on port 5000 locally because 3000 is taken by another project). Catalog, service page, theme toggle and Lookbook verified in the browser.
-- [ ] `bin/rails test` — not run yet.
-- [ ] `git init`, first commit, push to the org. Enable the CI workflow (`.github/workflows/ci.yml`).
-- [ ] Add `faraday`, `faraday-retry`, `webmock` (test) to the Gemfile.
+- [ ] `bin/rails db:prepare && bin/rails test` — spike code + tests written Sept 10; **run on the Mac and fix whatever the first run turns up**.
+- [ ] Enable the CI workflow (`.github/workflows/ci.yml`). (Org move waits for GitHub Support.)
+- [x] Add `faraday`, `faraday-retry`, `webmock` (test) to the Gemfile (Sept 10 — run `bundle`).
 
 ### C. The x402 spike (the real work, ~8 hours)
 
 Build it as real code in its final place, not a throwaway script — the spike *is* the first slice of Phase 1.
 
-1. **Payment requirements.** `Payments::BuildRequirements.call(service:)` → the JSON body of the 402 (see `docs/x402-algorand.md` for exact field names). Unit test the shape.
-2. **Middleware.** `X402Paywall` in `app/middleware/`, mounted for `POST /s/:slug/*path`. No `X-PAYMENT` header → 402 with requirements. With header → decode, hand to the verify service.
-3. **Verify.** `Payments::VerifyPayment.call(payment_header:, requirements:)` → `Payments::Adapters::Algorand#verify` → `POST https://facilitator.goplausible.xyz/verify`. WebMock the facilitator in tests; hit the real one manually on TestNet.
-4. **Proxy.** `Gateway::ProxyCall.call(service:, request:)` → Faraday to a fixed upstream (use `https://httpbin.org/anything` or a tiny internal Rack app first), timed, response captured.
-5. **Settle.** `Payments::SettlePayment.call(...)` → `/settle`. Synchronous in the spike; the async path (Solid Queue job) is a Phase 1 task.
-6. **Ledger.** `Ledger::RecordTransaction` writes one `Call` row: service, payer, amount (µUSDC integer), commission, upstream latency, facilitator tx id.
-7. **Client.** A small script under `gateway/script/x402_client.rb` (or the official TypeScript client in `mcp-hub/`) that pays from the agent wallet. First real TestNet transaction = spike done.
+1. [x] **Payment requirements.** `Payments::BuildRequirements` → `Payments::Requirements` + `body_for` (402 body with `extra.tag` and `extensions.bazaar`). Tested.
+2. [x] **Paywall.** `POST /s/:slug` → `PaidCallsController` → `Gateway::HandlePaidCall` (controller + service instead of Rack middleware — ADR 0008). No `X-PAYMENT` → 402; with header → `Payments::Payload.from_header` → verify.
+3. [x] **Verify.** `Payments::VerifyPayment` → `Payments::Adapters::Algorand#verify` → `POST /verify` (Faraday, timeouts, WebMock in tests). Real facilitator not hit yet.
+4. [x] **Proxy.** `Gateway::ProxyCall` → Faraday to `Catalog::Service#upstream_url` (every seed service points at `https://httpbin.org/anything` for now), timed.
+5. [x] **Settle.** `Payments::SettlePayment` → `/settle`, synchronous; `Payments::Receipt#to_header` becomes `X-PAYMENT-RESPONSE`.
+6. [x] **Ledger.** `Ledger::RecordTransaction` writes one `Call` row (migration `create_calls`): amount, 15 % commission and seller share as integers, payer, tx id, upstream status/latency.
+7. [ ] **Client.** `gateway/script/x402_client.py` (py-algorand-sdk) pays from the agent wallet: 402 → sign USDC transfer → retry with `X-PAYMENT`. **Not run yet** — needs both wallets funded with TestNet USDC. First real TestNet transaction = spike done; whatever the facilitator rejects, fix in the adapter and write the real shapes into `docs/x402-algorand.md`.
 
 ### D. Definition of done
 

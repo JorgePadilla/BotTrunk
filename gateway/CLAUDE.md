@@ -4,7 +4,7 @@ Rails 8.1 · Postgres · Solid Queue/Cache/Cable · Hotwire · Tailwind v4 + dai
 
 ## Layers (top → bottom)
 
-Rack middleware (`app/middleware/x402_paywall.rb`) → controllers (thin) → services (`app/services/<domain>/`, all business logic, return `Result`) → adapters (`app/services/payments/adapters/`, `app/services/upstream/`) → models. Components never query the DB. Details: `../docs/architecture.md`.
+Controllers (thin; `PaidCallsController` is the paid endpoint) → `Gateway::HandlePaidCall` (the x402 loop, ADR 0008) → services (`app/services/<domain>/`, all business logic, return `Result`) → adapters (`app/services/payments/adapters/`, `app/services/upstream/`) → models. Components never query the DB. Details: `../docs/architecture.md`.
 
 Detailed rules load by path from `../.claude/rules/`: `services.md`, `ui.md`, `payments.md`, `testing.md`.
 
