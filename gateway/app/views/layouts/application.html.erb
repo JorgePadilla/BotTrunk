@@ -3,6 +3,14 @@
   <head>
     <title><%= content_for(:title) || "BotTrunk" %></title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
+    <% page_description = content_for(:description) || "Services your AI agent can pay for, per call, in USDC on Algorand over x402. No API keys, no accounts." %>
+    <meta name="description" content="<%= page_description %>">
+    <meta property="og:site_name" content="BotTrunk">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="<%= content_for(:title) || "BotTrunk" %>">
+    <meta property="og:description" content="<%= page_description %>">
+    <meta property="og:url" content="<%= request.original_url %>">
+    <meta name="twitter:card" content="summary">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
     <%= csrf_meta_tags %>

@@ -46,6 +46,7 @@ Build it as real code in its final place, not a throwaway script — the spike *
 - [x] `/sell` — how selling works, pricing (85 % to the seller), early-access form → `SellerInquiry` (`price_atomic` in µUSDC) via `Sellers::CreateInquiry`.
 - [x] `/sign_in` — agents don't sign in; two cards (docs / sell). Real seller auth is Phase 1.
 - [x] `GET /api/v1/catalog[/:slug]` — JSON catalog for `mcp-hub` (ADR 0007 contract starts here).
+- [x] Catalog search (`?q=`, ⌘K), service-page tabs as anchors, pay CTA → docs, footer links, `<meta description>` + OpenGraph on every page, `public/llms.txt` (the Bazaar enriches listings from OG tags and llms.txt), BotTrunk-styled 400/404/422/500 pages.
 - [ ] Run `bin/rails db:migrate` (new `seller_inquiries` table) and `bin/rails test` on the Mac.
 
 ### D. Definition of done

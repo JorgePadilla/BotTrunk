@@ -45,6 +45,21 @@ class PagesControllerTest < ActionDispatch::IntegrationTest
     assert_select "a[href='/sell#early-access']"
   end
 
+  test "every page carries a description and OpenGraph tags (the Bazaar reads them)" do
+    [ root_url, docs_url, sell_url, service_url("scrape-markdown") ].each do |url|
+      get url
+      assert_select "meta[name=description][content]"
+      assert_select "meta[property='og:title'][content]"
+      assert_select "meta[property='og:description'][content]"
+    end
+  end
+
+  test "llms.txt is served" do
+    get "/llms.txt"
+    assert_response :success
+    assert_includes response.body, "/api/v1/catalog"
+  end
+
   test "navbar links resolve" do
     get root_url
     assert_select "nav a[href='/docs']"
