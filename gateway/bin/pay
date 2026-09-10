@@ -18,10 +18,10 @@ if [ -z "${AGENT_WALLET_MNEMONIC:-}" ]; then
   exit 1
 fi
 
-python3 -c "import algosdk, requests" 2>/dev/null || pip3 install --quiet py-algorand-sdk requests
+PY="$(bin/python-env)"
 
 SLUG="${1:-scrape-markdown}"
 BODY="${2:-{\"url\":\"https://example.com\"}}"
 BASE="${BOTTRUNK_URL:-http://localhost:5000}"
 
-exec python3 script/x402_client.py "$BASE/s/$SLUG" "$BODY"
+exec "$PY" script/x402_client.py "$BASE/s/$SLUG" "$BODY"

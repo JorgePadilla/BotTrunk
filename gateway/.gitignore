@@ -52,3 +52,6 @@ tools/**/__pycache__/
 
 # Python bytecode from script/x402_client.py
 __pycache__/
+
+# Python venv for script/ (bin/python-env)
+/.venv/

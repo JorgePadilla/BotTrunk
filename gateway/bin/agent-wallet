@@ -2,5 +2,5 @@
 # Create/inspect the machine-local TestNet payer wallet, or `bin/agent-wallet optin`.
 set -euo pipefail
 cd "$(dirname "$0")/.."
-python3 -c "import algosdk, requests" 2>/dev/null || pip3 install --quiet py-algorand-sdk requests
-exec python3 script/agent_wallet.py "$@"
+PY="$(bin/python-env)"
+exec "$PY" script/agent_wallet.py "$@"
