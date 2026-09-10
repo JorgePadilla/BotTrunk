@@ -40,6 +40,14 @@ Build it as real code in its final place, not a throwaway script — the spike *
 6. [x] **Ledger.** `Ledger::RecordTransaction` writes one `Call` row (migration `create_calls`): amount, 15 % commission and seller share as integers, payer, tx id, upstream status/latency.
 7. [ ] **Client.** `gateway/script/x402_client.py` (py-algorand-sdk) pays from the agent wallet: 402 → sign USDC transfer → retry with `X-PAYMENT`. **Not run yet** — needs both wallets funded with TestNet USDC. First real TestNet transaction = spike done; whatever the facilitator rejects, fix in the adapter and write the real shapes into `docs/x402-algorand.md`.
 
+### C′. Pages that were 404 (done Sept 10, while the faucet cooled down)
+
+- [x] `/docs` — how a paid call works, connect snippets (MCP / Python / TypeScript / curl), the **live 402 body** of `scrape-markdown`, header shapes, networks table, catalog API.
+- [x] `/sell` — how selling works, pricing (85 % to the seller), early-access form → `SellerInquiry` (`price_atomic` in µUSDC) via `Sellers::CreateInquiry`.
+- [x] `/sign_in` — agents don't sign in; two cards (docs / sell). Real seller auth is Phase 1.
+- [x] `GET /api/v1/catalog[/:slug]` — JSON catalog for `mcp-hub` (ADR 0007 contract starts here).
+- [ ] Run `bin/rails db:migrate` (new `seller_inquiries` table) and `bin/rails test` on the Mac.
+
 ### D. Definition of done
 
 - One paid call completes on TestNet: 402 → pay → verify → proxy → settle → 200, with the Algorand tx id visible in the `calls` table.

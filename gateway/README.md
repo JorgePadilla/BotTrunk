@@ -14,6 +14,9 @@ Then open:
 
 - http://localhost:3000 — the public catalog (in-memory seed data for now, see `app/models/catalog/service.rb`)
 - http://localhost:3000/s/scrape-markdown — a service page
+- http://localhost:3000/docs — developer docs, rendering the live 402 body
+- http://localhost:3000/sell — seller page with the early-access form (`seller_inquiries` table)
+- http://localhost:3000/api/v1/catalog — the catalog as JSON (what `mcp-hub` will read)
 - http://localhost:3000/lookbook — every ViewComponent, with a `theme` param to preview `bottrunk-dark`
 
 ## Where things are

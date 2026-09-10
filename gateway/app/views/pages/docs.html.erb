@@ -1,0 +1,160 @@
+<% content_for :title, "Docs — BotTrunk" %>
+<% content_for :nav_active, "Docs" %>
+
+<div class="flex flex-col gap-16 py-16 md:py-24">
+  <div class="flex flex-col gap-4 max-w-2xl">
+    <h1 class="text-4xl md:text-[40px] font-semibold tracking-[-0.03em] leading-[1.15]">Pay per call. Nothing else.</h1>
+    <p class="text-lg text-muted">Every service on BotTrunk is an HTTP endpoint that answers <span class="font-mono">402 Payment Required</span> until it's paid in USDC. No API keys, no accounts, no invoices — the payment <em>is</em> the authentication.</p>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_320px] gap-12 lg:gap-20 items-start">
+    <div class="flex flex-col gap-16">
+
+      <section id="how" class="flex flex-col gap-4">
+        <h2 class="text-[22px] font-semibold tracking-tight">How a paid call works</h2>
+        <p class="text-muted">The <a href="https://x402.org" class="underline underline-offset-4 hover:text-base-content">x402 protocol</a> turns the HTTP status code that was reserved for this in 1997 into a real payment flow. Four steps, about four seconds on Algorand:</p>
+        <ol class="flex flex-col gap-3 text-sm list-decimal pl-5 marker:text-muted">
+          <li><span class="font-medium">Ask.</span> <span class="text-muted">Your agent calls the endpoint. It gets a 402 whose body says what to pay, to whom, on which network.</span></li>
+          <li><span class="font-medium">Pay.</span> <span class="text-muted">The agent signs a USDC transfer for that amount and retries the same request with an <span class="font-mono">X-PAYMENT</span> header.</span></li>
+          <li><span class="font-medium">Verify &amp; fulfil.</span> <span class="text-muted">We check the payment with the facilitator, then run the service upstream. Nothing is charged if the upstream fails.</span></li>
+          <li><span class="font-medium">Settle.</span> <span class="text-muted">The transfer is submitted on-chain. The response carries an <span class="font-mono">X-PAYMENT-RESPONSE</span> header with the transaction id.</span></li>
+        </ol>
+      </section>
+
+      <section id="connect" class="flex flex-col gap-4 scroll-mt-24">
+        <h2 class="text-[22px] font-semibold tracking-tight">Connect your agent</h2>
+        <p class="text-muted">Any x402-capable client handles the 402 → pay → retry dance for you. Pick the one that matches your stack.</p>
+        <%= render Docs::CodeSnippetComponent.new(snippets: {
+          "MCP" => <<~JSON.strip,
+            // Claude Desktop, Cursor, or any MCP host. One server, every service as a tool.
+            {
+              "mcpServers": {
+                "bottrunk": { "url": "https://mcp.bottrunk.com" }
+              }
+            }
+          JSON
+          "Python" => <<~PY.strip,
+            # pip install x402 py-algorand-sdk
+            from x402.clients import requests as x402_requests
+
+            session = x402_requests.x402_http_adapter(account)   # your agent's Algorand account
+            r = session.post("#{@example_service.endpoint_url}",
+                             json={"url": "https://example.com/pricing"})
+            print(r.json()["markdown"])
+            print(r.headers["X-PAYMENT-RESPONSE"])                 # settlement receipt
+          PY
+          "TypeScript" => <<~TS.strip,
+            // npm install @x402-avm/fetch
+            import { wrapFetchWithPayment } from "@x402-avm/fetch";
+
+            const fetchWithPay = wrapFetchWithPayment(fetch, account);
+            const r = await fetchWithPay("#{@example_service.endpoint_url}", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ url: "https://example.com/pricing" }),
+            });
+            console.log(await r.json());
+          TS
+          "curl" => <<~SH.strip
+            # 1. Ask — you get the 402 shown below.
+            curl -X POST #{@example_service.endpoint_url} \\
+              -H "Content-Type: application/json" \\
+              -d '{"url": "https://example.com/pricing"}'
+
+            # 2. Pay and retry with the signed transfer, base64-encoded.
+            curl -X POST #{@example_service.endpoint_url} \\
+              -H "Content-Type: application/json" \\
+              -H "X-PAYMENT: <base64 payment payload>" \\
+              -d '{"url": "https://example.com/pricing"}'
+          SH
+        }) %>
+        <p class="text-sm text-muted">Your agent's wallet needs a little ALGO for fees and must be opted in to the USDC asset (<span class="font-mono">31566704</span> on MainNet, <span class="font-mono">10458941</span> on TestNet). That's a one-time transaction from any Algorand wallet.</p>
+      </section>
+
+      <section id="402" class="flex flex-col gap-4 scroll-mt-24">
+        <h2 class="text-[22px] font-semibold tracking-tight">The 402 response</h2>
+        <p class="text-muted">This is what <span class="font-mono"><%= @example_service.slug %></span> answers today when called without payment. <span class="font-mono">amount</span> is in atomic units — <span class="font-mono"><%= @requirements.amount %></span> µUSDC is $<%= @example_service.price_usdc %>.</p>
+        <%= render Docs::CodeSnippetComponent.new(snippets: { "402 body" => JSON.pretty_generate(@example_402) }) %>
+        <%= render Docs::SchemaTableComponent.new(fields: [
+          Catalog::Field.new("scheme", "string", "Always exact: pay exactly the amount, nothing is metered."),
+          Catalog::Field.new("network", "string", "CAIP-2 id of the chain. Algorand MainNet or TestNet."),
+          Catalog::Field.new("asset", "string", "USDC asset id on that network."),
+          Catalog::Field.new("amount", "string", "Price in atomic units (6 decimals)."),
+          Catalog::Field.new("payTo", "string", "BotTrunk's receiving address. Never send anywhere else."),
+          Catalog::Field.new("maxTimeoutSeconds", "integer", "How long the payment stays valid."),
+          Catalog::Field.new("extensions.bazaar", "object", "Input/output schema so agents can discover and call the service without reading this page.")
+        ]) %>
+      </section>
+
+      <section id="payment" class="flex flex-col gap-4 scroll-mt-24">
+        <h2 class="text-[22px] font-semibold tracking-tight">The payment header</h2>
+        <p class="text-muted"><span class="font-mono">X-PAYMENT</span> is base64 of a JSON object carrying the signed Algorand transaction group. Clients build it; you only need to know the shape if you're writing one.</p>
+        <%= render Docs::CodeSnippetComponent.new(snippets: { "X-PAYMENT (decoded)" => <<~JSON.strip })
+          {
+            "x402Version": 2,
+            "scheme": "exact",
+            "network": "#{@requirements.network}",
+            "payload": {
+              "paymentGroup": ["<base64 msgpack of the signed USDC transfer>"],
+              "paymentIndex": 0
+            }
+          }
+        JSON
+        %>
+        <p class="text-muted">On success the response carries <span class="font-mono">X-PAYMENT-RESPONSE</span>: base64 JSON with <span class="font-mono">success</span>, <span class="font-mono">transaction</span> (the Algorand txn id), <span class="font-mono">network</span> and <span class="font-mono">payer</span>. If verification fails you get the 402 again with an <span class="font-mono">error</span>; if the upstream service fails you get a <span class="font-mono">502</span> and are not charged.</p>
+      </section>
+
+      <section id="networks" class="flex flex-col gap-4 scroll-mt-24">
+        <h2 class="text-[22px] font-semibold tracking-tight">Networks</h2>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead><tr class="border-b hairline text-left text-muted"><th class="py-2 pr-4 font-medium">Network</th><th class="py-2 pr-4 font-medium">CAIP-2 id</th><th class="py-2 font-medium">USDC asset</th></tr></thead>
+            <tbody>
+              <% Payments::Networks::ALGORAND.each do |name, net| %>
+                <tr class="border-b hairline align-top">
+                  <td class="py-3 pr-4">Algorand <%= name.to_s.titleize %><%= " (current)" if name == Rails.configuration.x402.network %></td>
+                  <td class="py-3 pr-4 font-mono text-xs break-all"><%= net[:caip2] %></td>
+                  <td class="py-3 font-mono"><%= net[:usdc_asa] %></td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+        <p class="text-sm text-muted">Payments are verified and settled by the <a href="https://facilitator.goplausible.xyz/docs" class="underline underline-offset-4 hover:text-base-content">GoPlausible facilitator</a>. BotTrunk never holds your keys and never holds your funds: the transfer goes from your wallet to the receiving address in one on-chain transaction.</p>
+      </section>
+
+      <section id="api" class="flex flex-col gap-4 scroll-mt-24">
+        <h2 class="text-[22px] font-semibold tracking-tight">Catalog API</h2>
+        <p class="text-muted">The same list as the home page, for machines. Public, no payment needed.</p>
+        <%= render Docs::CodeSnippetComponent.new(snippets: { "curl" => <<~SH.strip })
+          curl #{request.base_url}/api/v1/catalog                 # every service
+          curl #{request.base_url}/api/v1/catalog?category=Data   # filtered
+          curl #{request.base_url}/api/v1/catalog/#{@example_service.slug}  # one, with input/output schema
+        SH
+        %>
+      </section>
+    </div>
+
+    <aside class="flex flex-col gap-10 lg:pt-1.5 lg:sticky lg:top-8">
+      <nav class="flex flex-col gap-2 text-sm" aria-label="On this page">
+        <span class="text-[13px] font-medium text-muted">On this page</span>
+        <% [ [ "How a paid call works", "#how" ], [ "Connect your agent", "#connect" ], [ "The 402 response", "#402" ], [ "The payment header", "#payment" ], [ "Networks", "#networks" ], [ "Catalog API", "#api" ] ].each do |label, anchor| %>
+          <a href="<%= anchor %>" class="text-muted hover:text-base-content"><%= label %></a>
+        <% end %>
+      </nav>
+      <hr class="hairline">
+      <%= render Gateway::CallTimelineComponent.new(heading: "A call, end to end", stamp: "~4 s", steps: [
+        { title: "402 Payment Required", meta: "#{@requirements.amount} µUSDC · #{@example_service.slug}" },
+        { title: "X-PAYMENT verified", meta: "facilitator /verify" },
+        { title: "Upstream responded", meta: "200 OK · timed" },
+        { title: "Settled on Algorand", meta: "X-PAYMENT-RESPONSE · txn id" }
+      ]) %>
+      <hr class="hairline">
+      <div class="flex flex-col gap-3">
+        <span class="text-[13px] font-medium text-muted">Have an API?</span>
+        <p class="text-sm text-muted">Register an upstream URL and a price. We host the paywall and pay you out in USDC.</p>
+        <%= render(Ui::ButtonComponent.new(href: sell_path, icon: "arrow-right", size: :sm)) { "Sell on BotTrunk" } %>
+      </div>
+    </aside>
+  </div>
+</div>

@@ -77,6 +77,12 @@ Invariants: verify before spending upstream compute; settle only after a success
 
 ```
 app/
+  controllers/
+    catalog_controller.rb          GET /            GET /s/:slug          (HTML)
+    paid_calls_controller.rb       POST /s/:slug                          (the x402 endpoint)
+    pages_controller.rb            GET /docs /sell /sign_in
+    seller_inquiries_controller.rb POST /sell                             (early-access form)
+    api/v1/catalog_controller.rb   GET /api/v1/catalog[/:slug]            (JSON, read by mcp-hub)
   components/
     application_component.rb
     ui/          button pill card tabs search_input navbar theme_toggle  (modal alert empty_state later)
@@ -92,6 +98,7 @@ app/
                  requirements.rb payload.rb receipt.rb        (value objects)
                  adapters/base.rb adapters/algorand.rb          (adapters/base_evm.rb later)
     gateway/     handle_paid_call.rb proxy_call.rb
+    sellers/     create_inquiry.rb
     upstream/    client.rb
     ledger/      record_transaction.rb
     payouts/     create_payout.rb

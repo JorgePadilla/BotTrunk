@@ -1,0 +1,92 @@
+<% content_for :title, "Sell your API to agents — BotTrunk" %>
+<% content_for :nav_active, "Sell" %>
+
+<div class="flex flex-col gap-16 py-16 md:py-24">
+  <div class="flex flex-col gap-4 max-w-2xl">
+    <h1 class="text-4xl md:text-[40px] font-semibold tracking-[-0.03em] leading-[1.15]">Have an API? Agents will pay for it.</h1>
+    <p class="text-lg text-muted">Give us an upstream URL and a price. We host the paywall, verify and settle every payment in USDC, and pay you out. No payment code, no billing, no chargebacks.</p>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+    <% [
+      [ "link", "1. Register", "Point us at your endpoint and set a price per call — from a fraction of a cent to whatever the work is worth." ],
+      [ "shield-check", "2. We collect", "Agents hit bottrunk.com, get a 402, pay, and we forward the call to you only after the payment verifies." ],
+      [ "wallet", "3. You get paid", "Settled USDC lands in your Algorand address. You keep 85% of every call; the rest is our fee." ]
+    ].each do |icon_name, title, text| %>
+      <%= render(Ui::CardComponent.new) do %>
+        <div class="flex flex-col gap-3">
+          <span class="size-9 rounded-full bg-base-200 flex items-center justify-center"><%= icon(icon_name) %></span>
+          <h2 class="font-semibold tracking-tight"><%= title %></h2>
+          <p class="text-sm text-muted"><%= text %></p>
+        </div>
+      <% end %>
+    <% end %>
+  </div>
+
+  <hr class="hairline">
+
+  <div class="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_400px] gap-12 lg:gap-20 items-start">
+    <section class="flex flex-col gap-10">
+      <div class="flex flex-col gap-3.5">
+        <h2 class="text-[22px] font-semibold tracking-tight">What sells</h2>
+        <p class="text-muted">Anything an agent can't do alone and would rather pay for than build: scraping and extraction, sending messages to real phone numbers, verifying something in the physical world, translation a human has checked. Code you already run, or work a person does — both become one paid endpoint.</p>
+      </div>
+      <div class="flex flex-col gap-3.5">
+        <h2 class="text-[22px] font-semibold tracking-tight">Pricing</h2>
+        <dl class="flex flex-col text-sm">
+          <% [ [ "Your share", "85% of every settled call" ], [ "Listing", "Free" ], [ "Minimum price", "0.001 USDC per call" ], [ "Payout", "USDC on Algorand, to the address you give us" ], [ "Failed upstream calls", "Not charged to the agent, not counted" ] ].each do |k, v| %>
+            <div class="flex justify-between gap-6 py-3 border-b hairline"><dt class="text-muted"><%= k %></dt><dd class="text-right"><%= v %></dd></div>
+          <% end %>
+        </dl>
+      </div>
+      <div class="flex flex-col gap-3.5">
+        <h2 class="text-[22px] font-semibold tracking-tight">Your endpoint</h2>
+        <p class="text-muted">A public HTTPS URL that accepts a JSON <span class="font-mono">POST</span> and answers JSON. We forward the agent's body as-is and add nothing you need to parse. If you return a 5xx we don't charge the agent and don't count the call.</p>
+      </div>
+    </section>
+
+    <aside class="lg:pt-1.5">
+      <%= render(Ui::CardComponent.new(id: "early-access")) do %>
+        <% if @submitted %>
+          <div class="flex flex-col gap-3">
+            <span class="size-9 rounded-full bg-base-200 text-success flex items-center justify-center"><%= icon("check") %></span>
+            <h2 class="font-semibold tracking-tight">Got it.</h2>
+            <p class="text-sm text-muted">We'll email you when your endpoint is live. Seller accounts and payouts open with the first public services in October.</p>
+          </div>
+        <% else %>
+          <%= form_with model: @inquiry, url: seller_inquiries_path, class: "flex flex-col gap-4" do |f| %>
+            <div class="flex flex-col gap-1">
+              <h2 class="font-semibold tracking-tight">Request early access</h2>
+              <p class="text-sm text-muted">Tell us what you'd sell. Takes a minute.</p>
+            </div>
+            <% if @inquiry.errors.any? %>
+              <p class="text-sm text-error"><%= @inquiry.errors.full_messages.to_sentence %></p>
+            <% end %>
+            <label class="flex flex-col gap-1.5 text-sm">
+              <span class="font-medium">Email</span>
+              <%= f.email_field :email, class: "input w-full", placeholder: "you@company.com", required: true %>
+            </label>
+            <label class="flex flex-col gap-1.5 text-sm">
+              <span class="font-medium">Service name</span>
+              <%= f.text_field :service_name, class: "input w-full", placeholder: "Scrape URL to Markdown", required: true %>
+            </label>
+            <label class="flex flex-col gap-1.5 text-sm">
+              <span class="font-medium">Upstream URL</span>
+              <%= f.url_field :upstream_url, class: "input w-full font-mono", placeholder: "https://api.example.com/scrape", required: true %>
+            </label>
+            <label class="flex flex-col gap-1.5 text-sm">
+              <span class="font-medium">Price per call (USDC)</span>
+              <%= f.text_field :price_usdc, value: @inquiry.price_usdc, class: "input w-full font-mono", placeholder: "0.005", inputmode: "decimal", required: true %>
+            </label>
+            <label class="flex flex-col gap-1.5 text-sm">
+              <span class="font-medium">Notes <span class="text-muted font-normal">(optional)</span></span>
+              <%= f.text_area :notes, class: "textarea w-full", rows: 3, placeholder: "What it does, who it's for, expected latency…" %>
+            </label>
+            <%= render(Ui::ButtonComponent.new(variant: :primary, type: "submit", class: "w-full", icon: "arrow-right")) { "Request access" } %>
+            <p class="text-xs text-muted text-center">No spam. One email when it's ready.</p>
+          <% end %>
+        <% end %>
+      <% end %>
+    </aside>
+  </div>
+</div>

@@ -17,4 +17,18 @@ Rails.application.routes.draw do
   get "s/:slug", to: "catalog#show", as: :service
   # The paid endpoint itself: 402 → X-PAYMENT → verify → upstream → settle.
   post "s/:slug", to: "paid_calls#create", as: :paid_call
+
+  # Pages
+  get "docs", to: "pages#docs"
+  get "sell", to: "pages#sell"
+  post "sell", to: "seller_inquiries#create", as: :seller_inquiries
+  get "sign_in", to: "pages#sign_in"
+
+  # Machine-readable catalog (read by mcp-hub)
+  namespace :api do
+    namespace :v1 do
+      get "catalog", to: "catalog#index"
+      get "catalog/:slug", to: "catalog#show", as: :catalog_service
+    end
+  end
 end

@@ -1,0 +1,28 @@
+<% content_for :title, "Sign in — BotTrunk" %>
+<% content_for :nav_active, "" %>
+
+<div class="flex flex-col gap-12 py-16 md:py-24 max-w-2xl">
+  <div class="flex flex-col gap-4">
+    <h1 class="text-4xl md:text-[40px] font-semibold tracking-[-0.03em] leading-[1.15]">Agents don't sign in.</h1>
+    <p class="text-lg text-muted">If you're here to <em>use</em> a service, there's nothing to create: your agent pays per call with USDC and the payment is the credential. Point it at the catalog and go.</p>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+    <%= render(Ui::CardComponent.new(href: docs_path(anchor: "connect"))) do %>
+      <div class="flex flex-col gap-3">
+        <span class="size-9 rounded-full bg-base-200 flex items-center justify-center"><%= icon("plug") %></span>
+        <h2 class="font-semibold tracking-tight">I'm building an agent</h2>
+        <p class="text-sm text-muted">Connect it in one line — MCP, Python or TypeScript. No account needed.</p>
+        <span class="text-sm font-medium inline-flex items-center gap-1.5 mt-1">Read the docs <%= icon("arrow-right", class: "size-3.5") %></span>
+      </div>
+    <% end %>
+    <%= render(Ui::CardComponent.new(href: sell_path(anchor: "early-access"))) do %>
+      <div class="flex flex-col gap-3">
+        <span class="size-9 rounded-full bg-base-200 flex items-center justify-center"><%= icon("wallet") %></span>
+        <h2 class="font-semibold tracking-tight">I want to sell a service</h2>
+        <p class="text-sm text-muted">Seller accounts, dashboards and payouts open in October. Request early access and we'll set you up first.</p>
+        <span class="text-sm font-medium inline-flex items-center gap-1.5 mt-1">Request access <%= icon("arrow-right", class: "size-3.5") %></span>
+      </div>
+    <% end %>
+  </div>
+</div>
