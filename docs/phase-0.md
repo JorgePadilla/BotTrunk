@@ -14,10 +14,10 @@ Phase 0 produces no product features. It produces certainty, three registered na
 
 - [x] Register `bottrunk.com` — done Sept 3, 2026 (Namecheap, 5 years). Point nothing yet.
 - [x] Repo created: `github.com/JorgePadilla/BotTrunk` (Sept 3, public).
-- [x] First push done (Sept 3). Two more local commits (`ef00b5e`, `d9a7636`: first-boot fixes + UI audit) are waiting for `git push`.
+- [x] First push done (Sept 3). Local commits since then (first-boot fixes, UI audit, payTo docs, encrypted credentials) are waiting for `git push`.
 - [x] GitHub Support ticket filed Sept 3 asking to release the `bottrunk` org name (GitHub confirms deleted org names are locked for **90 days → Dec 2, 2026**; Support may release it sooner). Watch the inbox / support.github.com → My Tickets. When released: create the org, transfer the repo (Settings → Transfer), install the Claude GitHub App on the org with "All repositories", `git remote set-url origin git@github.com:bottrunk/bottrunk.git`.
 - [x] Rules PDF and submission guide read (Sept 3); exact dates recorded in `docs/challenge.md`: **submit by Sep 29, 11:45 pm ET**, shortlist Oct 9, final Nov 2, winners by Nov 12. Self-payments don't count as volume.
-- [x] Create an Algorand wallet for the gateway (Pera, Sept 9). Mnemonic in the password manager; never in the repo. `payTo` = `UTWS33TM7IT7NINJSFWS5KVGL73G4ERJMYDKHF7KE4WDXHYO4L7V2PNMRE` (recorded in `docs/x402-algorand.md` and Rails credentials `algorand.pay_to`).
+- [x] Create an Algorand wallet for the gateway (Pera, Sept 9). Mnemonic in the password manager; never in the repo. `payTo` = `UTWS33TM7IT7NINJSFWS5KVGL73G4ERJMYDKHF7KE4WDXHYO4L7V2PNMRE` — recorded in `docs/x402-algorand.md` and in Rails encrypted credentials as `algorand.pay_to` (`credentials.yml.enc` committed, `master.key` git-ignored, copy in the password manager).
 - [ ] Fund it on TestNet: ALGO from the TestNet dispenser, then opt in to TestNet USDC (ASA `10458941`) and get test USDC from the faucet.
 - [ ] Create a second wallet to act as the *paying agent* in the spike.
 
