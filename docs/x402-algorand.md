@@ -112,7 +112,9 @@ Responses: verify → `{ "isValid": boolean, "invalidReason"?: string, "payer"?:
 
 ## Wallets for Phase 0
 
-- Gateway receiving wallet: created in Pera/Defly, address = `payTo`. It must **opt in** to the USDC ASA on each network before it can receive.
+- Gateway receiving wallet (Pera, created Sept 9 2026), address = `payTo`:
+  `UTWS33TM7IT7NINJSFWS5KVGL73G4ERJMYDKHF7KE4WDXHYO4L7V2PNMRE`
+  Public address only — the mnemonic lives in the password manager. Lives in Rails credentials as `algorand.pay_to`; read it with `Rails.application.credentials.dig(:algorand, :pay_to)`. It must **opt in** to the USDC ASA on each network before it can receive.
 - Agent (payer) wallet: separate account, funded with TestNet ALGO (dispenser) and TestNet USDC (faucet), used by the spike client.
 - The gateway server holds **no private keys**; it only builds requirements and calls the facilitator.
 
