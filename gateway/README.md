@@ -40,9 +40,11 @@ Then open:
 
 Pay it for real on TestNet with the payer wallet:
 
-    pip3 install py-algorand-sdk requests
-    export AGENT_WALLET_MNEMONIC="…25 words of the *agent* wallet…"     # or put it in .env.local (git-ignored)
-    python3 script/x402_client.py http://localhost:5000/s/scrape-markdown '{"url":"https://example.com"}'
+    bin/agent-wallet          # creates a throwaway TestNet payer on this machine, prints its address
+    #  → from Defly send it 0.5 ALGO, then:
+    bin/agent-wallet optin    # opts in to TestNet USDC
+    #  → from Defly send it a few USDC, then:
+    bin/pay                   # 402 → sign → retry against localhost:5000/s/scrape-markdown
 
 Flow and files: `docs/architecture.md` §4 and ADR 0008. Every value we learn from the real facilitator goes into `docs/x402-algorand.md`.
 
