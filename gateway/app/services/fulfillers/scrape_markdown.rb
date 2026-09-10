@@ -35,7 +35,7 @@ module Fulfillers
 
       Result.success(status: 200, content_type: "application/json", body: extract(response.body).to_json)
     rescue Faraday::Error => e
-      upstream_error("fetch failed: #{e.class.name.demodulize}")
+      upstream_error("fetch failed: #{e.message.truncate(120)}")
     end
 
     private
