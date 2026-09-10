@@ -26,11 +26,14 @@ fi
 
 if ! .venv/bin/python -c "import algosdk, requests" 2>/dev/null; then
   echo "installing py-algorand-sdk + requests into .venv (one time)" >&2
+  # --use-deprecated=legacy-certs: pip's macOS truststore crashes on some builds
+  # ("invalid literal for int() with base 10: ''"); the classic certifi path is fine.
+  PIP_FLAGS="--use-deprecated=legacy-certs"
   if [ -x .venv/bin/pip ]; then
-    .venv/bin/pip install py-algorand-sdk requests >&2
+    .venv/bin/pip install $PIP_FLAGS py-algorand-sdk requests >&2
   else
     PY="$(pick_python)"
-    "$PY" -m pip --python .venv/bin/python install py-algorand-sdk requests >&2
+    "$PY" -m pip --python .venv/bin/python install $PIP_FLAGS py-algorand-sdk requests >&2
   fi
 fi
 echo "$PWD/.venv/bin/python"
