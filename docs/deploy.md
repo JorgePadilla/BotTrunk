@@ -1,5 +1,7 @@
 # Deploying the gateway (Render)
 
+**Status (Sept 10, 2026):** live at https://bottrunk-gateway.onrender.com (service `srv-dahjcb6q1p3s73dqem4g`, Ohio; Postgres 18 `bottrunk-db`). First blueprint deploy succeeded on the first try (2m03s). Still on TestNet; custom domains and the MainNet switch are next.
+
 One Docker web service + one Postgres, described in `render.yaml` at the repo root. ~$13/month (Starter web $7 + Basic Postgres $6). Decided Sept 10, 2026 over Fly (managed Postgres there starts at $38) and Kamal on a VPS (ops time we don't have before the challenge deadline).
 
 ## First deploy (once, ~30 min)
