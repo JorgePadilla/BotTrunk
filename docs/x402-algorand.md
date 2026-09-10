@@ -81,7 +81,7 @@ Request body (both): `{ "x402Version": 2, "paymentPayload": <decoded X-PAYMENT>,
 
 Responses: verify → `{ "isValid": boolean, "invalidReason"?: string, "payer"?: string }`; settle → `{ "success": boolean, "transaction": "<txId>", "network": "..." , "errorReason"?: string }`. The settle response, base64-encoded, becomes `X-PAYMENT-RESPONSE`.
 
-(Exact key casing to be confirmed against `/docs` during the spike — write the real shapes here.)
+**Confirmed Sept 10 (first real exchange, TestNet):** the facilitator accepted our `X-PAYMENT` exactly as documented above — `{x402Version: 2, scheme, network, payload: {paymentGroup: [<base64 msgpack signed txn>], paymentIndex: 0}}` with a single plain `AssetTransferTxn` (no fee payer, no group) — and `/verify` **simulates the transaction** before answering. An unfunded payer came back as `isValid: false` with `invalidReason` = `"Transaction simulation failed: transaction <txid>: overspend (account …, MicroAlgos:0 …)"`, which our gateway surfaced in the 402's `error`. So: shapes are right; payer needs ALGO for the fee/min-balance and USDC ≥ amount.
 
 ## Discovery ("Bazaar") and the challenge tag
 

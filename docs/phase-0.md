@@ -38,7 +38,7 @@ Build it as real code in its final place, not a throwaway script — the spike *
 4. [x] **Proxy.** `Gateway::ProxyCall` → Faraday to `Catalog::Service#upstream_url` (every seed service points at `https://httpbin.org/anything` for now), timed.
 5. [x] **Settle.** `Payments::SettlePayment` → `/settle`, synchronous; `Payments::Receipt#to_header` becomes `X-PAYMENT-RESPONSE`.
 6. [x] **Ledger.** `Ledger::RecordTransaction` writes one `Call` row (migration `create_calls`): amount, 15 % commission and seller share as integers, payer, tx id, upstream status/latency.
-7. [ ] **Client.** `gateway/script/x402_client.py` (py-algorand-sdk) pays from the agent wallet: 402 → sign USDC transfer → retry with `X-PAYMENT`. **Not run yet** — needs both wallets funded with TestNet USDC. First real TestNet transaction = spike done; whatever the facilitator rejects, fix in the adapter and write the real shapes into `docs/x402-algorand.md`.
+7. [ ] **Client.** `gateway/script/x402_client.py` (py-algorand-sdk) pays from the agent wallet: 402 → sign USDC transfer → retry with `X-PAYMENT`. First run Sept 10: full loop executed, facilitator parsed and simulated our payment (rejected only for an unfunded payer — see `docs/x402-algorand.md`). Payer is a machine-generated 25-word account (`bin/agent-wallet`, `LQAWG…KPFQ`) because Defly's HD wallets use 24-word BIP39 phrases the Python SDK can't derive. First real TestNet transaction = spike done; whatever the facilitator rejects, fix in the adapter and write the real shapes into `docs/x402-algorand.md`.
 
 ### C′. Pages that were 404 (done Sept 10, while the faucet cooled down)
 
