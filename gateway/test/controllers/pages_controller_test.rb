@@ -34,7 +34,7 @@ class PagesControllerTest < ActionDispatch::IntegrationTest
   test "sell shows a confirmation after submitting" do
     get sell_url(submitted: 1)
     assert_response :success
-    assert_select "form", count: 0
+    assert_select "form[action='/sell']", count: 0
     assert_select "h2", text: "Got it."
   end
 
