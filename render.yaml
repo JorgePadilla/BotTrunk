@@ -1,0 +1,41 @@
+# Render Blueprint for BotTrunk. Docs: https://render.com/docs/blueprint-spec
+# One web service (the Rails gateway, Docker) + one Postgres. Runbook: docs/deploy.md
+services:
+  - type: web
+    name: bottrunk-gateway
+    runtime: docker
+    rootDir: gateway
+    dockerfilePath: ./Dockerfile
+    dockerCommand: ./bin/rails server
+    plan: starter
+    region: ohio
+    healthCheckPath: /up
+    autoDeploy: true
+    envVars:
+      - key: RAILS_ENV
+        value: production
+      - key: BINDING
+        value: 0.0.0.0
+      - key: RAILS_MAX_THREADS
+        value: "3"
+      - key: RAILS_LOG_LEVEL
+        value: info
+      - key: RAILS_MASTER_KEY
+        sync: false            # paste from gateway/config/master.key in the Render dashboard
+      - key: DATABASE_URL
+        fromDatabase:
+          name: bottrunk-db
+          property: connectionString
+      - key: BOTTRUNK_PUBLIC_HOST
+        value: https://api.bottrunk.com
+      - key: ALGORAND_NETWORK
+        value: testnet         # flip to mainnet once the gateway wallet is opted in to USDC 31566704
+      - key: APP_HOST
+        value: bottrunk.com
+
+databases:
+  - name: bottrunk-db
+    plan: basic-256mb
+    region: ohio
+    databaseName: bottrunk
+    user: bottrunk

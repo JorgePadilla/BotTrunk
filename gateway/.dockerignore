@@ -42,3 +42,7 @@
 # Ignore Docker-related files
 /.dockerignore
 /Dockerfile*
+
+# Python venv and payer scripts are dev-only; never ship them.
+/.venv/
+/script/__pycache__/

@@ -13,6 +13,7 @@ Monorepo: `gateway/` (Rails 8.1 — registry, x402 paywall + proxy, catalog, led
 | How the code is organized | `docs/architecture.md` |
 | Why each gem/lib | `docs/stack.md`, `docs/adr/` |
 | x402 / Algorand / facilitator facts | `docs/x402-algorand.md` |
+| How it is deployed (Render), MainNet switch | `docs/deploy.md` |
 | Rails conventions (auto-loaded inside `gateway/`) | `gateway/CLAUDE.md`, `.claude/rules/` |
 | Product plan and phases | Claude project doc `claude/plan.md` |
 
