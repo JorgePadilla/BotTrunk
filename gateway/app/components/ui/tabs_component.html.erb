@@ -1,5 +1,5 @@
 <div role="tablist" class="tabs tabs-border">
-  <% @tabs.each do |tab| %>
-    <a role="tab" class="<%= tab_classes(tab) %>" <%= "aria-selected=true" if active?(tab) %>><%= tab %></a>
+  <% tabs.each do |label, href| %>
+    <%= tag.a label, role: "tab", href: href, class: tab_classes(label), "aria-selected": (true if active?(label)) %>
   <% end %>
 </div>

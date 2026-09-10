@@ -1,8 +1,10 @@
 class CatalogController < ApplicationController
   def index
     @category = params[:category].presence
+    @query = params[:q].to_s.strip.presence
     @services = Catalog::Service.all
     @services = @services.select { |s| s.category == @category } if @category
+    @services = @services.select { |s| s.matches?(@query) } if @query
   end
 
   def show

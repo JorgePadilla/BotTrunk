@@ -6,6 +6,6 @@
       <div class="flex justify-between gap-4"><dt class="text-muted"><%= label %></dt><dd><%= value %></dd></div>
     <% end %>
   </dl>
-  <%= render(Ui::ButtonComponent.new(variant: :primary, class: "w-full", icon: "zap")) { "Run a paid test call" } %>
-  <p class="text-xs text-muted text-center">Uses your connected wallet · settles in ~4 s</p>
+  <%= render(Ui::ButtonComponent.new(variant: :primary, class: "w-full", icon: "zap", href: "/docs#connect")) { "Pay from your agent" } %>
+  <p class="text-xs text-muted text-center">Any x402 client · settles on Algorand in ~4 s</p>
 </div>

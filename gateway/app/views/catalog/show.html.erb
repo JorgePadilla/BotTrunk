@@ -1,7 +1,7 @@
 <% content_for :title, "#{@service.name} — BotTrunk" %>
 <% content_for :nav_active, "Catalog" %>
 
-<div class="flex flex-col gap-12 py-12 md:py-16">
+<div id="overview" class="flex flex-col gap-12 py-12 md:py-16 scroll-mt-24">
   <nav class="flex items-center gap-2 text-sm text-muted" aria-label="Breadcrumb">
     <%= link_to "Catalog", root_path, class: "hover:text-base-content" %><span>/</span>
     <%= link_to @service.category, root_path(category: @service.category), class: "hover:text-base-content" %>
@@ -19,11 +19,11 @@
     </div>
   </div>
 
-  <%= render Ui::TabsComponent.new(tabs: %w[Overview Try\ it Schema Stats], active: "Overview") %>
+  <%= render Ui::TabsComponent.new(tabs: [ [ "Overview", "#overview" ], [ "Call it", "#call" ], [ "Input", "#input" ], [ "Output", "#output" ] ], active: "Overview") %>
 
   <div class="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_360px] gap-12 lg:gap-20 items-start">
     <section class="flex flex-col gap-12">
-      <div class="flex flex-col gap-3.5">
+      <div id="call" class="flex flex-col gap-3.5 scroll-mt-24">
         <h2 class="text-[22px] font-semibold tracking-tight">Call it</h2>
         <%= render Docs::CodeSnippetComponent.new(snippets: {
           "curl" => <<~SH.strip,
@@ -52,11 +52,11 @@
           JSON
         }) %>
       </div>
-      <div class="flex flex-col gap-3.5">
+      <div id="input" class="flex flex-col gap-3.5 scroll-mt-24">
         <h2 class="text-[22px] font-semibold tracking-tight">Input</h2>
         <%= render Docs::SchemaTableComponent.new(fields: @service.inputs) %>
       </div>
-      <div class="flex flex-col gap-3.5">
+      <div id="output" class="flex flex-col gap-3.5 scroll-mt-24">
         <h2 class="text-[22px] font-semibold tracking-tight">Output</h2>
         <%= render Docs::SchemaTableComponent.new(fields: @service.outputs) %>
       </div>

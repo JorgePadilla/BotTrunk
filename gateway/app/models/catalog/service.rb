@@ -31,6 +31,12 @@ module Catalog
     def human_fulfilled? = provider == "Human-fulfilled"
 
     def to_param = slug
+
+    # Case-insensitive substring match on the words people actually type.
+    def matches?(query)
+      q = query.to_s.downcase
+      [ name, summary, description, category, provider, slug ].any? { |text| text.downcase.include?(q) }
+    end
   end
 
   Service::SEED = [

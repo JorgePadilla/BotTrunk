@@ -1,5 +1,8 @@
-<label class="input <%= "input-sm" if @size == :sm %> <%= @width %> flex items-center gap-2.5 bg-base-100 border hairline focus-within:border-base-content/40">
-  <%= icon("search", class: "size-4 text-muted") %>
-  <input type="search" name="<%= @name %>" value="<%= @value %>" placeholder="<%= @placeholder %>" class="grow bg-transparent text-sm placeholder:text-muted" autocomplete="off">
-  <kbd class="kbd kbd-xs font-mono text-muted">⌘K</kbd>
-</label>
+<form action="<%= @action %>" method="get" role="search" data-controller="search" class="contents">
+  <label class="input <%= "input-sm" if @size == :sm %> <%= @width %> flex items-center gap-2.5 bg-base-100 border hairline focus-within:border-base-content/40">
+    <%= icon("search", class: "size-4 text-muted") %>
+    <input type="search" name="<%= @name %>" value="<%= @value %>" placeholder="<%= @placeholder %>" class="grow bg-transparent text-sm placeholder:text-muted" autocomplete="off"
+           data-search-target="input" data-action="keydown->search#clear">
+    <kbd class="kbd kbd-xs font-mono text-muted">⌘K</kbd>
+  </label>
+</form>

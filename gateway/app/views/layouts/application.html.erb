@@ -25,9 +25,15 @@
       <%= yield %>
     </main>
     <footer class="border-t hairline">
-      <div class="max-w-[1180px] mx-auto px-6 md:px-12 py-8 text-sm text-muted flex items-center justify-between">
+      <div class="max-w-[1180px] mx-auto px-6 md:px-12 py-8 text-sm text-muted flex items-center justify-between gap-6 flex-wrap">
         <span>© <%= Time.current.year %> BotTrunk</span>
-        <span class="font-mono">api.bottrunk.com · x402 · Algorand</span>
+        <nav class="flex items-center gap-5" aria-label="Footer">
+          <%= link_to "Docs", docs_path, class: "hover:text-base-content" %>
+          <%= link_to "Sell", sell_path, class: "hover:text-base-content" %>
+          <%= link_to "API", api_v1_catalog_path, class: "hover:text-base-content" %>
+          <%= link_to "GitHub", "https://github.com/JorgePadilla/BotTrunk", class: "hover:text-base-content" %>
+        </nav>
+        <span class="font-mono">x402 · USDC · Algorand</span>
       </div>
     </footer>
   </body>
