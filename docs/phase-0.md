@@ -17,9 +17,9 @@ Phase 0 produces no product features. It produces certainty, three registered na
 - [x] First push done (Sept 3). Local commits since then (first-boot fixes, UI audit, payTo docs, encrypted credentials) are waiting for `git push`.
 - [x] GitHub Support ticket filed Sept 3 asking to release the `bottrunk` org name (GitHub confirms deleted org names are locked for **90 days → Dec 2, 2026**; Support may release it sooner). Watch the inbox / support.github.com → My Tickets. When released: create the org, transfer the repo (Settings → Transfer), install the Claude GitHub App on the org with "All repositories", `git remote set-url origin git@github.com:bottrunk/bottrunk.git`.
 - [x] Rules PDF and submission guide read (Sept 3); exact dates recorded in `docs/challenge.md`: **submit by Sep 29, 11:45 pm ET**, shortlist Oct 9, final Nov 2, winners by Nov 12. Self-payments don't count as volume.
-- [x] Create an Algorand wallet for the gateway (Pera, Sept 9). Mnemonic in the password manager; never in the repo. `payTo` = `UTWS33TM7IT7NINJSFWS5KVGL73G4ERJMYDKHF7KE4WDXHYO4L7V2PNMRE` — recorded in `docs/x402-algorand.md` and in Rails encrypted credentials as `algorand.pay_to` (`credentials.yml.enc` committed, `master.key` git-ignored, copy in the password manager).
-- [ ] Fund it on TestNet: ALGO from the TestNet dispenser, then opt in to TestNet USDC (ASA `10458941`) and get test USDC from the faucet.
-- [ ] Create a second wallet to act as the *paying agent* in the spike.
+- [x] Create an Algorand wallet for the gateway (Defly, Sept 9). Mnemonic in the password manager; never in the repo. `payTo` = `UTWS33TM7IT7NINJSFWS5KVGL73G4ERJMYDKHF7KE4WDXHYO4L7V2PNMRE` — recorded in `docs/x402-algorand.md` and in Rails encrypted credentials as `algorand.pay_to` (`credentials.yml.enc` committed, `master.key` git-ignored, copy in the password manager).
+- [ ] Fund it on TestNet: ~~ALGO from the dispenser~~ (10 ALGO received Sept 10), then opt in to TestNet USDC (ASA `10458941`) in Defly and get test USDC from https://faucet.circle.com.
+- [x] Create a second wallet to act as the *paying agent* in the spike (Sept 10): `ABEAGNREVBDSINTSOWXYXOANZDRTLBWDGULA3SALTWRMXNEED2LWZNSADE`. Fund it the same way (10 ALGO, opt in to `10458941`, Circle USDC) — its mnemonic goes in `gateway/.env.local` (git-ignored) for the spike client.
 
 ### B. Repo hygiene (½ hour)
 
