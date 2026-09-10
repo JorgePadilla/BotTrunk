@@ -37,6 +37,8 @@ Then open:
     bin/rails test                            # whole loop with a fake adapter + WebMock, no network
     curl -i -X POST localhost:5000/s/scrape-markdown -H 'Content-Type: application/json' -d '{"url":"https://example.com"}'
     # → 402 with `accepts[]` (payTo from credentials `algorand.pay_to`) and `extensions.bazaar`
+    # scrape-markdown is a built-in service (Fulfillers::ScrapeMarkdown, in-process); the other seed
+    # services still proxy to httpbin until they get real upstreams.
 
 Pay it for real on TestNet with the payer wallet:
 

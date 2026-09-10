@@ -6,7 +6,7 @@ module Gateway
   class ProxyCallTest < ActiveSupport::TestCase
     test "forwards the body and returns status, body and latency" do
       stub_upstream(body: { markdown: "# Hi" }.to_json)
-      result = ProxyCall.new(service: service, body: { url: "https://example.com" }.to_json).call
+      result = ProxyCall.new(service: proxied_service, body: { url: "https://example.com" }.to_json).call
       assert result.success?
       assert_equal 200, result[:status]
       assert_equal "# Hi", JSON.parse(result[:body])["markdown"]
@@ -16,7 +16,7 @@ module Gateway
 
     test "5xx upstream is a failure carrying the status" do
       stub_upstream(status: 502, body: "bad gateway")
-      result = ProxyCall.new(service: service, body: "{}").call
+      result = ProxyCall.new(service: proxied_service, body: "{}").call
       assert result.failure?
       assert_equal :upstream_error, result.code
       assert_equal 502, result[:status]
@@ -24,14 +24,24 @@ module Gateway
 
     test "4xx upstream is passed through as success (the caller's problem, still paid)" do
       stub_upstream(status: 422, body: { error: "bad url" }.to_json)
-      result = ProxyCall.new(service: service, body: "{}").call
+      result = ProxyCall.new(service: proxied_service, body: "{}").call
       assert result.success?
       assert_equal 422, result[:status]
     end
 
+    test "built-in services run in-process and never touch the network" do
+      stub_request(:get, "https://example.com/").to_return(status: 200, body: "<html><title>Hi</title><body><main><h1>Hello</h1><p>World</p></main></body></html>", headers: { "Content-Type" => "text/html" })
+      result = ProxyCall.new(service: service, body: { url: "https://example.com/" }.to_json).call
+      assert result.success?
+      assert_equal 200, result[:status]
+      assert_equal "Hi", JSON.parse(result[:body])["title"]
+      assert_kind_of Integer, result[:latency_ms]
+      assert_not_requested :post, Catalog::Service::DEFAULT_UPSTREAM
+    end
+
     test "timeouts become failures" do
       stub_request(:post, Catalog::Service::DEFAULT_UPSTREAM).to_timeout
-      assert_equal :upstream_unreachable, ProxyCall.new(service: service, body: "{}").call.code
+      assert_equal :upstream_unreachable, ProxyCall.new(service: proxied_service, body: "{}").call.code
     end
   end
 end

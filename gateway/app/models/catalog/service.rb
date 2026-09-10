@@ -8,14 +8,18 @@ module Catalog
   # Seller, Service, Endpoint, Call …), keep this public interface —
   # `all`, `find(slug)`, and the readers below — so no component changes.
   class Service < Data.define(:slug, :name, :summary, :description, :category, :provider, :price_usdc, :latency, :success_rate,
-                              :network, :asset, :facilitator, :inputs, :outputs, :upstream_url)
+                              :network, :asset, :facilitator, :inputs, :outputs, :upstream_url, :fulfiller)
     CATEGORIES = %w[Data Messaging Verification Translation].freeze
 
     # Phase 0: every service proxies to httpbin so the paid loop can be exercised
     # end to end before real upstreams exist.
     DEFAULT_UPSTREAM = "https://httpbin.org/anything"
 
-    def initialize(upstream_url: DEFAULT_UPSTREAM, **attrs) = super
+    # `fulfiller:` names a Fulfillers::* class that runs in-process instead of
+    # proxying to `upstream_url` (BotTrunk's own services).
+    def initialize(upstream_url: DEFAULT_UPSTREAM, fulfiller: nil, **attrs) = super
+
+    def built_in? = fulfiller.present?
 
     def self.categories = CATEGORIES
 
@@ -41,14 +45,14 @@ module Catalog
 
   Service::SEED = [
     Service.new(
-      slug: "scrape-markdown", name: "Scrape URL to Markdown", category: "Data", provider: "By BotTrunk",
+      slug: "scrape-markdown", name: "Scrape URL to Markdown", category: "Data", provider: "By BotTrunk", fulfiller: "Fulfillers::ScrapeMarkdown",
       summary: "Any public page as clean, LLM-ready markdown.",
       description: "Any public page as clean, LLM-ready markdown. Handles JS-rendered sites; links preserved, nav and footer stripped.",
       price_usdc: 0.005, latency: "0.8 s", success_rate: "99.6%",
       network: "Algorand MainNet", asset: "USDC", facilitator: "GoPlausible",
       inputs: [
         Field.new("url", "string", "Public http(s) URL to fetch."),
-        Field.new("render_js", "boolean", "Run a headless browser first. Default false, adds about 1.2 s."),
+        Field.new("render_js", "boolean", "Reserved: headless rendering is not available yet; the flag is accepted and ignored."),
         Field.new("selector", "string", "Optional CSS selector to scope the extraction.")
       ],
       outputs: [

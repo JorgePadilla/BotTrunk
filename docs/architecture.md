@@ -98,6 +98,7 @@ app/
                  requirements.rb payload.rb receipt.rb        (value objects)
                  adapters/base.rb adapters/algorand.rb          (adapters/base_evm.rb later)
     gateway/     handle_paid_call.rb proxy_call.rb
+    fulfillers/  scrape_markdown.rb            (BotTrunk's own services, run in-process; Catalog::Service#fulfiller)
     sellers/     create_inquiry.rb
     upstream/    client.rb
     ledger/      record_transaction.rb

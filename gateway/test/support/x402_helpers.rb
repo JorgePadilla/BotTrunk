@@ -1,10 +1,23 @@
 # frozen_string_literal: true
 
 module X402Helpers
+  # Stand-in for Resolv: hosts named *.internal or "localhost" resolve to
+  # private space, everything else to a public address.
+  module FakeResolver
+    def self.getaddresses(host)
+      return [ "127.0.0.1" ] if host == "localhost"
+      return [ "10.0.0.5" ] if host.end_with?(".internal")
+      return [] if host == "nxdomain.test"
+
+      [ "93.184.216.34" ]
+    end
+  end
+
   TEST_PAY_TO = "UTWS33TM7IT7NINJSFWS5KVGL73G4ERJMYDKHF7KE4WDXHYO4L7V2PNMRE"
   TESTNET = Payments::Networks.algorand(:testnet)
 
-  def service = Catalog::Service.find("scrape-markdown")
+  def service = Catalog::Service.find("scrape-markdown")          # built-in (Fulfillers::ScrapeMarkdown)
+  def proxied_service = Catalog::Service.find("pdf-extract")     # proxied to upstream_url (httpbin for now)
 
   def requirements_for(svc = service)
     Payments::BuildRequirements.new(service: svc).call[:requirements]

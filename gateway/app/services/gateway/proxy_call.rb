@@ -17,6 +17,8 @@ module Gateway
     end
 
     def call
+      return fulfil_locally if @service.built_in?
+
       started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
       response = @connection.post(@service.upstream_url) do |req|
         FORWARDED_HEADERS.each { |h| req.headers[h] = @headers[h] if @headers[h] }
@@ -34,6 +36,15 @@ module Gateway
     end
 
     private
+
+    # BotTrunk's own services run in-process; same Result shape as a proxied call.
+    def fulfil_locally
+      started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+      input = JSON.parse(@body.presence || "{}") rescue {}
+      result = @service.fulfiller.constantize.new(input: input).call
+      latency_ms = ((Process.clock_gettime(Process::CLOCK_MONOTONIC) - started) * 1000).round
+      result.success? ? Result.success(result.data.merge(latency_ms: latency_ms)) : Result.failure(result.error, code: result.code, data: result.data.merge(latency_ms: latency_ms))
+    end
 
     def build_connection
       Faraday.new do |f|

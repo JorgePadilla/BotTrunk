@@ -26,15 +26,15 @@ class PaidCallsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "POST with a valid payment proxies, settles, records and returns X-PAYMENT-RESPONSE" do
-    stub_upstream(body: { markdown: "# Example" }.to_json)
+    stub_upstream(body: { data: { total: 42 } }.to_json)
 
     assert_difference("Call.count", 1) do
-      post paid_call_path("scrape-markdown"), params: { url: "https://example.com" }.to_json,
+      post paid_call_path("pdf-extract"), params: { url: "https://example.com/x.pdf" }.to_json,
            headers: { "Content-Type" => "application/json", "X-PAYMENT" => payment_header }
     end
 
     assert_response :success
-    assert_equal "# Example", response.parsed_body["markdown"]
+    assert_equal 42, response.parsed_body.dig("data", "total")
     receipt = JSON.parse(Base64.strict_decode64(response.headers["X-PAYMENT-RESPONSE"]))
     assert_equal "TXID123", receipt["transaction"]
     assert_equal 1, @adapter.verify_calls.size
@@ -46,7 +46,7 @@ class PaidCallsControllerTest < ActionDispatch::IntegrationTest
     Payments::Adapters.stubs_current = FakePaymentAdapter.new(valid: false)
     upstream = stub_upstream
 
-    post paid_call_path("scrape-markdown"), params: "{}", headers: { "Content-Type" => "application/json", "X-PAYMENT" => payment_header }
+    post paid_call_path("pdf-extract"), params: "{}", headers: { "Content-Type" => "application/json", "X-PAYMENT" => payment_header }
 
     assert_response :payment_required
     assert_equal "fake: invalid", response.parsed_body["error"]
@@ -55,7 +55,7 @@ class PaidCallsControllerTest < ActionDispatch::IntegrationTest
 
   test "upstream failure is 502 and is not settled" do
     stub_upstream(status: 500, body: "boom")
-    post paid_call_path("scrape-markdown"), params: "{}", headers: { "Content-Type" => "application/json", "X-PAYMENT" => payment_header }
+    post paid_call_path("pdf-extract"), params: "{}", headers: { "Content-Type" => "application/json", "X-PAYMENT" => payment_header }
 
     assert_response :bad_gateway
     assert_empty @adapter.settle_calls
