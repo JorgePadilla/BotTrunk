@@ -4,6 +4,7 @@
 #   bin/pay                      # scrape-markdown against the local server
 #   bin/pay pdf-extract          # another service
 #   bin/pay scrape-markdown '{"url":"https://example.com/pricing"}'
+#   BOTTRUNK_URL=https://api.bottrunk.com bin/pay      # the live gateway (network comes from its 402)
 #
 # Reads AGENT_WALLET_MNEMONIC from .env.local (git-ignored) if it isn't exported.
 set -euo pipefail
