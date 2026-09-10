@@ -12,7 +12,7 @@ Phase 0 produces no product features. It produces certainty, three registered na
 
 ### A. Identity and accounts
 
-- [x] Register `bottrunk.com` — done Sept 3, 2026 (Namecheap, 5 years). Point nothing yet.
+- [x] Register `bottrunk.com` — done Sept 3, 2026 (Namecheap, 5 years). DNS pointed at Render Sept 10 (`docs/deploy.md`).
 - [x] Repo created: `github.com/JorgePadilla/BotTrunk` (Sept 3, public).
 - [x] Repo pushed and in sync with `origin/main` (Sept 10: UI fixes, wallets, credentials, x402 loop + tests).
 - [x] GitHub Support ticket filed Sept 3 asking to release the `bottrunk` org name (GitHub confirms deleted org names are locked for **90 days → Dec 2, 2026**; Support may release it sooner). Watch the inbox / support.github.com → My Tickets. When released: create the org, transfer the repo (Settings → Transfer), install the Claude GitHub App on the org with "All repositories", `git remote set-url origin git@github.com:bottrunk/bottrunk.git`.

@@ -1,6 +1,6 @@
 # Deploying the gateway (Render)
 
-**Status (Sept 10, 2026):** live at https://bottrunk-gateway.onrender.com (service `srv-dahjcb6q1p3s73dqem4g`, Ohio; Postgres 18 `bottrunk-db`). First blueprint deploy succeeded on the first try (2m03s). Still on TestNet; custom domains and the MainNet switch are next.
+**Status (Sept 10, 2026):** live at https://bottrunk-gateway.onrender.com (service `srv-dahjcb6q1p3s73dqem4g`, Ohio; Postgres 18 `bottrunk-db`). First blueprint deploy succeeded on the first try (2m03s). Custom domains live since Sept 10: **https://bottrunk.com** (site), **https://api.bottrunk.com** (same service), `www` → apex. DNS at Namecheap: `A @ 216.24.57.1`, `CNAME www` and `CNAME api` → `bottrunk-gateway.onrender.com`. Still on TestNet; the MainNet switch is next.
 
 One Docker web service + one Postgres, described in `render.yaml` at the repo root. ~$13/month (Starter web $7 + Basic Postgres $6). Decided Sept 10, 2026 over Fly (managed Postgres there starts at $38) and Kamal on a VPS (ops time we don't have before the challenge deadline).
 
