@@ -45,14 +45,18 @@ module Payments
       }
     end
 
+    # Closed schemas: the facilitator's catalog validator requires
+    # `additionalProperties: false` on `input` (and we do the same for `output`).
     BAZAAR_SCHEMA = {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       type: "object",
       required: %w[input output],
+      additionalProperties: false,
       properties: {
         input: {
           type: "object",
           required: %w[type method],
+          additionalProperties: false,
           properties: {
             type: { type: "string", enum: [ "http" ] },
             method: { type: "string" },
@@ -61,6 +65,7 @@ module Payments
         },
         output: {
           type: "object",
+          additionalProperties: false,
           properties: { schema: { type: "object" }, example: {} }
         }
       }

@@ -36,6 +36,7 @@ module Payments
       assert_equal "string", body.dig(:extensions, :bazaar, :info, :input, :params, "url")
       assert_kind_of Hash, body.dig(:extensions, :bazaar, :schema)
       assert_equal "object", body.dig(:extensions, :bazaar, :schema, :type)
+      assert_equal false, body.dig(:extensions, :bazaar, :schema, :properties, :input, :additionalProperties)
     end
 
     test "fails when payTo is not configured" do
