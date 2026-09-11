@@ -23,7 +23,7 @@
     <div class="flex items-end justify-between gap-6 flex-wrap">
       <div class="flex flex-col gap-1">
         <h2 class="text-[22px] font-semibold tracking-tight">Lempira rate</h2>
-        <p class="text-[13px] text-muted">Source <span class="font-mono"><%= @rate.source %></span> · as of <%= @rate.as_of %> · refreshed <%= @rate.fetched_at ? @rate.fetched_at.utc.strftime("%Y-%m-%d %H:%M UTC") : "—" %> · checked again at most once an hour</p>
+        <p class="text-[13px] text-muted">Source <span class="font-mono"><%= @rate.source %></span> · as of <%= @rate.as_of %> · refreshed <%= @rate.fetched_at ? @rate.fetched_at.utc.strftime("%Y-%m-%d %H:%M UTC") : "—" %> · checked again at most every 6 hours</p>
       </div>
       <%= form_with url: admin_refresh_rates_path, method: :post do |f| %>
         <%= f.button "Refresh now", class: "btn btn-sm btn-outline" %>
@@ -44,9 +44,9 @@
         ) %>
       </div>
       <div class="flex flex-col gap-3">
-        <h3 class="text-[13px] uppercase tracking-wide text-muted">Last refreshes</h3>
+        <h3 class="text-[13px] uppercase tracking-wide text-muted">Rate history</h3>
         <%= render Dashboard::TableComponent.new(
-          columns: [ "Fetched (UTC)", "Source", "As of", "L per USD" ], numeric: [ 3 ],
+          columns: [ "Last confirmed (UTC)", "Source", "As of", "L per USD" ], numeric: [ 3 ],
           rows: @rate_history.map { |x| [ x.fetched_at.utc.strftime("%m-%d %H:%M"), x.source, x.as_of, "L#{x.rate.to_s("F")}" ] },
           empty: "No rate stored yet — the first request after deploy fetches one, or press Refresh now."
         ) %>

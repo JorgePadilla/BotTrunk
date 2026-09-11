@@ -1,7 +1,9 @@
 # frozen_string_literal: true
 
 module Admin
-  # POST /admin/rates/refresh — fetch the USD/HNL rate now instead of waiting for the hourly refresh.
+  # POST /admin/rates/refresh — fetch the USD/HNL rate now instead of waiting
+  # for the next scheduled refresh. This calls `refresh` directly, so it is not
+  # subject to the six-hour window: pressing the button means "now".
   class RatesController < BaseController
     def refresh
       Rails.cache.delete(Rates::UsdHnl::CACHE_KEY)

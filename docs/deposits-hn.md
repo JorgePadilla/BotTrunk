@@ -6,7 +6,7 @@ The first human-fulfilled, high-ticket service: an agent pays USDC, a person dep
 
 `USDC = amount_hnl ÷ (reference_rate − spread) × (1 + fee)` — rounded up to the µUSDC.
 
-- **Reference rate:** `Rates::UsdHnl`, refreshed at most once an hour, on demand, and stored in `exchange_rates`. Order: `HNL_PER_USD` (manual pin, wins outright) → the **Banco Central de Honduras Web API** (`Rates::FetchBch`; set `BCH_API_KEY` — free account at https://bchapi-am.developer.azure-api.net, subscribe to "Banco Central de Honduras - Web API", copy the primary key; indicator `BCH_TCR_INDICATOR_ID`, default 97 = Tipo de Cambio de Referencia; `bin/rails rates:bch_indicators` lists candidates) → the open.er-api.com feed → the newest stored rate (≤ 7 days) → a hard 26.00 fallback. `bin/rails rates:show` prints what pricing uses right now; `/admin/stats` shows it too.
+- **Reference rate:** `Rates::UsdHnl`, refreshed at most every six hours (four times a day), on demand, and stored in `exchange_rates`. Order: `HNL_PER_USD` (manual pin, wins outright) → the **Banco Central de Honduras Web API** (`Rates::FetchBch`; set `BCH_API_KEY` — free account at https://bchapi-am.developer.azure-api.net, subscribe to "Banco Central de Honduras - Web API", copy the primary key; indicator `BCH_TCR_INDICATOR_ID`, default 97 = Tipo de Cambio de Referencia; `bin/rails rates:bch_indicators` lists candidates) → the open.er-api.com feed → the newest stored rate (≤ 7 days) → a hard 26.00 fallback. `bin/rails rates:show` prints what pricing uses right now; `/admin/stats` shows it too.
 - **Spread:** `HNL_RATE_SPREAD`, default **L1.50** per dollar below the reference — that is the exchange margin the buyer gives up.
 - **Fee:** `DEPOSIT_FEE_BPS`, default **500** (5 %).
 
