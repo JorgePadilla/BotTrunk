@@ -108,13 +108,21 @@ app/
 
 Class ↔ file: `Payments::VerifyPayment` → `app/services/payments/verify_payment.rb`. Zeitwerk does the rest; no `require`s.
 
-## 6. mcp-hub
+## 6. mcp-hub (local, with a wallet)
 
 TypeScript, published to npm as **`bottrunk-mcp`** (`npx bottrunk-mcp`), stdio transport, stateless apart from two files under `~/.bottrunk/` on the agent's machine. On start it fetches `GET /api/v1/catalog` and registers one MCP tool per **live** service (`bottrunk_scrape_markdown`, …) with the catalog's input fields as the JSON schema and the price in the description, plus two free tools: `bottrunk_catalog` (discovery, includes coming-soon services) and `bottrunk_wallet` (address, balances, caps). A paid tool call goes through `@x402-avm/fetch` with an `ExactAvmScheme` per network (explicit algod URL — the scheme's default is TestNet) and a `ClientAvmSigner` built from the agent's key; the client copies `resource`, `accepted` and `extensions` from the 402 into the payload, so settles are tagged and Bazaar-cataloged like any other. Caps (`BOTTRUNK_MAX_PER_CALL`, `BOTTRUNK_MAX_PER_DAY`) are enforced in the client's `onBeforePaymentCreation` hook, before anything is signed; spend is tracked in `~/.bottrunk/spend.json` per UTC day.
 
 Wallet: `npx bottrunk-mcp wallet` generates a 25-word account into `~/.bottrunk/wallet.json` (0600) or `BOTTRUNK_MNEMONIC` supplies one; `wallet optin` does the USDC opt-in. The gateway never sees the key. Tests (`npm test`, node:test) drive the real x402 client through an in-process fake gateway + fake algod, including one full 402 → signed ASA transfer → 200 round trip and the stdio transport.
 
 Gateway side: `Catalog::Service#status` (`live` | `coming_soon`) is exposed by `/api/v1/catalog`; `POST /s/:slug` answers **503** for anything not live, before the 402, so placeholder services can be listed without ever charging anyone.
+
+## 6c. Hosted MCP (`mcp.bottrunk.com`)
+
+The same catalog, reachable as a **remote** MCP server for clients that cannot spawn a local command (ChatGPT, Claude on the web, hosted agent platforms). `McpController` (`ActionController::API`) answers `POST /mcp` with JSON-RPC 2.0 over the Streamable HTTP transport and hands the body to `Mcp::Dispatch`; `GET`/`DELETE` answer 405 with `Allow: POST, OPTIONS`, and CORS is open because there is nothing to authorize.
+
+Stateless on purpose: the 2026-07-28 revision of the transport removed protocol-level sessions and the GET stream, and every tool answers in one round trip, so there is no session id and no SSE. `initialize` is still answered for older clients (2025-03-26 … 2025-11-25) and their `Mcp-Session-Id` is ignored; a notification (no `id`) answers **202 with no body**. Unknown methods answer 200 with `-32601` rather than the spec's 404, because today's clients handle a JSON-RPC error better than a bare 404.
+
+`Mcp::Tools` exposes five tools, all free and read-only: `bottrunk_catalog`, `bottrunk_service`, `bottrunk_payment_instructions` (the live 402 requirements for a slug — price, network, asset, `payTo`, fee payer), `bottrunk_quote_deposit` and `bottrunk_order_status`. **A hosted server cannot hold an agent's wallet, so it never spends.** That is the whole design constraint: MCP has no payment channel in a tool call, and we will not custody keys. An agent that can sign gets its quote here and answers the endpoint's own 402 directly; an agent that cannot runs `npx bottrunk-mcp` locally (§6), where the key lives on its own machine. Calls are tracked as `mcp_call` events (§8).
 
 ## 6b. The catalog
 

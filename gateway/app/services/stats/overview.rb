@@ -25,7 +25,7 @@ module Stats
         services: per_service,
         referrers: top(Event.named("page_view").since(from), :referrer_host),
         pages: top(Event.named("page_view").since(from), :path),
-        clients: top(Event.where(name: %w[payment_required payment_rejected catalog_api]).since(from), :client),
+        clients: top(Event.where(name: %w[payment_required payment_rejected catalog_api mcp_call]).since(from), :client),
         countries: top(Event.since(from), :country),
         cities: top(Event.since(from), :city),
         recent_calls: Call.order(created_at: :desc).limit(20).to_a,

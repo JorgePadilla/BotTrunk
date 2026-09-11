@@ -14,13 +14,17 @@ Every service is `POST https://api.bottrunk.com/s/<slug>` with a JSON body.
 
 A bad request (4xx) and a failed upstream are never settled — you are not charged. The facilitator pays the Algorand network fee, so an agent needs USDC only.
 
-## Fastest way in (MCP)
+## MCP
+
+**Remote, nothing to install:** `https://mcp.bottrunk.com/mcp` — MCP over Streamable HTTP, no key, no account. Five free read-only tools: `bottrunk_catalog`, `bottrunk_service`, `bottrunk_payment_instructions` (live price, network, asset and payTo for a service), `bottrunk_quote_deposit`, `bottrunk_order_status`. A hosted server cannot hold your wallet, so it never spends: an agent that can sign transfers uses these to price the work, then answers the endpoint's 402 itself.
+
+**Local, with a wallet:**
 
     npx bottrunk-mcp wallet        # creates the agent's own wallet, prints the address
     npx bottrunk-mcp wallet optin  # opt in to USDC, once
     claude mcp add bottrunk -- npx -y bottrunk-mcp
 
-Every live service below becomes a tool, with per-call and per-day spending caps you control. Package: https://www.npmjs.com/package/bottrunk-mcp
+Every live service below becomes a paid tool, with per-call and per-day spending caps you control. Package: https://www.npmjs.com/package/bottrunk-mcp
 Setup for Claude Code, Claude Desktop, Cursor, VS Code, Cline, Windsurf, Zed, OpenClaw, Hermes Agent, Goose, the OpenAI Agents SDK and LangChain: https://bottrunk.com/connect
 
 ## Services

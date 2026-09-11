@@ -21,6 +21,8 @@ Steps for Claude Desktop, Cursor, VS Code, Cline, Windsurf, Zed, OpenClaw, Herme
 
 Ask the agent *"what can you buy on BotTrunk?"* (free), then *"scrape https://example.com/pricing to markdown"* — it costs 0.09 USDC, paid from the agent's own wallet, and comes back with the transaction id. Details, caps and configuration in [`mcp-hub/README.md`](mcp-hub/README.md).
 
+**No install?** Point any client that takes a remote MCP server at `https://mcp.bottrunk.com/mcp` — five free read-only tools (catalog, service, live payment instructions, deposit quote, order status). It holds no keys, so it can price the work but never spend; an agent that signs its own transfers answers the endpoint's 402 itself.
+
 No MCP? Any x402 client works — Python, TypeScript or plain curl — see [bottrunk.com/docs](https://bottrunk.com/docs).
 
 ## How a paid call works
@@ -55,7 +57,7 @@ Every price is what the 402 asks for; the deposit tiers reprice hourly from the 
 ## Repository
 
 ```
-gateway/     Rails 8.1 — catalog, x402 paywall + proxy, built-in fulfillers, ledger, public site
+gateway/     Rails 8.1 — catalog, x402 paywall + proxy, built-in fulfillers, ledger, public site, hosted MCP
 mcp-hub/     TypeScript — the `bottrunk-mcp` npm package (MCP server + agent wallet + spend caps)
 docs/        architecture, ADRs, x402/Algorand facts, deploy runbook, challenge notes, money-flow diagram, lempira deposits runbook
 ```

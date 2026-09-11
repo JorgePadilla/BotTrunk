@@ -36,6 +36,12 @@ Rails.application.routes.draw do
     post "rates/refresh", to: "rates#refresh", as: :refresh_rates
   end
 
+  # Hosted MCP endpoint (mcp.bottrunk.com/mcp; also /mcp on the other hosts).
+  # Stateless Streamable HTTP: POST only, JSON in, JSON out.
+  post "mcp", to: "mcp#create"
+  match "mcp", to: "mcp#preflight", via: :options
+  match "mcp", to: "mcp#unsupported", via: [ :get, :delete ]
+
   # Public status of a human-fulfilled order (free, no bank details)
   get "orders/:token", to: "orders#show", as: :order
 

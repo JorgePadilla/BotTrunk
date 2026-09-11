@@ -1,11 +1,42 @@
 <% content_for :title, "Connect your agent — BotTrunk" %>
-<% content_for :description, "Point Claude Code, Claude Desktop, Cursor, VS Code, Cline, Windsurf, Zed, OpenClaw, Hermes, Goose, the OpenAI Agents SDK or LangChain at BotTrunk, and let your agent pay per call in USDC." %>
+<% content_for :description, "Add BotTrunk to any MCP client: a remote endpoint at mcp.bottrunk.com with nothing to install, or the bottrunk-mcp package so your agent pays per call in USDC from its own wallet." %>
 <% content_for :nav_active, "Connect" %>
 
 <div class="flex flex-col gap-16 py-16 md:py-24">
   <div class="flex flex-col gap-4 max-w-2xl">
     <h1 class="text-4xl md:text-[40px] font-semibold tracking-[-0.03em] leading-[1.15]">Connect your agent</h1>
-    <p class="text-lg text-muted">One npm package, <span class="font-mono">bottrunk-mcp</span>, turns every service in the catalog into a tool your agent can call and pay for. It runs on your machine, signs with a wallet only you control, and refuses anything above the caps you set.</p>
+    <p class="text-lg text-muted">Two ways in. The <strong class="text-base-content font-semibold">remote endpoint</strong> takes no install and lets an agent browse the catalog, price a deposit and check an order — free, read-only. The <strong class="text-base-content font-semibold">local package</strong> adds a wallet, so the agent can actually buy: it runs on your machine, signs with a key only you control, and refuses anything above the caps you set.</p>
+  </div>
+
+  <section class="flex flex-col gap-6">
+    <div class="flex flex-col gap-2 max-w-2xl">
+      <h2 class="text-[26px] font-semibold tracking-tight">Remote: nothing to install</h2>
+      <p class="text-muted">One URL, <span class="font-mono">https://mcp.bottrunk.com/mcp</span>, speaking MCP over Streamable HTTP. Any client that takes a remote server can add it — including ChatGPT and Claude on the web, which cannot run a local command.</p>
+    </div>
+    <div class="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_320px] gap-8 items-start">
+      <%= render Docs::CodeSnippetComponent.new(snippets: {
+        "Claude Code" => "claude mcp add --transport http bottrunk https://mcp.bottrunk.com/mcp",
+        "Cursor / Claude Desktop" => <<~JSON.strip,
+          { "mcpServers": { "bottrunk": { "url": "https://mcp.bottrunk.com/mcp" } } }
+        JSON
+        "VS Code" => <<~JSON.strip
+          { "servers": { "bottrunk": { "type": "http", "url": "https://mcp.bottrunk.com/mcp" } } }
+        JSON
+      })
+      %>
+      <div class="flex flex-col gap-3 text-sm text-muted">
+        <p>Five free tools: <span class="font-mono">bottrunk_catalog</span>, <span class="font-mono">bottrunk_service</span>, <span class="font-mono">bottrunk_payment_instructions</span>, <span class="font-mono">bottrunk_quote_deposit</span>, <span class="font-mono">bottrunk_order_status</span>.</p>
+        <p>No key, no account, no spending. A hosted server can't hold your wallet, so it can tell an agent what a call costs and how to pay for it, but it can never pay on your behalf.</p>
+        <p>An agent that can sign its own transfers works straight from <span class="font-mono">bottrunk_payment_instructions</span>: it returns the live price, network, asset and <span class="font-mono">payTo</span> for a service, and the agent answers the endpoint's 402 itself.</p>
+      </div>
+    </div>
+  </section>
+
+  <hr class="hairline">
+
+  <div class="flex flex-col gap-2 max-w-2xl">
+    <h2 class="text-[26px] font-semibold tracking-tight">Local: the agent pays for itself</h2>
+    <p class="text-muted">Everything below sets up <span class="font-mono">bottrunk-mcp</span>, which adds one paid tool per live service and settles each call from the agent's own wallet.</p>
   </div>
 
   <section class="flex flex-col gap-6">
@@ -60,12 +91,12 @@
     <section class="flex flex-col gap-3.5">
       <h2 class="text-[22px] font-semibold tracking-tight">Something else?</h2>
       <p class="text-muted">Anything that speaks MCP over stdio works: the command is always <span class="font-mono">npx -y bottrunk-mcp</span>. And nothing forces you to use MCP at all — the endpoints are plain HTTP with an x402 paywall, so curl, Python or TypeScript work the same way.</p>
-      <p class="text-sm text-muted">ChatGPT and Claude on the web are the exception: their connectors talk to <em>remote</em> MCP servers over HTTP, and this one runs on your machine so it can hold the wallet. A hosted endpoint is next — <%= link_to "tell us if you need it", "mailto:hello@bottrunk.com?subject=Remote%20MCP", class: "underline underline-offset-4 hover:text-base-content" %>.</p>
+      <p class="text-sm text-muted">Running somewhere that can't spawn a local command — ChatGPT, Claude on the web, a hosted agent platform? Use <span class="font-mono">https://mcp.bottrunk.com/mcp</span> for discovery and let the agent pay the endpoint directly with its own wallet.</p>
       <div class="mt-2"><%= render(Ui::ButtonComponent.new(href: "/docs", icon: "arrow-right")) { "Read the protocol docs" } %></div>
     </section>
     <section class="flex flex-col gap-3.5">
       <h2 class="text-[22px] font-semibold tracking-tight">What your agent gets</h2>
-      <p class="text-muted">Two free tools — <span class="font-mono">bottrunk_catalog</span> to see what exists and what it costs, <span class="font-mono">bottrunk_wallet</span> to check the balance and today's spend — plus one paid tool per live service. Ask it "what can you buy on BotTrunk?" to start.</p>
+      <p class="text-muted">From the local package: <span class="font-mono">bottrunk_catalog</span> to see what exists and what it costs, <span class="font-mono">bottrunk_wallet</span> for the balance and today's spend, plus one paid tool per live service. From the remote endpoint: the same catalog, live quotes and order status, without a wallet. Ask it "what can you buy on BotTrunk?" to start.</p>
       <div class="mt-2"><%= render(Ui::ButtonComponent.new(href: root_path, icon: "arrow-right")) { "See the catalog" } %></div>
     </section>
   </div>

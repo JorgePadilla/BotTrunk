@@ -93,7 +93,7 @@ Rails.application.configure do
   # Enable DNS rebinding protection and other `Host` header attacks.
   # Hosts we answer to (the paid endpoint and the site). Requests to other
   # Host headers get a 403 instead of reaching the app.
-  config.hosts = [ "api.bottrunk.com", "bottrunk.com", "www.bottrunk.com", /.*\.onrender\.com/ ]
+  config.hosts = [ "api.bottrunk.com", "mcp.bottrunk.com", "bottrunk.com", "www.bottrunk.com", /.*\.onrender\.com/ ]
   config.host_authorization = { exclude: ->(request) { request.path == "/up" } }
   # config.hosts = [
   #   "example.com",     # Allow requests from example.com
