@@ -15,7 +15,9 @@ module Payments
       assert_equal 5_000, req.amount # $0.005 in µUSDC
       assert_equal TEST_PAY_TO, req.pay_to
       assert_equal "https://api.bottrunk.test/s/scrape-markdown", req.resource
-      assert_equal({ decimals: 6, tag: "x402-global-challenge" }, req.extra)
+      assert_equal 6, req.extra[:decimals]
+      assert_equal "x402-global-challenge", req.extra[:tag]
+      assert_equal Rails.configuration.x402.fee_payer, req.extra[:feePayer]
     end
 
     test "serializes with x402 field names and a string amount" do
@@ -32,6 +34,8 @@ module Payments
       assert_equal 1, body[:accepts].size
       assert_equal "POST", body.dig(:extensions, :bazaar, :info, :input, :method)
       assert_equal "string", body.dig(:extensions, :bazaar, :info, :input, :params, "url")
+      assert_kind_of Hash, body.dig(:extensions, :bazaar, :schema)
+      assert_equal "object", body.dig(:extensions, :bazaar, :schema, :type)
     end
 
     test "fails when payTo is not configured" do

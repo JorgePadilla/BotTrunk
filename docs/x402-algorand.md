@@ -83,6 +83,18 @@ Responses: verify → `{ "isValid": boolean, "invalidReason"?: string, "payer"?:
 
 **Confirmed Sept 10 (first real exchange, TestNet):** the facilitator accepted our `X-PAYMENT` exactly as documented above — `{x402Version: 2, scheme, network, payload: {paymentGroup: [<base64 msgpack signed txn>], paymentIndex: 0}}` with a single plain `AssetTransferTxn` (no fee payer, no group) — and `/verify` **simulates the transaction** before answering. An unfunded payer came back as `isValid: false` with `invalidReason` = `"Transaction simulation failed: transaction <txid>: overspend (account …, MicroAlgos:0 …)"`, which our gateway surfaced in the 402's `error`. So: shapes are right; payer needs ALGO for the fee/min-balance and USDC ≥ amount.
 
+## Headers (x402 v2 names — learned from the facilitator's x402 Doctor, Sept 11)
+
+| Direction | v2 header | v1 alias we also honour |
+|---|---|---|
+| 402 challenge | `PAYMENT-REQUIRED` = base64 of the 402 JSON body (strict v2 clients read this, not the body) | — |
+| client → server | `PAYMENT-SIGNATURE` = base64 payment payload | `X-PAYMENT` |
+| server → client on success | `PAYMENT-RESPONSE` = base64 settlement receipt | `X-PAYMENT-RESPONSE` |
+
+CORS for browser payers: `Access-Control-Allow-Origin: *`, allow `PAYMENT-SIGNATURE, X-PAYMENT` request headers, **expose** `PAYMENT-REQUIRED, PAYMENT-RESPONSE`, answer `OPTIONS`.
+
+**Gasless:** advertise `extra.feePayer` = the facilitator's signer from `GET /supported` (`algorand:*` → `ZMFK2OI7ZBD2U27ISERZC4S6LKM6WMFJPZQ4MYNJDZ2VNBNMBA67RA22AA`, same on MainNet and TestNet). x402 clients then build an atomic group the facilitator co-signs, and the payer spends only USDC. A plain single transfer with the payer's own fee is still accepted.
+
 ## Discovery ("Bazaar") and the challenge tag
 
 - **Tag:** add `"tag": "x402-global-challenge"` inside `extra` of every payment-requirements entry.
@@ -104,7 +116,8 @@ Responses: verify → `{ "isValid": boolean, "invalidReason"?: string, "payer"?:
 }
 ```
 
-  The client copies `extensions` into the payment payload; the facilitator catalogs the resource when it **settles** — there is no registration call. Confirm the exact `info`/`schema` shape against `@x402-avm/extensions` (`declareDiscoveryExtension()`) during the spike and paste the real JSON here.
+  The client copies `extensions` into the payment payload; the facilitator catalogs the resource when it **settles** — there is no registration call. **`schema` is mandatory**: the catalog validator rejects a `bazaar` extension whose `schema` is not an object (our first MainNet settle was not cataloged for exactly this reason — the Doctor at https://facilitator.goplausible.xyz/guide says so verbatim). `Payments::BuildRequirements::BAZAAR_SCHEMA` is the JSON Schema we ship for `info`.
+- **Diagnose with the x402 Doctor** (Get started guide, "Check yourself"): paste the endpoint URL + method; it grades 402-first, header, CORS, fee payer, tag and both extensions with the same gate the catalog uses. 20 checks/day.
 - The requirement's `description` is the catalog text: concrete, say what the caller gets.
 - The Bazaar also enriches from the endpoint's OpenGraph tags, `llms.txt`, well-known files, and the merchant NFD.
 - Catalogs: `https://facilitator.goplausible.xyz/discovery/resources`, `/discovery/merchants`. Leaderboard: `/dashboard/leaderboards`.

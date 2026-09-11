@@ -17,6 +17,7 @@ Rails.application.routes.draw do
   get "s/:slug", to: "catalog#show", as: :service
   # The paid endpoint itself: 402 → X-PAYMENT → verify → upstream → settle.
   post "s/:slug", to: "paid_calls#create", as: :paid_call
+  match "s/:slug", to: "paid_calls#preflight", via: :options
 
   # Pages
   get "docs", to: "pages#docs"

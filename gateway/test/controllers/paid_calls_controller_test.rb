@@ -20,9 +20,26 @@ class PaidCallsControllerTest < ActionDispatch::IntegrationTest
     assert_equal "5000", body["accepts"][0]["amount"]
     assert_equal TEST_PAY_TO, body["accepts"][0]["payTo"]
     assert_equal "x402-global-challenge", body["accepts"][0]["extra"]["tag"]
-    assert body["extensions"]["bazaar"]
+    assert body["extensions"]["bazaar"]["schema"]
+    assert_equal body, JSON.parse(Base64.strict_decode64(response.headers["PAYMENT-REQUIRED"]))
+    assert_equal "*", response.headers["Access-Control-Allow-Origin"]
+    assert_includes response.headers["Access-Control-Expose-Headers"], "PAYMENT-REQUIRED"
     assert_not_requested upstream
     assert_empty @adapter.verify_calls
+  end
+
+  test "PAYMENT-SIGNATURE (x402 v2 header) is accepted and PAYMENT-RESPONSE is returned" do
+    stub_upstream(body: { ok: true }.to_json)
+    post paid_call_path("pdf-extract"), params: "{}", headers: { "Content-Type" => "application/json", "PAYMENT-SIGNATURE" => payment_header }
+    assert_response :success
+    assert_equal response.headers["X-PAYMENT-RESPONSE"], response.headers["PAYMENT-RESPONSE"]
+    assert_equal "TXID123", JSON.parse(Base64.strict_decode64(response.headers["PAYMENT-RESPONSE"]))["transaction"]
+  end
+
+  test "OPTIONS preflight answers with CORS headers" do
+    options paid_call_path("pdf-extract"), headers: { "Origin" => "https://example.app" }
+    assert_response :no_content
+    assert_includes response.headers["Access-Control-Allow-Headers"], "PAYMENT-SIGNATURE"
   end
 
   test "POST with a valid payment proxies, settles, records and returns X-PAYMENT-RESPONSE" do
