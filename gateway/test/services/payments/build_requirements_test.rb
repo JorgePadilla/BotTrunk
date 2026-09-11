@@ -32,6 +32,7 @@ module Payments
       body = BuildRequirements.body_for(service: service, requirements: requirements_for)
       assert_equal 2, body[:x402Version]
       assert_equal 1, body[:accepts].size
+      assert_equal "https://api.bottrunk.test/s/scrape-markdown", body.dig(:resource, :url)
 
       info = body.dig(:extensions, :bazaar, :info)
       assert_equal({ type: "http", method: "POST", bodyType: "json", body: { "url" => "https://example.com/pricing", "render_js" => false, "selector" => "…" } }, info[:input])

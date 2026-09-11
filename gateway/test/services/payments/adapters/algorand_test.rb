@@ -13,14 +13,33 @@ module Payments
         @requirements = requirements_for
       end
 
-      test "verify posts payload and requirements and reads isValid" do
+      test "verify posts a complete v2 envelope and reads isValid" do
         stub = stub_request(:post, "#{FACILITATOR}/verify")
-          .with { |req| body = JSON.parse(req.body); body["x402Version"] == 2 && body["paymentRequirements"]["payTo"] == TEST_PAY_TO && body["paymentPayload"]["scheme"] == "exact" }
+          .with { |req|
+            body = JSON.parse(req.body)
+            pp = body["paymentPayload"]
+            body["x402Version"] == 2 && body["paymentRequirements"]["payTo"] == TEST_PAY_TO && pp["scheme"] == "exact" &&
+              pp["resource"]["url"] == "https://api.bottrunk.test/s/scrape-markdown" &&
+              pp["accepted"]["extra"]["tag"] == "x402-global-challenge" &&
+              pp["extensions"]["bazaar"]["schema"].is_a?(Hash) &&
+              !body["paymentRequirements"].key?("resource")
+          }
           .to_return(status: 200, body: { isValid: true, payer: "PAYER1" }.to_json, headers: { "Content-Type" => "application/json" })
 
-        result = @adapter.verify(payload: @payload, requirements: @requirements)
+        ext = { bazaar: Payments::BuildRequirements.bazaar_extension(service) }
+        result = @adapter.verify(payload: @payload, requirements: @requirements, extensions: ext)
         assert result.success?
         assert_equal "PAYER1", result[:payer]
+        assert_requested stub
+      end
+
+      test "a client's own accepted/resource/extensions are left untouched" do
+        raw = @payload.to_h.merge("accepted" => { "scheme" => "exact", "custom" => true }, "resource" => { "url" => "https://client.example/x" })
+        payload = Payments::Payload.new(raw: raw)
+        stub = stub_request(:post, "#{FACILITATOR}/verify")
+          .with { |req| pp = JSON.parse(req.body)["paymentPayload"]; pp["accepted"]["custom"] == true && pp["resource"]["url"] == "https://client.example/x" }
+          .to_return(status: 200, body: { isValid: true, payer: "P" }.to_json)
+        assert @adapter.verify(payload: payload, requirements: @requirements).success?
         assert_requested stub
       end
 

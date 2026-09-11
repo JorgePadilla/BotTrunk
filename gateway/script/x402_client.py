@@ -50,6 +50,8 @@ def main(url: str, body: str) -> int:
         "x402Version": 2,
         "scheme": req["scheme"],
         "network": req["network"],
+        "resource": offer.get("resource") or {"url": req.get("resource")},
+        "accepted": req,   # the requirement we chose (carries extra.tag for the challenge)
         "payload": {"paymentGroup": [encoding.msgpack_encode(signed)], "paymentIndex": 0},
     }
     if "extensions" in offer:  # discovery: the facilitator catalogs the resource on settle

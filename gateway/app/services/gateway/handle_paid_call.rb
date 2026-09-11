@@ -21,13 +21,14 @@ module Gateway
       payload = Payments::Payload.from_header(@payment_header)
       return payment_required(requirements, "Payment required") if payload.nil?
 
-      verified = Payments::VerifyPayment.new(payload: payload, requirements: requirements, adapter: @adapter).call
+      extensions = { bazaar: Payments::BuildRequirements.bazaar_extension(@service) }
+      verified = Payments::VerifyPayment.new(payload: payload, requirements: requirements, extensions: extensions, adapter: @adapter).call
       return payment_required(requirements, verified.error) if verified.failure?
 
       upstream = Gateway::ProxyCall.new(service: @service, body: @body, headers: @headers).call
       return Result.failure(upstream.error, code: upstream.code, data: { status: 502, body: { error: upstream.error }.to_json }) if upstream.failure?
 
-      settled = Payments::SettlePayment.new(payload: payload, requirements: requirements, adapter: @adapter).call
+      settled = Payments::SettlePayment.new(payload: payload, requirements: requirements, extensions: extensions, adapter: @adapter).call
       return payment_required(requirements, settled.error) if settled.failure?
 
       receipt = settled[:receipt]

@@ -13,12 +13,12 @@ class FakePaymentAdapter < Payments::Adapters::Base
     @settle_calls = []
   end
 
-  def verify(payload:, requirements:)
+  def verify(payload:, requirements:, extensions: nil)
     @verify_calls << [ payload, requirements ]
     @valid ? Result.success(payer: @payer) : Result.failure("fake: invalid", code: :invalid_payment)
   end
 
-  def settle(payload:, requirements:)
+  def settle(payload:, requirements:, extensions: nil)
     @settle_calls << [ payload, requirements ]
     receipt = Payments::Receipt.new(success: @settle_success, transaction: @settle_success ? @transaction : nil,
                                     network: requirements.network, payer: @payer, error_reason: @settle_success ? nil : "fake: settle failed")

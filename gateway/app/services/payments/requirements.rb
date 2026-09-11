@@ -21,6 +21,17 @@ module Payments
       }
     end
 
+    # x402 v2 PaymentRequirements (no resource fields — those live in ResourceInfo).
+    def to_spec_h
+      { scheme: scheme, network: network, amount: amount.to_s, asset: asset, payTo: pay_to,
+        maxTimeoutSeconds: max_timeout_seconds, extra: extra }
+    end
+
+    # x402 v2 ResourceInfo.
+    def resource_info
+      { url: resource, description: description, mimeType: mime_type }.compact
+    end
+
     def self.from_h(h)
       h = h.transform_keys(&:to_s)
       new(scheme: h["scheme"], network: h["network"], asset: h["asset"].to_s, amount: Integer(h["amount"]),

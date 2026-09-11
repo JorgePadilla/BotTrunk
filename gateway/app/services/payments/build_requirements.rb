@@ -36,7 +36,8 @@ module Payments
       {
         x402Version: 2,
         error: "Payment required",
-        accepts: [ requirements.to_h ],
+        resource: requirements.resource_info,
+        accepts: [ requirements.to_h ], # spec fields + resource fields kept for v1-style clients
         extensions: { bazaar: bazaar_extension(service) }
       }
     end

@@ -75,6 +75,22 @@ Field names confirmed from the facilitator docs: `scheme`, `network`, `asset`, `
 
 `paymentGroup` is the signed Algorand transaction group; `paymentIndex` is the zero-based position of the USDC transfer inside it (fee-payer / opt-in txns may precede it).
 
+## The v2 payment payload — where the tag, resource and extension really travel
+
+Learned the hard way on Sept 11: three MainNet settles landed with a perfect 402 (Doctor all green) and were **still** untagged, unlisted and shown under the bare address. The facilitator reads the resource URL, the challenge tag and the discovery extension from the **PaymentPayload** (x402 v2 spec), not from the `paymentRequirements` we post:
+
+```json
+{
+  "x402Version": 2,
+  "resource": { "url": "https://api.bottrunk.com/s/scrape-markdown", "description": "…", "mimeType": "application/json" },
+  "accepted": { "scheme": "exact", "network": "algorand:…", "amount": "5000", "asset": "31566704", "payTo": "…", "maxTimeoutSeconds": 60, "extra": { "decimals": 6, "tag": "x402-global-challenge", "feePayer": "…" } },
+  "payload": { "paymentGroup": ["<base64 msgpack signed txn>"], "paymentIndex": 0 },
+  "extensions": { "bazaar": { "info": …, "schema": … } }
+}
+```
+
+Strict v2 clients build this themselves. Our gateway (`Payments::Adapters::Algorand#envelope`) fills `resource`, `accepted` and `extensions` when a payer omitted them, so v1-style clients (`X-PAYMENT` with only `payload`) are still tagged and cataloged. The 402 body likewise carries a top-level `resource` object per spec (`accepts[]` keeps the resource fields too, for older clients). `paymentRequirements` in the facilitator request is the spec shape (`Requirements#to_spec_h`, no resource fields).
+
 ## `/verify` and `/settle`
 
 Request body (both): `{ "x402Version": 2, "paymentPayload": <decoded X-PAYMENT>, "paymentRequirements": <the accepted entry> }`.
