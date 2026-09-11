@@ -35,6 +35,18 @@ module Admin
       assert_select "td", text: "bottrunk-mcp"
       assert_select "a[href='https://allo.info/tx/JJZEUY73ABCD']"
       assert_select "svg[role=img]", 3
+      assert_select "h2", text: "Countries"
+      assert_select "p", text: /No GeoIP database/
+    end
+
+    test "shows countries by name when events are located" do
+      Analytics::Geolocate.stubs_lookup = ->(_ip) { { country: "HN", city: "Tegucigalpa, Francisco Morazán" } }
+      Analytics::Track.new(name: "page_view", path: "/", ip: "190.4.0.1", user_agent: "Mozilla/5.0").call
+      get admin_stats_url, headers: basic("admin", "s3cret")
+      assert_select "td", text: "Honduras (HN)"
+      assert_select "td", text: "Tegucigalpa, Francisco Morazán"
+    ensure
+      Analytics::Geolocate.stubs_lookup = nil
     end
 
     test "shows the lempira rate, tier prices and history, and can refresh it" do

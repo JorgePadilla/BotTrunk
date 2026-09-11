@@ -8,7 +8,7 @@ module Stats
     Window = Data.define(:label, :page_views, :visitors, :probes, :rejected, :settled, :payers, :volume, :commission)
     Day = Data.define(:date, :page_views, :probes, :settled, :volume)
     ServiceRow = Data.define(:slug, :name, :probes, :rejected, :settled, :volume, :status)
-    Report = Data.define(:generated_at, :windows, :days, :services, :referrers, :pages, :clients, :recent_calls, :recent_probes)
+    Report = Data.define(:generated_at, :windows, :days, :services, :referrers, :pages, :clients, :countries, :cities, :recent_calls, :recent_probes)
 
     WINDOWS = { "24 hours" => 1, "7 days" => 7, "30 days" => 30, "All time" => nil }.freeze
 
@@ -26,6 +26,8 @@ module Stats
         referrers: top(Event.named("page_view").since(from), :referrer_host),
         pages: top(Event.named("page_view").since(from), :path),
         clients: top(Event.where(name: %w[payment_required payment_rejected catalog_api]).since(from), :client),
+        countries: top(Event.since(from), :country),
+        cities: top(Event.since(from), :city),
         recent_calls: Call.order(created_at: :desc).limit(20).to_a,
         recent_probes: Event.where(name: %w[payment_required payment_rejected coming_soon]).order(created_at: :desc).limit(20).to_a
       ))

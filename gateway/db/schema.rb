@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_11_070000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_11_080000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -61,7 +61,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_11_070000) do
   end
 
   create_table "events", force: :cascade do |t|
+    t.string "city"
     t.string "client", default: "other", null: false
+    t.string "country"
     t.datetime "created_at", null: false
     t.string "name", null: false
     t.string "path"
@@ -69,6 +71,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_11_070000) do
     t.string "referrer_host"
     t.string "service_slug"
     t.string "visitor"
+    t.index ["country", "created_at"], name: "index_events_on_country_and_created_at"
     t.index ["created_at"], name: "index_events_on_created_at"
     t.index ["name", "created_at"], name: "index_events_on_name_and_created_at"
   end

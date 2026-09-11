@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# Downloads the free MaxMind GeoLite2-City database (country + city of an IP)
+# into tmp/geoip/. Needs MAXMIND_LICENSE_KEY (free account at maxmind.com →
+# Manage License Keys). Safe to run at every boot: skips when the file is
+# fresher than 7 days. Without a key it does nothing and visitors simply have
+# no location in /admin/stats.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+DEST="${GEOIP_DB:-tmp/geoip/GeoLite2-City.mmdb}"
+if [ -z "${MAXMIND_LICENSE_KEY:-}" ]; then
+  echo "geoip: MAXMIND_LICENSE_KEY not set, skipping"; exit 0
+fi
+if [ -f "$DEST" ] && [ -z "$(find "$DEST" -mtime +7)" ]; then
+  echo "geoip: $DEST is fresh"; exit 0
+fi
+mkdir -p "$(dirname "$DEST")"
+TMP="$(mktemp -d)"
+curl -fsSL "https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-City&license_key=${MAXMIND_LICENSE_KEY}&suffix=tar.gz" -o "$TMP/geo.tgz"
+tar -xzf "$TMP/geo.tgz" -C "$TMP"
+mv "$(find "$TMP" -name '*.mmdb' | head -1)" "$DEST"
+rm -rf "$TMP"
+echo "geoip: updated $DEST"

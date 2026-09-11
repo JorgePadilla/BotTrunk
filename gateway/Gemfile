@@ -44,6 +44,9 @@ gem "faraday-follow_redirects"
 # HTML → Markdown for the built-in scrape-markdown service (uses Nokogiri, already a Rails dep).
 gem "reverse_markdown"
 
+# Country/city of visitors from the MaxMind GeoLite2 database (offline lookup; no IP is stored)
+gem "maxmind-db"
+
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
   gem "debug", platforms: %i[ mri windows ], require: "debug/prelude"

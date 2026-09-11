@@ -97,6 +97,18 @@
     </div>
   </section>
 
+  <section class="grid grid-cols-1 lg:grid-cols-2 gap-10">
+    <div class="flex flex-col gap-4">
+      <h2 class="text-[22px] font-semibold tracking-tight">Countries</h2>
+      <%= render Dashboard::TableComponent.new(columns: [ "Country", "Events" ], numeric: [ 1 ], rows: r.countries.map { |code, n| [ country_name(code), n ] },
+                                               empty: (Analytics::Geolocate.available? ? "No located visitors yet." : "No GeoIP database — set MAXMIND_LICENSE_KEY and redeploy (bin/geoip-update).")) %>
+    </div>
+    <div class="flex flex-col gap-4">
+      <h2 class="text-[22px] font-semibold tracking-tight">Cities</h2>
+      <%= render Dashboard::TableComponent.new(columns: [ "City", "Events" ], numeric: [ 1 ], rows: r.cities, empty: "No city-level data yet.") %>
+    </div>
+  </section>
+
   <section class="flex flex-col gap-4">
     <h2 class="text-[22px] font-semibold tracking-tight">Recent settled calls</h2>
     <%= render Dashboard::TableComponent.new(
@@ -113,8 +125,8 @@
   <section class="flex flex-col gap-4">
     <h2 class="text-[22px] font-semibold tracking-tight">Recent probes</h2>
     <%= render Dashboard::TableComponent.new(
-      columns: [ "When (UTC)", "Event", "Service", "Client", "Reason" ],
-      rows: r.recent_probes.map { |e| [ e.created_at.utc.strftime("%m-%d %H:%M"), e.name.tr("_", " "), e.service_slug, e.client, e.properties["reason"].to_s.truncate(80) ] },
+      columns: [ "When (UTC)", "Event", "Service", "Client", "From", "Reason" ],
+      rows: r.recent_probes.map { |e| [ e.created_at.utc.strftime("%m-%d %H:%M"), e.name.tr("_", " "), e.service_slug, e.client, [ e.city, e.country ].compact.join(" · ").presence || "—", e.properties["reason"].to_s.truncate(80) ] },
       empty: "Nobody has hit a paid endpoint yet."
     ) %>
   </section>

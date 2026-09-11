@@ -6,7 +6,8 @@ module Analytics
   #
   # Privacy by construction: the IP and user agent are only used to derive a
   # `visitor` token that rotates daily (SHA-256 of ip + ua + date + secret,
-  # truncated), and the user agent collapses to a coarse `client` label.
+  # truncated) and a coarse location (country + city, via a local GeoIP
+  # database), and the user agent collapses to a coarse `client` label.
   class Track
     BOT_UA = /bot|crawl|spider|slurp|preview|fetch\b|monitor|headless/i
 
@@ -22,8 +23,11 @@ module Analytics
     end
 
     def call
+      location = Geolocate.call(@ip) || {}
       event = Event.create!(
         name: @name,
+        country: location[:country],
+        city: location[:city],
         path: @path&.truncate(200),
         referrer_host: referrer_host,
         client: self.class.classify(@user_agent),

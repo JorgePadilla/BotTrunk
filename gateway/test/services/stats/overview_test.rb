@@ -48,6 +48,16 @@ module Stats
       assert_equal 1, report.days[-3].settled    # T2, 2 days ago
     end
 
+    test "countries and cities come from located events" do
+      Analytics::Geolocate.stubs_lookup = ->(_ip) { { country: "HN", city: "San Pedro Sula, Cortés" } }
+      track("page_view", path: "/", ua: "Mozilla/5.0", ip: "190.4.0.1", at: @now - 5.minutes)
+      report = Overview.new(days: 30, now: @now).call[:report]
+      assert_equal [ [ "HN", 1 ] ], report.countries
+      assert_equal [ [ "San Pedro Sula, Cortés", 1 ] ], report.cities
+    ensure
+      Analytics::Geolocate.stubs_lookup = nil
+    end
+
     test "per-service rows, referrers, pages and clients" do
       report = Overview.new(days: 30, now: @now).call[:report]
       scrape = report.services.find { |s| s.slug == "scrape-markdown" }

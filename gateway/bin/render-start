@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
-# Render's start command. Migrates (idempotent), then serves. Kept as a script
-# so it runs the same whether Render invokes it through a shell or not.
+# Render's start command. Migrates (idempotent), fetches the GeoIP database
+# when a key is present, then serves. Kept as a script so it runs the same
+# whether Render invokes it through a shell or not.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 ./bin/rails db:prepare
+./bin/geoip-update || echo "geoip: update failed, continuing without locations"
 exec ./bin/rails server
