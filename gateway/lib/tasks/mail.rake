@@ -15,9 +15,11 @@ namespace :mail do
 
     method = ActionMailer::Base.delivery_method
     if method == :test
+      missing = %w[SMTP_ADDRESS SMTP_USER_NAME SMTP_PASSWORD].reject { |k| ENV[k].present? }
       abort "SMTP is not configured (delivery_method is :test), so nothing would leave this machine.\n" \
-            "Put SMTP_ADDRESS=smtp.resend.com, SMTP_USER_NAME=resend and SMTP_PASSWORD=<resend api key> in gateway/.env.local,\n" \
-            "or just open http://localhost:3000/rails/mailers to look at every email without sending one."
+            "#{missing.any? ? "Missing: #{missing.join(', ')}. Put them" : 'Put SMTP_ADDRESS=smtp.resend.com, SMTP_USER_NAME=resend and SMTP_PASSWORD=<resend api key>'} in gateway/.env.local.\n" \
+            "That file is read in config/boot.rb, so a value added after the server started needs a restart.\n" \
+            "To look at every email without sending one: http://localhost:3000/rails/mailers"
     end
 
     order = DepositOrder.order(created_at: :desc).first || MailPreviewTask.sample_order
