@@ -16,7 +16,7 @@ Then open:
 - http://localhost:3000/s/scrape-markdown — a service page
 - http://localhost:3000/docs — developer docs, rendering the live 402 body
 - http://localhost:3000/sell — seller page with the early-access form (`seller_inquiries` table)
-- http://localhost:3000/api/v1/catalog — the catalog as JSON (what `mcp-hub` will read)
+- http://localhost:3000/api/v1/catalog — the catalog as JSON (what `bottrunk-mcp` reads; includes each service's `status`)
 - http://localhost:3000/lookbook — every ViewComponent, with a `theme` param to preview `bottrunk-dark`
 
 ## Where things are
@@ -37,8 +37,9 @@ Then open:
     bin/rails test                            # whole loop with a fake adapter + WebMock, no network
     curl -i -X POST localhost:5000/s/scrape-markdown -H 'Content-Type: application/json' -d '{"url":"https://example.com"}'
     # → 402 with `accepts[]` (payTo from credentials `algorand.pay_to`) and `extensions.bazaar`
-    # scrape-markdown is a built-in service (Fulfillers::ScrapeMarkdown, in-process); the other seed
-    # services still proxy to httpbin until they get real upstreams.
+    # scrape-markdown is a built-in service (Fulfillers::ScrapeMarkdown, in-process) and the only
+    # one marked `live`; the other seed services are `coming_soon` and POST /s/:slug answers 503
+    # for them, so nothing can be charged until a real upstream exists.
 
 Pay it for real on TestNet with the payer wallet:
 
@@ -47,6 +48,10 @@ Pay it for real on TestNet with the payer wallet:
     bin/agent-wallet optin    # opts in to TestNet USDC
     #  → from Defly send it a few USDC, then:
     bin/pay                   # 402 → sign → retry against localhost:5000/s/scrape-markdown
+
+Against production: `BOTTRUNK_URL=https://api.bottrunk.com bin/pay` (the client follows whatever network the 402 announces; the payer key must hold MainNet USDC then). `bin/send <address> --usd 10 | --algo N | --usdc N` moves funds out of the payer wallet as a plain transfer — it never goes through the gateway or the facilitator, so it shows up on a chain explorer, not on the facilitator dashboard.
+
+Point the MCP server at a local gateway with `BOTTRUNK_API=http://localhost:5000 npx bottrunk-mcp` (see `../mcp-hub/README.md`).
 
 Flow and files: `docs/architecture.md` §4 and ADR 0008. Every value we learn from the real facilitator goes into `docs/x402-algorand.md`.
 
