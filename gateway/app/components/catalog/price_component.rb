@@ -13,7 +13,8 @@ module Catalog
 
     def formatted
       # Show as many decimals as the price needs, at least 2 (0.005 → "0.005", 5.0 → "5.00").
-      decimals = [ 2, @amount.to_s.split(".").last.to_s.length ].max
+      plain = @amount.is_a?(BigDecimal) ? @amount.to_s("F") : @amount.to_s
+      decimals = [ 2, plain.split(".").last.to_s.sub(/0+\z/, "").length ].max
       "$#{format("%.#{decimals}f", @amount)}"
     end
   end

@@ -11,6 +11,9 @@ Rails.configuration.x402.pay_to = X402Helpers::TEST_PAY_TO
 Rails.configuration.x402.network = :testnet
 Rails.configuration.x402.public_host = "https://api.bottrunk.test"
 
+# Lempira prices are deterministic in tests: L26.20 per dollar, no feed.
+Rates::UsdHnl.stub_rate = "26.20"
+
 # The proxy path is tested through pdf-extract, which is coming_soon in the seed.
 Catalog::Service.treat_all_live = true
 

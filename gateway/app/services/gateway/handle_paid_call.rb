@@ -27,12 +27,17 @@ module Gateway
 
       upstream = Gateway::ProxyCall.new(service: @service, body: @body, headers: @headers).call
       return Result.failure(upstream.error, code: upstream.code, data: { status: 502, body: { error: upstream.error }.to_json }) if upstream.failure?
+      return not_charged(upstream) if upstream[:status] >= 400
 
       settled = Payments::SettlePayment.new(payload: payload, requirements: requirements, extensions: extensions, adapter: @adapter).call
-      return payment_required(requirements, settled.error) if settled.failure?
+      if settled.failure?
+        cancel_order(upstream[:order])
+        return payment_required(requirements, settled.error)
+      end
 
       receipt = settled[:receipt]
       recorded = record(requirements, receipt, upstream) # never fail a paid, settled call over bookkeeping
+      open_order(upstream[:order], recorded[:call])
 
       Result.success(status: upstream[:status], body: upstream[:body], content_type: upstream[:content_type],
                      headers: { Payments::Receipt::HEADER => receipt.to_header }, call: recorded[:call])
@@ -50,6 +55,28 @@ module Gateway
     rescue StandardError => e
       Rails.logger.error("ledger: exception recording settled txn #{receipt.transaction}: #{e.class}: #{e.message}")
       Result.failure(e.message, code: :ledger_error)
+    end
+
+    # The service refused the request (bad input, limits): pass its answer
+    # through but never settle — a rejected request costs the payer nothing.
+    def not_charged(upstream)
+      cancel_order(upstream[:order])
+      Result.failure("service rejected the request", code: :rejected_by_service,
+                     data: { status: upstream[:status], body: upstream[:body], content_type: upstream[:content_type] })
+    end
+
+    # Human-fulfilled services open an order before settlement (so a bad request
+    # is refused for free). Once the USDC has settled the order joins the queue.
+    def open_order(order, call_row)
+      order&.update!(status: "pending", call: call_row)
+    rescue StandardError => e
+      Rails.logger.error("orders: could not open #{order.token} after settlement: #{e.class}: #{e.message}")
+    end
+
+    def cancel_order(order)
+      order&.update!(status: "cancelled")
+    rescue StandardError => e
+      Rails.logger.error("orders: could not cancel #{order.token}: #{e.class}: #{e.message}")
     end
 
     def payment_required(requirements, error)

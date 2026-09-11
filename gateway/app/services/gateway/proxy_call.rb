@@ -41,7 +41,10 @@ module Gateway
     def fulfil_locally
       started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
       input = JSON.parse(@body.presence || "{}") rescue {}
-      result = @service.fulfiller.constantize.new(input: input).call
+      klass = @service.fulfiller.constantize
+      args = { input: input }
+      args[:service] = @service if klass.instance_method(:initialize).parameters.any? { |_, name| name == :service }
+      result = klass.new(**args).call
       latency_ms = ((Process.clock_gettime(Process::CLOCK_MONOTONIC) - started) * 1000).round
       result.success? ? Result.success(result.data.merge(latency_ms: latency_ms)) : Result.failure(result.error, code: result.code, data: result.data.merge(latency_ms: latency_ms))
     end

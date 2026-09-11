@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_11_050000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_11_060000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -31,6 +31,33 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_11_050000) do
     t.integer "upstream_status"
     t.index ["service_slug"], name: "index_calls_on_service_slug"
     t.index ["transaction_id"], name: "index_calls_on_transaction_id", unique: true, where: "(transaction_id IS NOT NULL)"
+  end
+
+  create_table "deposit_orders", force: :cascade do |t|
+    t.string "account_number", null: false
+    t.integer "amount_hnl", null: false
+    t.string "bank", default: "BAC Credomatic", null: false
+    t.string "beneficiary_name", null: false
+    t.bigint "call_id"
+    t.string "concept"
+    t.string "contact_email"
+    t.datetime "created_at", null: false
+    t.datetime "delivered_at"
+    t.integer "fee_bps", null: false
+    t.text "notes"
+    t.bigint "price_atomic", null: false
+    t.decimal "rate_hnl_per_usd", precision: 10, scale: 4, null: false
+    t.string "receipt_reference"
+    t.string "refund_transaction_id"
+    t.datetime "refunded_at"
+    t.string "service_slug", null: false
+    t.string "status", default: "awaiting_payment", null: false
+    t.string "token", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_number", "created_at"], name: "index_deposit_orders_on_account_number_and_created_at"
+    t.index ["call_id"], name: "index_deposit_orders_on_call_id"
+    t.index ["status", "created_at"], name: "index_deposit_orders_on_status_and_created_at"
+    t.index ["token"], name: "index_deposit_orders_on_token", unique: true
   end
 
   create_table "events", force: :cascade do |t|
@@ -56,4 +83,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_11_050000) do
     t.string "upstream_url", null: false
     t.index ["email"], name: "index_seller_inquiries_on_email"
   end
+
+  add_foreign_key "deposit_orders", "calls"
 end

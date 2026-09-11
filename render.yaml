@@ -24,7 +24,12 @@ services:
       - key: RAILS_MASTER_KEY
         sync: false            # paste from gateway/config/master.key in the Render dashboard
       - key: ADMIN_PASSWORD
-        sync: false            # HTTP basic auth for /admin/stats (user: anything, e.g. admin)
+        sync: false            # HTTP basic auth for /admin/* (user: anything, e.g. admin)
+      - key: HNL_RATE_SPREAD
+        value: "1.50"          # lempiras per dollar below the reference rate (deposit-bac-*)
+      - key: DEPOSIT_FEE_BPS
+        value: "500"           # 5 % fee on top of the spread
+      # HNL_PER_USD (optional): pin the USD→HNL rate by hand when the feed looks wrong
       - key: DATABASE_URL
         fromDatabase:
           name: bottrunk-db

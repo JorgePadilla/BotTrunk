@@ -28,7 +28,13 @@ Rails.application.routes.draw do
   # Operator dashboard (HTTP basic auth, see Admin::BaseController)
   namespace :admin do
     get "stats", to: "stats#show"
+    get "orders", to: "orders#index"
+    post "orders/:token/deliver", to: "orders#deliver", as: :deliver_order
+    post "orders/:token/refund", to: "orders#refund", as: :refund_order
   end
+
+  # Public status of a human-fulfilled order (free, no bank details)
+  get "orders/:token", to: "orders#show", as: :order
 
   # Machine-readable catalog (read by mcp-hub)
   namespace :api do

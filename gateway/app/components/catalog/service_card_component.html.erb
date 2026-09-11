@@ -9,7 +9,7 @@
     <p class="text-[15px] text-muted"><%= service.summary %></p>
   </div>
   <div class="flex items-end justify-between">
-    <%= render Catalog::PriceComponent.new(amount: service.price_usdc, suffix: "per call · #{service.latency}") %>
+    <%= render Catalog::PriceComponent.new(amount: service.usd_price, suffix: "per call · #{service.latency}") %>
     <span class="text-[13px] text-muted"><%= service.provider %></span>
   </div>
 <% end %>

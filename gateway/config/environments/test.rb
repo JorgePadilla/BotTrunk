@@ -59,4 +59,10 @@ Rails.application.configure do
 
   # Raise error when a before_action's only/except options reference missing actions.
   config.action_controller.raise_on_missing_callback_actions = true
+
+  # Active Record encryption keys for test only (DepositOrder#account_number).
+  # Production keys live in credentials: `bin/rails db:encryption:init`.
+  config.active_record.encryption.primary_key = "test-primary-key-not-a-secret-0000000000"
+  config.active_record.encryption.deterministic_key = "test-deterministic-key-not-a-secret-00"
+  config.active_record.encryption.key_derivation_salt = "test-key-derivation-salt-not-a-secret"
 end

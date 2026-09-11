@@ -1,5 +1,5 @@
 <% content_for :title, "#{@service.name} — BotTrunk" %>
-<% content_for :description, "#{@service.summary} #{@service.price_usdc} USDC per call, paid over x402 on Algorand." %>
+<% content_for :description, "#{@service.summary} #{@service.usd_price.to_s("F")} USDC per call, paid over x402 on Algorand." %>
 <% content_for :nav_active, "Catalog" %>
 
 <div id="overview" class="flex flex-col gap-12 py-12 md:py-16 scroll-mt-24">
@@ -70,7 +70,7 @@
       <%= render Catalog::PayPanelComponent.new(service: @service) %>
       <hr class="hairline">
       <%= render Gateway::CallTimelineComponent.new(stamp: "sample", steps: [
-        { title: "402 Payment Required", meta: "#{(@service.price_usdc * 1_000_000).to_i} µUSDC requested" },
+        { title: "402 Payment Required", meta: "#{@service.price_atomic} µUSDC requested" },
         { title: "Payment verified", meta: "X-PAYMENT · #{@service.facilitator}" },
         { title: "Upstream responded", meta: "812 ms · 200 OK" },
         { title: "Settled on-chain", meta: "txn 4KQ2…M9 · seller 90%" }

@@ -22,7 +22,7 @@ module Gateway
       assert_equal 502, result[:status]
     end
 
-    test "4xx upstream is passed through as success (the caller's problem, still paid)" do
+    test "4xx upstream is passed through as success (HandlePaidCall decides not to charge)" do
       stub_upstream(status: 422, body: { error: "bad url" }.to_json)
       result = ProxyCall.new(service: proxied_service, body: "{}").call
       assert result.success?

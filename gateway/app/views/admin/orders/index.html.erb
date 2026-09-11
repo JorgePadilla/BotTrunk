@@ -1,0 +1,76 @@
+<% content_for :title, "Orders — BotTrunk admin" %>
+
+<div class="flex flex-col gap-14 py-12 md:py-16">
+  <header class="flex flex-col gap-3">
+    <%= render Dashboard::AdminNavComponent.new(active: "Orders", queue: @queue.size) %>
+    <h1 class="text-4xl font-semibold tracking-[-0.03em]">Deposits to make</h1>
+    <p class="text-muted">Each row is USDC already settled on-chain. Make the BAC transfer, paste the receipt reference, mark it delivered. If you cannot deliver, send the USDC back from the gateway wallet and record the refund transaction.</p>
+    <% if flash[:notice] %><p class="text-sm text-success"><%= flash[:notice] %></p><% end %>
+    <% if flash[:alert] %><p class="text-sm text-error"><%= flash[:alert] %></p><% end %>
+  </header>
+
+  <section class="flex flex-col gap-5">
+    <h2 class="text-[22px] font-semibold tracking-tight">Queue · <%= @queue.size %> pending</h2>
+    <% if @queue.empty? %>
+      <p class="text-sm text-muted">Nothing waiting. Every paid deposit has been made.</p>
+    <% end %>
+    <% @queue.each do |order| %>
+      <%= render Ui::CardComponent.new(class: "flex flex-col lg:flex-row lg:items-start justify-between gap-8") do %>
+        <div class="flex flex-col gap-2 min-w-0">
+          <div class="flex items-baseline gap-3 flex-wrap">
+            <span class="font-mono text-2xl font-medium">L<%= number_with_delimiter(order.amount_hnl) %></span>
+            <span class="text-muted">→ <%= order.bank %></span>
+            <%= render(Ui::PillComponent.new(tone: :success, icon: "check")) { "USDC settled" } %>
+          </div>
+          <dl class="grid grid-cols-[auto_1fr] gap-x-6 gap-y-1 text-sm">
+            <dt class="text-muted">Beneficiary</dt><dd class="font-medium"><%= order.beneficiary_name %></dd>
+            <dt class="text-muted">Account</dt><dd class="font-mono select-all"><%= order.account_number %></dd>
+            <dt class="text-muted">Concept</dt><dd><%= order.concept.presence || "—" %></dd>
+            <dt class="text-muted">Paid</dt><dd class="font-mono"><%= usdc(order.price_atomic) %> USDC at L<%= order.rate_hnl_per_usd.to_s("F") %>/$ · fee <%= order.fee_bps / 100.0 %>%<% if order.call&.transaction_id %> · <%= link_to short_address(order.call.transaction_id, head: 8, tail: 4), "https://allo.info/tx/#{order.call.transaction_id}", class: "link link-hover", target: "_blank", rel: "noopener" %><% end %></dd>
+            <dt class="text-muted">Ordered</dt><dd><%= order.created_at.utc.strftime("%Y-%m-%d %H:%M UTC") %> · due by <%= (order.created_at + 24.hours).utc.strftime("%m-%d %H:%M UTC") %><% if order.contact_email %> · <%= order.contact_email %><% end %></dd>
+            <dt class="text-muted">Order</dt><dd class="font-mono text-muted"><%= order.token %></dd>
+          </dl>
+        </div>
+        <div class="flex flex-col gap-3 lg:w-80 shrink-0">
+          <%= form_with url: admin_deliver_order_path(order.token), method: :post, class: "flex flex-col gap-2" do |f| %>
+            <%= f.text_field :receipt_reference, placeholder: "BAC receipt / reference no.", required: true, class: "input w-full font-mono", autocomplete: "off" %>
+            <%= f.button "Mark delivered", class: "btn btn-neutral" %>
+          <% end %>
+          <details class="text-sm">
+            <summary class="cursor-pointer text-muted">Could not deliver — refund</summary>
+            <%= form_with url: admin_refund_order_path(order.token), method: :post, class: "flex flex-col gap-2 mt-2" do |f| %>
+              <%= f.text_field :refund_transaction_id, placeholder: "Algorand txn id of the USDC refund", required: true, class: "input w-full font-mono", autocomplete: "off" %>
+              <%= f.text_field :notes, placeholder: "Why (bank rejected, wrong account…)", class: "input w-full" %>
+              <%= f.button "Mark refunded", class: "btn btn-outline" %>
+            <% end %>
+          </details>
+        </div>
+      <% end %>
+    <% end %>
+  </section>
+
+  <section class="flex flex-col gap-4">
+    <h2 class="text-[22px] font-semibold tracking-tight">Done · last <%= @done.size %></h2>
+    <%= render Dashboard::TableComponent.new(
+      columns: [ "When (UTC)", "Status", "Amount", "Beneficiary", "Paid", "Reference / refund txn", "Order" ], numeric: [ 2, 4 ],
+      rows: @done.map { |o| [
+        (o.delivered_at || o.refunded_at || o.updated_at).utc.strftime("%m-%d %H:%M"),
+        (o.status == "delivered" ? tag.span("delivered", class: "text-success") : tag.span("refunded", class: "text-error")),
+        "L#{number_with_delimiter(o.amount_hnl)}", o.beneficiary_name, usdc(o.price_atomic),
+        tag.span(o.receipt_reference.presence || o.refund_transaction_id.presence || "—", class: "font-mono"), tag.span(o.token, class: "font-mono text-muted")
+      ] },
+      empty: "No deposits made yet."
+    ) %>
+  </section>
+
+  <% if @abandoned.any? %>
+    <section class="flex flex-col gap-4">
+      <h2 class="text-[22px] font-semibold tracking-tight">Never paid</h2>
+      <p class="text-sm text-muted">Orders opened by a request whose USDC never settled. Nothing is owed; they are here so you can see attempts.</p>
+      <%= render Dashboard::TableComponent.new(
+        columns: [ "When (UTC)", "Status", "Amount", "Beneficiary", "Order" ], numeric: [ 2 ],
+        rows: @abandoned.map { |o| [ o.created_at.utc.strftime("%m-%d %H:%M"), o.status.tr("_", " "), "L#{number_with_delimiter(o.amount_hnl)}", o.beneficiary_name, tag.span(o.token, class: "font-mono text-muted") ] }
+      ) %>
+    </section>
+  <% end %>
+</div>

@@ -7,6 +7,7 @@ module Admin
       @days = params[:days].to_i.clamp(7, 90)
       @days = 30 if params[:days].blank?
       @report = Stats::Overview.new(days: @days).call[:report]
+      @queue_count = DepositOrder.queue.count
     end
   end
 end

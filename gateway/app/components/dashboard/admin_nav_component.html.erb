@@ -1,0 +1,6 @@
+<nav class="flex items-center gap-2 text-sm" aria-label="Admin">
+  <span class="text-[13px] text-muted mr-2">Admin</span>
+  <% links.each do |label, href| %>
+    <%= link_to label, href, class: classes("btn btn-sm", active?(label) ? "" : "btn-ghost text-muted") %>
+  <% end %>
+</nav>

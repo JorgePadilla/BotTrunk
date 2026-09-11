@@ -8,8 +8,8 @@ module Catalog
   # Seller, Service, Endpoint, Call …), keep this public interface —
   # `all`, `find(slug)`, and the readers below — so no component changes.
   class Service < Data.define(:slug, :name, :summary, :description, :category, :provider, :price_usdc, :latency, :success_rate,
-                              :network, :asset, :facilitator, :inputs, :outputs, :upstream_url, :fulfiller, :status)
-    CATEGORIES = %w[Data Messaging Verification Translation].freeze
+                              :network, :asset, :facilitator, :inputs, :outputs, :upstream_url, :fulfiller, :status, :price_hnl)
+    CATEGORIES = %w[Data Payments Messaging Verification Translation].freeze
     STATUSES = %w[live coming_soon].freeze
 
     # Test hook: the paid-call tests exercise the proxy path through a
@@ -22,7 +22,9 @@ module Catalog
 
     # `fulfiller:` names a Fulfillers::* class that runs in-process instead of
     # proxying to `upstream_url` (BotTrunk's own services).
-    def initialize(upstream_url: DEFAULT_UPSTREAM, fulfiller: nil, status: "live", **attrs) = super
+    # `price_hnl:` marks a lempira-denominated service: its USDC price is
+    # derived from the day's exchange rate (Pricing::LempiraDeposit), not fixed.
+    def initialize(upstream_url: DEFAULT_UPSTREAM, fulfiller: nil, status: "live", price_hnl: nil, price_usdc: nil, **attrs) = super
 
     def built_in? = fulfiller.present?
 
@@ -39,7 +41,16 @@ module Catalog
     def endpoint_url = "https://api.bottrunk.com/s/#{slug}"
 
     # Price in atomic units (µUSDC, 6 decimals) — the only form the payment layer uses.
-    def price_atomic = (BigDecimal(price_usdc.to_s) * 1_000_000).to_i
+    def price_atomic
+      return Pricing::LempiraDeposit.new(amount_hnl: price_hnl).price_atomic if price_hnl
+
+      (BigDecimal(price_usdc.to_s) * 1_000_000).to_i
+    end
+
+    # Price in USD for display; always derived from price_atomic so both kinds agree.
+    def usd_price = BigDecimal(price_atomic) / 1_000_000
+
+    def lempira? = price_hnl.present?
 
     def human_fulfilled? = provider == "Human-fulfilled"
 
@@ -70,6 +81,29 @@ module Catalog
         Field.new("word_count", "integer", "Words in markdown, for budgeting tokens.", 412)
       ]
     ),
+    *[ 1_000, 2_500, 5_000, 10_000 ].map do |hnl|
+      Service.new(
+        slug: "deposit-bac-#{hnl}", name: "Deposit L#{hnl.to_s.reverse.scan(/\d{1,3}/).join(",").reverse} to a BAC account", category: "Payments", provider: "Human-fulfilled",
+        fulfiller: "Fulfillers::DepositBac", price_hnl: hnl,
+        summary: "Pay someone in Honduras: L#{hnl.to_s.reverse.scan(/\d{1,3}/).join(",").reverse} lands in their BAC Credomatic account.",
+        description: "Send #{hnl.to_s.reverse.scan(/\d{1,3}/).join(",").reverse} lempiras to any BAC Credomatic account in Honduras. Priced in USDC at the day's reference rate with a fixed spread and fee; a person makes the bank transfer within 24 hours and you get the receipt reference. Poll GET /orders/{order_id} for status.",
+        latency: "≤ 24 h", success_rate: "100%",
+        network: "Algorand MainNet", asset: "USDC", facilitator: "GoPlausible",
+        inputs: [
+          Field.new("beneficiary_name", "string", "Account holder's name as the bank has it.", "María Pérez"),
+          Field.new("account_number", "string", "BAC Credomatic account number (digits only).", "123456789"),
+          Field.new("concept", "string", "Optional transfer concept, up to 60 characters.", "Pago factura 1043"),
+          Field.new("contact_email", "string", "Optional: where to send the receipt.", "ops@example.com")
+        ],
+        outputs: [
+          Field.new("order_id", "string", "Token to poll at /orders/{order_id}.", "8kPz3n…"),
+          Field.new("status", "string", "pending until a person completes the transfer, then delivered.", "pending"),
+          Field.new("amount_hnl", "integer", "Lempiras the beneficiary receives.", hnl),
+          Field.new("eta", "string", "Fulfilment promise.", "within 24 hours"),
+          Field.new("status_url", "string", "Where to poll.", "https://api.bottrunk.com/orders/8kPz3n…")
+        ]
+      )
+    end,
     Service.new(
       slug: "pdf-extract", status: "coming_soon", name: "PDF to JSON", category: "Data", provider: "By BotTrunk",
       summary: "Send a PDF and a schema, get the fields back.",

@@ -102,7 +102,7 @@
 
       <section id="402" class="flex flex-col gap-4 scroll-mt-24">
         <h2 class="text-[22px] font-semibold tracking-tight">The 402 response</h2>
-        <p class="text-muted">This is what <span class="font-mono"><%= @example_service.slug %></span> answers today when called without payment. <span class="font-mono">amount</span> is in atomic units — <span class="font-mono"><%= @requirements.amount %></span> µUSDC is $<%= @example_service.price_usdc %>.</p>
+        <p class="text-muted">This is what <span class="font-mono"><%= @example_service.slug %></span> answers today when called without payment. <span class="font-mono">amount</span> is in atomic units — <span class="font-mono"><%= @requirements.amount %></span> µUSDC is $<%= @example_service.usd_price.to_s("F") %>.</p>
         <%= render Docs::CodeSnippetComponent.new(snippets: { "402 body" => JSON.pretty_generate(@example_402) }) %>
         <%= render Docs::SchemaTableComponent.new(fields: [
           Catalog::Field.new("scheme", "string", "Always exact: pay exactly the amount, nothing is metered."),

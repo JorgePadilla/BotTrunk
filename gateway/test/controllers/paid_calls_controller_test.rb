@@ -129,6 +129,59 @@ class PaidCallsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
   end
 
+  test "a 4xx from the service is passed through and never charged" do
+    stub_upstream(status: 422, body: { error: "bad url" }.to_json)
+    post paid_call_path("pdf-extract"), params: "{}", headers: { "Content-Type" => "application/json", "X-PAYMENT" => payment_header }
+
+    assert_response :unprocessable_entity
+    assert_equal "bad url", response.parsed_body["error"]
+    assert_empty @adapter.settle_calls
+    assert_nil response.headers["X-PAYMENT-RESPONSE"]
+    assert_equal 0, Call.count
+  end
+
+  test "a lempira deposit opens an order, settles the quoted USDC and queues the order" do
+    input = { beneficiary_name: "María Pérez", account_number: "123456789", concept: "Factura 7" }.to_json
+
+    post paid_call_path("deposit-bac-1000"), params: input, headers: { "Content-Type" => "application/json" }
+    assert_response :payment_required
+    assert_equal "42510122", response.parsed_body.dig("accepts", 0, "amount")
+    assert_equal 0, DepositOrder.count, "no order before a payment is presented"
+
+    post paid_call_path("deposit-bac-1000"), params: input, headers: { "Content-Type" => "application/json", "X-PAYMENT" => payment_header }
+    assert_response :accepted
+    body = response.parsed_body
+    assert_equal "pending", body["status"]
+    assert_equal 1000, body["amount_hnl"]
+
+    order = DepositOrder.find_by!(token: body["order_id"])
+    assert_equal "pending", order.status
+    assert_equal Call.last, order.call
+    assert_equal 42_510_122, Call.last.amount
+    assert_equal 1, @adapter.settle_calls.size
+
+    get order_path(order.token)
+    assert_response :success
+    assert_equal "pending", response.parsed_body["status"]
+    assert_nil response.parsed_body["account_number"]
+  end
+
+  test "a deposit with bad input is refused before any money moves" do
+    post paid_call_path("deposit-bac-1000"), params: { beneficiary_name: "X", account_number: "12" }.to_json,
+         headers: { "Content-Type" => "application/json", "X-PAYMENT" => payment_header }
+    assert_response :unprocessable_entity
+    assert_empty @adapter.settle_calls
+    assert_equal 0, DepositOrder.count
+  end
+
+  test "a deposit whose settlement fails is cancelled, not queued" do
+    Payments::Adapters.stubs_current = FakePaymentAdapter.new(settle_success: false)
+    post paid_call_path("deposit-bac-1000"), params: { beneficiary_name: "María", account_number: "123456789" }.to_json,
+         headers: { "Content-Type" => "application/json", "X-PAYMENT" => payment_header }
+    assert_response :payment_required
+    assert_equal [ "cancelled" ], DepositOrder.pluck(:status)
+  end
+
   test "unknown service is 404" do
     post paid_call_path("nope"), params: "{}", headers: { "Content-Type" => "application/json" }
     assert_response :not_found

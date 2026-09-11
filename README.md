@@ -38,6 +38,7 @@ Only the settle touches the chain. If the service fails, settle is never called 
 | Service | Price | Status |
 |---|---|---|
 | `scrape-markdown` — any public page as clean, LLM-ready markdown | 0.005 USDC | **live** |
+| `deposit-bac-1000` … `deposit-bac-10000` — pay someone in Honduras: lempiras into their BAC account within 24 h (human-fulfilled) | day's rate + 5 % (≈ $42 for L1,000) | **live** |
 | `pdf-extract` — PDF + JSON schema → fields | 0.02 USDC | coming soon |
 | `screenshot` — full-page PNG of a URL | 0.01 USDC | coming soon |
 | `send-whatsapp` — reach a phone number your agent can't | 0.05 USDC | coming soon |
@@ -53,7 +54,7 @@ Coming-soon services are listed for discovery but their endpoints answer 503, so
 ```
 gateway/     Rails 8.1 — catalog, x402 paywall + proxy, built-in fulfillers, ledger, public site
 mcp-hub/     TypeScript — the `bottrunk-mcp` npm package (MCP server + agent wallet + spend caps)
-docs/        architecture, ADRs, x402/Algorand facts, deploy runbook, challenge notes, money-flow diagram
+docs/        architecture, ADRs, x402/Algorand facts, deploy runbook, challenge notes, money-flow diagram, lempira deposits runbook
 ```
 
 Gateway design in one line: controllers are skinny, every business action is a service object returning a `Result`, only `app/services/payments/` knows about chains and facilitators, money is integer µUSDC everywhere. Read [`docs/architecture.md`](docs/architecture.md), then [`docs/x402-algorand.md`](docs/x402-algorand.md) for everything learned from the real facilitator (headers, v2 payload envelope, Bazaar discovery shape, gasless fee payer).
