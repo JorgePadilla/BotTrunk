@@ -98,24 +98,46 @@ CORS for browser payers: `Access-Control-Allow-Origin: *`, allow `PAYMENT-SIGNAT
 ## Discovery ("Bazaar") and the challenge tag
 
 - **Tag:** add `"tag": "x402-global-challenge"` inside `extra` of every payment-requirements entry.
-- **Discovery extension:** add an `extensions` object to the 402 body:
+- **Discovery extension:** add an `extensions.bazaar` object to the 402 body, shaped exactly like `@x402/extensions` `createBodyDiscoveryExtension` (this passed the facilitator's x402 Doctor on Sept 11 — earlier guesses were rejected for: missing `schema`, `input.additionalProperties` not false, `input.type` not pinned by `const`):
 
 ```json
 {
-  "x402Version": 2,
-  "accepts": [ { "...": "...", "extra": { "decimals": 6, "tag": "x402-global-challenge" } } ],
   "extensions": {
     "bazaar": {
       "info": {
-        "input":  { "type": "http", "method": "POST", "params": { "url": "string" } },
-        "output": { "example": { "markdown": "# …", "title": "…" }, "schema": { "type": "object" } }
+        "input":  { "type": "http", "method": "POST", "bodyType": "json", "body": { "url": "https://example.com/pricing" } },
+        "output": { "type": "json", "example": { "markdown": "# …", "title": "…", "word_count": 412 } }
       },
-      "schema": { "$comment": "JSON Schema that validates info" }
+      "schema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "input": {
+            "type": "object",
+            "properties": {
+              "type": { "type": "string", "const": "http" },
+              "method": { "type": "string", "enum": ["POST", "PUT", "PATCH"] },
+              "bodyType": { "type": "string", "enum": ["json", "form-data", "text"] },
+              "body": { "type": "object", "properties": { "url": { "type": "string", "description": "…" } } },
+              "pathParams": { "type": "object" }
+            },
+            "required": ["type", "method", "bodyType", "body"],
+            "additionalProperties": false
+          },
+          "output": {
+            "type": "object",
+            "properties": { "type": { "type": "string" }, "example": { "type": "object", "properties": { "…": {} } } },
+            "required": ["type"]
+          }
+        },
+        "required": ["input"]
+      }
     }
   }
 }
 ```
 
+  Built by `Payments::BuildRequirements.bazaar_extension`; field examples come from `Catalog::Field#example`.
   The client copies `extensions` into the payment payload; the facilitator catalogs the resource when it **settles** — there is no registration call. **`schema` is mandatory**: the catalog validator rejects a `bazaar` extension whose `schema` is not an object (our first MainNet settle was not cataloged for exactly this reason — the Doctor at https://facilitator.goplausible.xyz/guide says so verbatim). `Payments::BuildRequirements::BAZAAR_SCHEMA` is the JSON Schema we ship for `info`.
 - **Diagnose with the x402 Doctor** (Get started guide, "Check yourself"): paste the endpoint URL + method; it grades 402-first, header, CORS, fee payer, tag and both extensions with the same gate the catalog uses. 20 checks/day.
 - The requirement's `description` is the catalog text: concrete, say what the caller gets.
