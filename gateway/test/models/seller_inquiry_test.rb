@@ -48,7 +48,37 @@ class SellerInquiryTest < ActiveSupport::TestCase
   test "a price nobody could pay is a typo, not a listing" do
     assert_not inquiry(price_atomic: 0).valid?
     assert_not inquiry(price_atomic: -1).valid?
+    assert_not inquiry(price_atomic: SellerInquiry::MIN_PRICE_ATOMIC - 1).valid?, "below a cent the commission rounds to nothing"
     assert_not inquiry(price_atomic: SellerInquiry::MAX_PRICE_ATOMIC + 1).valid?
+    assert inquiry(price_atomic: SellerInquiry::MIN_PRICE_ATOMIC).valid?
     assert inquiry(price_atomic: SellerInquiry::MAX_PRICE_ATOMIC).valid?
+  end
+
+  test "an unreadable price says so, instead of claiming the box was empty" do
+    record = inquiry(price_atomic: nil)
+
+    assert_not record.valid?
+    assert_match(/must be a number in USDC/, record.errors[:price_atomic].to_sentence)
+  end
+
+  # Tightening a rule must never strand a row that predates it: a person still
+  # has to be able to approve or reject whatever is already in the queue.
+  test "a row that no longer meets the limits can still be reviewed" do
+    record = inquiry
+    record.save!
+    record.update_columns(price_atomic: 1, upstream_url: "http://taphn")
+
+    assert_nothing_raised { record.reload.reject!(notes: "Below the minimum.") }
+    assert_equal "rejected", record.reload.status
+  end
+
+  test "but changing the price or the URL is judged by today's rules" do
+    record = inquiry.tap(&:save!)
+
+    record.price_atomic = 1
+    assert_not record.valid?
+
+    record.reload.upstream_url = "http://localhost/admin"
+    assert_not record.valid?
   end
 end

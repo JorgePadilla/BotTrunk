@@ -35,7 +35,7 @@
       <div class="flex flex-col gap-3.5">
         <h2 class="text-[22px] font-semibold tracking-tight">Pricing</h2>
         <dl class="flex flex-col text-sm">
-          <% [ [ "Your share", "85% of every settled call" ], [ "Listing", "Free" ], [ "Minimum price", "0.001 USDC per call" ], [ "Payout", "USDC on Algorand, to the address you give us" ], [ "Failed upstream calls", "Not charged to the agent, not counted" ] ].each do |k, v| %>
+          <% [ [ "Your share", "85% of every settled call" ], [ "Listing", "Free" ], [ "Minimum price", "0.01 USDC per call" ], [ "Payout", "USDC on Algorand, to the address you give us" ], [ "Failed upstream calls", "Not charged to the agent, not counted" ] ].each do |k, v| %>
             <div class="flex justify-between gap-6 py-3 border-b hairline"><dt class="text-muted"><%= k %></dt><dd class="text-right"><%= v %></dd></div>
           <% end %>
         </dl>
@@ -77,7 +77,7 @@
             </label>
             <label class="flex flex-col gap-1.5 text-sm">
               <span class="font-medium">Price per call (USDC)</span>
-              <%= f.text_field :price_usdc, value: @inquiry.price_usdc, class: "input w-full font-mono", placeholder: "0.005", inputmode: "decimal", required: true %>
+              <%= f.text_field :price_usdc, value: @inquiry.price_usdc, class: "input w-full font-mono", placeholder: "0.05", inputmode: "decimal", required: true %>
             </label>
             <label class="flex flex-col gap-1.5 text-sm">
               <span class="font-medium">Notes <span class="text-muted font-normal">(optional)</span></span>
