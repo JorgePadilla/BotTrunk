@@ -17,7 +17,7 @@ claude mcp add bottrunk -- npx -y bottrunk-mcp     # Claude Code
 # Claude Desktop / Cursor: { "mcpServers": { "bottrunk": { "command": "npx", "args": ["-y", "bottrunk-mcp"] } } }
 ```
 
-Ask the agent *"what can you buy on BotTrunk?"* (free), then *"scrape https://example.com/pricing to markdown"* — it costs 0.005 USDC, paid from the agent's own wallet, and comes back with the transaction id. Details, caps and configuration in [`mcp-hub/README.md`](mcp-hub/README.md).
+Ask the agent *"what can you buy on BotTrunk?"* (free), then *"scrape https://example.com/pricing to markdown"* — it costs 0.09 USDC, paid from the agent's own wallet, and comes back with the transaction id. Details, caps and configuration in [`mcp-hub/README.md`](mcp-hub/README.md).
 
 No MCP? Any x402 client works — Python, TypeScript or plain curl — see [bottrunk.com/docs](https://bottrunk.com/docs).
 
@@ -37,7 +37,7 @@ Only the settle touches the chain. If the service fails, settle is never called 
 
 | Service | Price | Status |
 |---|---|---|
-| `scrape-markdown` — any public page as clean, LLM-ready markdown | 0.005 USDC | **live** |
+| `scrape-markdown` — any public page as clean, LLM-ready markdown | 0.09 USDC | **live** |
 | `deposit-bac-1000` … `deposit-bac-10000` — pay someone in Honduras: lempiras into their BAC account within 24 h (human-fulfilled) | day's rate + 5 % (≈ $42 for L1,000) | **live** |
 | `pdf-extract` — PDF + JSON schema → fields | 0.02 USDC | coming soon |
 | `screenshot` — full-page PNG of a URL | 0.01 USDC | coming soon |

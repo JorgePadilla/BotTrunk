@@ -11,7 +11,7 @@ module Api
         services = response.parsed_body["services"]
         assert_equal Catalog::Service.all.size, services.size
         first = services.find { |s| s["slug"] == "scrape-markdown" }
-        assert_equal "5000", first["price"]["amount"]
+        assert_equal "90000", first["price"]["amount"]
         assert_equal "https://api.bottrunk.com/s/scrape-markdown", first["endpoint"]
         assert_equal "url", first["inputs"][0]["name"]
         assert_equal "live", first["status"]

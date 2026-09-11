@@ -12,7 +12,7 @@ module Payments
       assert_equal "exact", req.scheme
       assert_equal TESTNET[:caip2], req.network
       assert_equal TESTNET[:usdc_asa], req.asset
-      assert_equal 5_000, req.amount # $0.005 in µUSDC
+      assert_equal 90_000, req.amount # $0.09 in µUSDC
       assert_equal TEST_PAY_TO, req.pay_to
       assert_equal "https://api.bottrunk.test/s/scrape-markdown", req.resource
       assert_equal 6, req.extra[:decimals]
@@ -22,7 +22,7 @@ module Payments
 
     test "serializes with x402 field names and a string amount" do
       h = requirements_for.to_h
-      assert_equal "5000", h[:amount]
+      assert_equal "90000", h[:amount]
       assert_equal TEST_PAY_TO, h[:payTo]
       assert_equal 60, h[:maxTimeoutSeconds]
       assert_equal "application/json", h[:mimeType]

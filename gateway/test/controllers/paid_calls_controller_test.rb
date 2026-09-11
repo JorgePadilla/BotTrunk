@@ -17,7 +17,7 @@ class PaidCallsControllerTest < ActionDispatch::IntegrationTest
     assert_response :payment_required
     body = response.parsed_body
     assert_equal 2, body["x402Version"]
-    assert_equal "5000", body["accepts"][0]["amount"]
+    assert_equal "90000", body["accepts"][0]["amount"]
     assert_equal TEST_PAY_TO, body["accepts"][0]["payTo"]
     assert_equal "x402-global-challenge", body["accepts"][0]["extra"]["tag"]
     assert body["extensions"]["bazaar"]["schema"]

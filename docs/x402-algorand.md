@@ -32,7 +32,7 @@ Best-practice order from the Algorand guide: respond 402 → verify → fulfil �
 
 Public algod nodes (no token): `https://testnet-api.algonode.cloud`, `https://mainnet-api.algonode.cloud`.
 
-Amounts are strings in **atomic units**: `$0.005` USDC = `"5000"`.
+Amounts are strings in **atomic units**: `$0.09` USDC = `"90000"`.
 
 ## 402 body — payment requirements
 
@@ -45,7 +45,7 @@ Amounts are strings in **atomic units**: `$0.005` USDC = `"5000"`.
       "scheme": "exact",
       "network": "algorand:SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI=",
       "asset": "10458941",
-      "amount": "5000",
+      "amount": "90000",
       "payTo": "<58-char Algorand address of the gateway>",
       "maxTimeoutSeconds": 60,
       "resource": "https://api.taskfare.ai/s/scrape-markdown",
@@ -83,7 +83,7 @@ Learned the hard way on Sept 11: three MainNet settles landed with a perfect 402
 {
   "x402Version": 2,
   "resource": { "url": "https://api.bottrunk.com/s/scrape-markdown", "description": "…", "mimeType": "application/json" },
-  "accepted": { "scheme": "exact", "network": "algorand:…", "amount": "5000", "asset": "31566704", "payTo": "…", "maxTimeoutSeconds": 60, "extra": { "decimals": 6, "tag": "x402-global-challenge", "feePayer": "…" } },
+  "accepted": { "scheme": "exact", "network": "algorand:…", "amount": "90000", "asset": "31566704", "payTo": "…", "maxTimeoutSeconds": 60, "extra": { "decimals": 6, "tag": "x402-global-challenge", "feePayer": "…" } },
   "payload": { "paymentGroup": ["<base64 msgpack signed txn>"], "paymentIndex": 0 },
   "extensions": { "bazaar": { "info": …, "schema": … } }
 }

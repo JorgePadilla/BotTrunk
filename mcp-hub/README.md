@@ -49,7 +49,7 @@ claude mcp add bottrunk -- npx -y bottrunk-mcp
 }
 ```
 
-Restart the client. Ask the agent *"what can you buy on BotTrunk?"* and then *"scrape https://example.com/pricing to markdown"* — the first is free, the second costs 0.005 USDC and comes back with the transaction id.
+Restart the client. Ask the agent *"what can you buy on BotTrunk?"* and then *"scrape https://example.com/pricing to markdown"* — the first is free, the second costs 0.09 USDC and comes back with the transaction id.
 
 ## Tools
 
@@ -88,7 +88,7 @@ Pass them through your client's `env` block:
 2. The gateway answers `402` with the price, the `payTo` address and the network (CAIP-2).
 3. The server checks the caps, builds an Algorand USDC transfer for exactly that amount, signs it locally, and retries with a `PAYMENT-SIGNATURE` header.
 4. The gateway verifies with the facilitator, runs the service, settles on-chain, and answers `200` with a `PAYMENT-RESPONSE` receipt.
-5. The tool result is the service output plus one line: `— paid 0.005 USDC · txn <id>`.
+5. The tool result is the service output plus one line: `— paid 0.09 USDC · txn <id>`.
 
 If step 3 or 4 fails nothing is charged; if the service fails after settlement the gateway still returns what it has, because the money already moved.
 

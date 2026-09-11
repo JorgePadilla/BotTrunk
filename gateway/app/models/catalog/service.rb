@@ -68,7 +68,7 @@ module Catalog
       slug: "scrape-markdown", name: "Scrape URL to Markdown", category: "Data", provider: "By BotTrunk", fulfiller: "Fulfillers::ScrapeMarkdown",
       summary: "Any public page as clean, LLM-ready markdown.",
       description: "Any public page as clean, LLM-ready markdown. Handles JS-rendered sites; links preserved, nav and footer stripped.",
-      price_usdc: 0.005, latency: "0.8 s", success_rate: "99.6%",
+      price_usdc: 0.09, latency: "0.8 s", success_rate: "99.6%",
       network: "Algorand MainNet", asset: "USDC", facilitator: "GoPlausible",
       inputs: [
         Field.new("url", "string", "Public http(s) URL to fetch.", "https://example.com/pricing"),
