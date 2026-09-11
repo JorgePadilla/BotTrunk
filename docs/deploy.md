@@ -41,9 +41,20 @@ One Docker web service + one Postgres, described in `render.yaml` at the repo ro
 
 Delivery is plain SMTP, so the provider is four environment variables and nothing in the Gemfile. Without `SMTP_ADDRESS` the app logs a warning and sends nothing — that is the safe default, not a bug.
 
-1. Create the account at resend.com and add the domain `bottrunk.com`. Resend shows three DNS records: a TXT (DKIM, host `resend._domainkey`), an MX and a TXT for the `send` subdomain (SPF for the bounce domain).
-2. Add all three at Namecheap → Domain List → bottrunk.com → Advanced DNS, exactly as shown. **Do not touch the existing `@` TXT record** (`v=spf1 include:spf.efwd.registrar-servers.com ~all`) — that is the email *forwarding* for hello@bottrunk.com and it is unrelated to sending. Resend's SPF goes on the `send` subdomain, so the two never collide.
-3. Back in Resend, press Verify. It usually passes within a minute on Namecheap.
+1. Create the account at resend.com and add the domain `bottrunk.com` (region us-east-1). Resend shows the records to add.
+2. Add them at Namecheap → Domain List → bottrunk.com → Advanced DNS. Added on Sept 12, 2026:
+
+   | Type | Host | Value |
+   |---|---|---|
+   | TXT | `resend._domainkey` | the 218-character DKIM key Resend shows (`p=MIGfMA0GCSqGSIb3…QIDAQAB`) |
+   | CNAME | `rsend` | `rsend.forge.rmta.net` |
+   | CNAME | `send` | `send.forge.rmta.net` |
+   | TXT | `_dmarc` | `v=DMARC1; p=none;` (optional, added — monitor-only, changes nothing about delivery) |
+
+   **Do not touch the existing `@` TXT record** (`v=spf1 include:spf.efwd.registrar-servers.com ~all`, under Mail Settings). That is the email *forwarding* for hello@bottrunk.com and it is unrelated to sending. Resend's SPF rides on the `send` subdomain, so the two never collide.
+
+   Namecheap's UI truncates long values on screen — after saving, confirm the DKIM record is the full 218 characters and ends in `QIDAQAB`, not a shortened copy.
+3. Back in Resend, press **Verify DNS Records**. Status goes Pending while it looks; Namecheap usually propagates within minutes.
 4. Create an API key (sending permission only) and paste it into Render as `SMTP_PASSWORD` on **both** `bottrunk-gateway` and `bottrunk-digest`. Set `ADMIN_EMAIL` on both as well — that is where deposit alerts and the digest go. Everything else (`SMTP_ADDRESS`, `SMTP_PORT`, `SMTP_USER_NAME`, `MAIL_FROM`, `MAIL_REPLY_TO`) is already in `render.yaml`.
 5. Check it: `bin/rails mail:preview` sends one of each email to `ADMIN_EMAIL`, rendered from the newest real records. Nothing is written.
 
