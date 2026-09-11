@@ -183,7 +183,7 @@
                 [ "200", "—", "Yes. <span class=\"font-mono\">PAYMENT-RESPONSE</span> carries the transaction id." ],
                 [ "402", "<span class=\"font-mono\">Payment required</span>", "No — you sent no payment header. This is the probe." ],
                 [ "402", "<span class=\"font-mono\">missing or malformed X-PAYMENT header</span>, <span class=\"font-mono\">unsupported x402 version</span>, <span class=\"font-mono\">scheme mismatch</span>, <span class=\"font-mono\">network mismatch</span>, or the facilitator's own <span class=\"font-mono\">invalidReason</span>", "No. Verification refused it." ],
-                [ "402", "<span class=\"font-mono\">settlement failed</span>", "No — but the work was done. See below." ],
+                [ "402", "<span class=\"font-mono\">settlement failed</span>, or an explained node error — \"the paying wallet is not opted in to USDC…\", \"at its Algorand minimum balance…\", \"the signed payment expired…\"", "No — but the work was done. See below." ],
                 [ "422", "A validation message: <span class=\"font-mono\">url must be a public http(s) URL</span>, <span class=\"font-mono\">url resolves to a private address</span>, <span class=\"font-mono\">selector \"…\" matched nothing on this page</span>, and so on.", "No." ],
                 [ "502", "<span class=\"font-mono\">fetch failed with N</span>, <span class=\"font-mono\">page too large</span>, <span class=\"font-mono\">fetch failed: …</span>", "No. The upstream let us down." ],
                 [ "503", "<span class=\"font-mono\">&lt;name&gt; is not live yet</span>, with <span class=\"font-mono\">status</span> and <span class=\"font-mono\">catalog</span>", "No. Listed for discovery, not callable." ]
@@ -199,6 +199,7 @@
         </div>
         <div class="rounded-field border hairline bg-base-200 p-5 flex flex-col gap-2">
           <span class="text-[13px] font-medium">The one retry that can cost you twice</span>
+          <p class="text-sm text-muted">Algorand's own errors reach you through the facilitator; we translate the ones we know into an instruction and keep the node's original in the message, so <span class="font-mono">asset 31566704 missing from …</span> arrives as "the paying wallet is not opted in to USDC" rather than as a log line.</p>
           <p class="text-sm text-muted">A 402, 422, 502 or 503 means nothing settled, so retrying is free. <span class="font-mono">settlement failed</span> is different: verification passed, the service already ran, and the transfer did not settle as far as we could tell. If it did land on-chain anyway, signing a fresh payment pays for the same work twice. Check the payer address on <a href="https://allo.info" class="underline underline-offset-4 hover:text-base-content">an explorer</a> before re-signing. An agent whose rule is "on 402, sign and retry" should make an exception for this string.</p>
         </div>
         <table class="w-full text-sm">

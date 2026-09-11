@@ -32,7 +32,7 @@
         <%= render Docs::CodeSnippetComponent.new(snippets: {
           "MCP" => <<~SH.strip,
             # once, on the machine your agent runs on
-            npx bottrunk-mcp wallet && npx bottrunk-mcp wallet optin
+            npx bottrunk-mcp wallet   # prints the address; send it 0.3 ALGO, then USDC
             claude mcp add bottrunk -- npx -y bottrunk-mcp
 
             # then ask your agent for it — the tool is `#{@service.tool_name}`

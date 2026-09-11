@@ -19,7 +19,7 @@ module Payments
         if body["isValid"]
           Result.success(payer: body["payer"])
         else
-          Result.failure(body["invalidReason"] || "payment invalid", code: :invalid_payment)
+          Result.failure(NodeErrors.explain(body["invalidReason"]).presence || "payment invalid", code: :invalid_payment)
         end
       end
 
@@ -29,7 +29,7 @@ module Payments
 
         receipt = Receipt.new(success: body["success"] == true, transaction: body["transaction"],
                               network: body["network"], payer: body["payer"], error_reason: body["errorReason"])
-        return Result.failure(receipt.error_reason || "settlement failed", code: :settlement_failed, data: { receipt: receipt }) unless receipt.success
+        return Result.failure(NodeErrors.explain(receipt.error_reason).presence || "settlement failed", code: :settlement_failed, data: { receipt: receipt }) unless receipt.success
 
         Result.success(receipt: receipt)
       end

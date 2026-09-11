@@ -60,9 +60,9 @@
     <div class="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_320px] gap-8 items-start">
       <%= render Docs::CodeSnippetComponent.new(snippets: {
         "Terminal" => <<~SH.strip,
-          npx bottrunk-mcp wallet        # creates the agent's wallet, prints its address
-          # send it a little USDC on Algorand (and ~0.2 ALGO once), then:
-          npx bottrunk-mcp wallet optin
+          npx bottrunk-mcp wallet   # creates the agent's wallet, prints the address
+          # send that address 0.3 ALGO, then the USDC it may spend.
+          # The USDC opt-in in between happens by itself on the first call.
 
           claude mcp add bottrunk -- npx -y bottrunk-mcp
         SH
