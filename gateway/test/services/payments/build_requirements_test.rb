@@ -28,15 +28,22 @@ module Payments
       assert_equal "application/json", h[:mimeType]
     end
 
-    test "402 body carries accepts and the bazaar extension" do
+    test "402 body carries accepts and a bazaar extension shaped like the reference SDK" do
       body = BuildRequirements.body_for(service: service, requirements: requirements_for)
       assert_equal 2, body[:x402Version]
       assert_equal 1, body[:accepts].size
-      assert_equal "POST", body.dig(:extensions, :bazaar, :info, :input, :method)
-      assert_equal "string", body.dig(:extensions, :bazaar, :info, :input, :params, "url")
-      assert_kind_of Hash, body.dig(:extensions, :bazaar, :schema)
-      assert_equal "object", body.dig(:extensions, :bazaar, :schema, :type)
-      assert_equal false, body.dig(:extensions, :bazaar, :schema, :properties, :input, :additionalProperties)
+
+      info = body.dig(:extensions, :bazaar, :info)
+      assert_equal({ type: "http", method: "POST", bodyType: "json", body: { "url" => "https://example.com/pricing", "render_js" => false, "selector" => "…" } }, info[:input])
+      assert_equal "json", info.dig(:output, :type)
+      assert_equal 412, info.dig(:output, :example, "word_count")
+
+      schema = body.dig(:extensions, :bazaar, :schema)
+      assert_equal "http", schema.dig(:properties, :input, :properties, :type, :const)
+      assert_equal false, schema.dig(:properties, :input, :additionalProperties)
+      assert_equal %w[type method bodyType body], schema.dig(:properties, :input, :required)
+      assert_equal "string", schema.dig(:properties, :input, :properties, :body, :properties, "url", :type)
+      assert_equal %w[type], schema.dig(:properties, :output, :required)
     end
 
     test "fails when payTo is not configured" do

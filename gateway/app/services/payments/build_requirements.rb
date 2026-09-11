@@ -28,47 +28,55 @@ module Payments
       Result.success(requirements: requirements)
     end
 
-    # The full 402 body: requirements + Bazaar discovery extension. x402 v2
-    # extensions carry both `info` and a JSON Schema for it; the facilitator's
-    # catalog rejects the extension when `schema` is missing.
+    # The full 402 body: requirements + Bazaar discovery extension, shaped
+    # exactly like @x402/extensions' createBodyDiscoveryExtension (info +
+    # a JSON Schema for it). The facilitator's catalog validator is strict:
+    # `type` pinned by const, closed `input`, output with `type` + `example`.
     def self.body_for(service:, requirements:)
-      info = {
-        input: { type: "http", method: "POST", params: service.inputs.to_h { |f| [ f.name, f.type ] } },
-        output: { schema: { type: "object",
-                            properties: service.outputs.to_h { |f| [ f.name, { type: f.type, description: f.description } ] } } }
-      }
       {
         x402Version: 2,
         error: "Payment required",
         accepts: [ requirements.to_h ],
-        extensions: { bazaar: { info: info, schema: BAZAAR_SCHEMA } }
+        extensions: { bazaar: bazaar_extension(service) }
       }
     end
 
-    # Closed schemas: the facilitator's catalog validator requires
-    # `additionalProperties: false` on `input` (and we do the same for `output`).
-    BAZAAR_SCHEMA = {
-      "$schema": "https://json-schema.org/draft/2020-12/schema",
-      type: "object",
-      required: %w[input output],
-      additionalProperties: false,
-      properties: {
-        input: {
-          type: "object",
-          required: %w[type method],
-          additionalProperties: false,
-          properties: {
-            type: { type: "string", enum: [ "http" ] },
-            method: { type: "string" },
-            params: { type: "object", additionalProperties: { type: "string" } }
-          }
+    def self.bazaar_extension(service)
+      input_example  = service.inputs.to_h { |f| [ f.name, f.example_value ] }
+      input_schema   = { type: "object", properties: service.inputs.to_h { |f| [ f.name, f.json_schema ] } }
+      output_example = service.outputs.to_h { |f| [ f.name, f.example_value ] }
+      output_schema  = { properties: service.outputs.to_h { |f| [ f.name, f.json_schema ] } }
+
+      {
+        info: {
+          input: { type: "http", method: "POST", bodyType: "json", body: input_example },
+          output: { type: "json", example: output_example }
         },
-        output: {
+        schema: {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
           type: "object",
-          additionalProperties: false,
-          properties: { schema: { type: "object" }, example: {} }
+          properties: {
+            input: {
+              type: "object",
+              properties: {
+                type: { type: "string", const: "http" },
+                method: { type: "string", enum: %w[POST PUT PATCH] },
+                bodyType: { type: "string", enum: %w[json form-data text] },
+                body: input_schema,
+                pathParams: { type: "object" }
+              },
+              required: %w[type method bodyType body],
+              additionalProperties: false
+            },
+            output: {
+              type: "object",
+              properties: { type: { type: "string" }, example: { type: "object" }.merge(output_schema) },
+              required: %w[type]
+            }
+          },
+          required: %w[input]
         }
       }
-    }.freeze
+    end
   end
 end

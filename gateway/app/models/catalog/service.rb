@@ -51,14 +51,14 @@ module Catalog
       price_usdc: 0.005, latency: "0.8 s", success_rate: "99.6%",
       network: "Algorand MainNet", asset: "USDC", facilitator: "GoPlausible",
       inputs: [
-        Field.new("url", "string", "Public http(s) URL to fetch."),
+        Field.new("url", "string", "Public http(s) URL to fetch.", "https://example.com/pricing"),
         Field.new("render_js", "boolean", "Reserved: headless rendering is not available yet; the flag is accepted and ignored."),
         Field.new("selector", "string", "Optional CSS selector to scope the extraction.")
       ],
       outputs: [
-        Field.new("markdown", "string", "Body content as GitHub-flavored markdown."),
-        Field.new("title", "string", "Document title."),
-        Field.new("word_count", "integer", "Words in markdown, for budgeting tokens.")
+        Field.new("markdown", "string", "Body content as GitHub-flavored markdown.", "# Pricing\n\nSimple, honest pricing…"),
+        Field.new("title", "string", "Document title.", "Pricing — Example"),
+        Field.new("word_count", "integer", "Words in markdown, for budgeting tokens.", 412)
       ]
     ),
     Service.new(
