@@ -163,10 +163,10 @@ CORS for browser payers: `Access-Control-Allow-Origin: *`, allow `PAYMENT-SIGNAT
 
 ## Wallets for Phase 0
 
-- Gateway receiving wallet (Defly, created Sept 9 2026), address = `payTo`:
+- Gateway receiving wallet (**Pera** on Jorge's phone, created Sept 9 2026), address = `payTo`:
   `UTWS33TM7IT7NINJSFWS5KVGL73G4ERJMYDKHF7KE4WDXHYO4L7V2PNMRE`
   Public address only — the mnemonic lives in the password manager. Lives in Rails credentials as `algorand.pay_to`; read it with `Rails.application.credentials.dig(:algorand, :pay_to)`. It must **opt in** to the USDC ASA on each network before it can receive.
-- Agent (payer) wallet in Defly (created Sept 10 2026), address:
+- Second wallet in **Defly** on the phone (created Sept 10 2026) — funding/"bank" account for tests, address:
   `ABEAGNREVBDSINTSOWXYXOANZDRTLBWDGULA3SALTWRMXNEED2LWZNSADE`
   Public address only; holds the TestNet USDC from Circle's faucet. It funds the *spike payer* below with ordinary Defly sends, so no phone mnemonic is ever typed anywhere.
 - Spike payer: a throwaway TestNet account generated on the dev machine by `bin/agent-wallet` (mnemonic written straight into `gateway/.env.local`, never printed). `bin/pay` signs with it. Separate account (its mnemonic must be on the machine running the spike client — `gateway/.env.local`, git-ignored, copy in the password manager; optionally imported into Defly/Pera for viewing). Funded with TestNet ALGO (dispenser) and TestNet USDC (Circle faucet).
