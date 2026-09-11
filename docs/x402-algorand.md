@@ -109,6 +109,8 @@ Responses: verify → `{ "isValid": boolean, "invalidReason"?: string, "payer"?:
 
 CORS for browser payers: `Access-Control-Allow-Origin: *`, allow `PAYMENT-SIGNATURE, X-PAYMENT` request headers, **expose** `PAYMENT-REQUIRED, PAYMENT-RESPONSE`, answer `OPTIONS`.
 
+**PaymentPayload shape (v2), the one that bit us:** `{ x402Version, resource?, accepted, payload, extensions? }`. The scheme and the network live inside **`accepted`** — v2 has nothing named `scheme` at the top level; v1 did. `Payments::Payload` read only the top level, so every strict v2 client (including our own `bottrunk-mcp`) was refused with "scheme mismatch" before the facilitator was ever asked, while our Python spike — which sends the v1 flat shape — worked. The parser reads `accepted` first and falls back to the top level. The mcp-hub test suite asserted `accepted.network` on the way out and the Ruby suite asserted the flat shape on the way in: two halves of one repo agreeing with themselves and with nothing else. The fake gateway in `mcp-hub/src/test/fake_gateway.ts` now runs the real sanity checks so the seam is covered.
+
 **Gasless:** advertise `extra.feePayer` = the facilitator's signer from `GET /supported` (`algorand:*` → `ZMFK2OI7ZBD2U27ISERZC4S6LKM6WMFJPZQ4MYNJDZ2VNBNMBA67RA22AA`, same on MainNet and TestNet). x402 clients then build an atomic group the facilitator co-signs, and the payer spends only USDC. A plain single transfer with the payer's own fee is still accepted.
 
 ## Discovery ("Bazaar") and the challenge tag

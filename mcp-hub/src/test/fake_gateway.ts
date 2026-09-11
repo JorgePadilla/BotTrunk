@@ -112,6 +112,17 @@ export async function startFakeGateway(priceAtomic = "5000"): Promise<FakeGatewa
       }
       const payload = JSON.parse(Buffer.from(String(header), "base64").toString("utf8"));
       payments.push({ header: String(header), body: payload });
+
+      // The same sanity checks the real gateway runs before it calls the
+      // facilitator. Without them this fake accepted any shape at all, so the
+      // round-trip test passed for months while production answered every
+      // call from this client with "scheme mismatch".
+      const scheme = payload?.accepted?.scheme ?? payload?.scheme;
+      const network = payload?.accepted?.network ?? payload?.network;
+      if (payload?.x402Version !== 2) return json(402, { ...paymentRequired, error: "unsupported x402 version" });
+      if (scheme !== requirements.scheme) return json(402, { ...paymentRequired, error: "scheme mismatch" });
+      if (network !== requirements.network) return json(402, { ...paymentRequired, error: "network mismatch" });
+
       if (!input.url) return json(422, { error: "url is required" });
       const receipt = { success: true, transaction: "FAKETXN", network: TESTNET, payer: payload?.payload?.paymentGroup ? "signed" : "unknown" };
       return json(

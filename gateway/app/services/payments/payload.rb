@@ -17,8 +17,20 @@ module Payments
     end
 
     def x402_version = raw["x402Version"]
-    def scheme = raw["scheme"]
-    def network = raw["network"]
+
+    # x402 v2 moved the scheme and the network inside `accepted` — a v2
+    # PaymentPayload is { x402Version, resource?, accepted, payload,
+    # extensions? } with nothing named `scheme` at the top level. v1 put them
+    # there. Reading only the top level rejected every strict v2 client,
+    # including our own npm package, with "scheme mismatch" before the
+    # facilitator was ever asked. Read the v2 place first, keep the v1
+    # fallback: both vocabularies pay.
+    def accepted = raw["accepted"].is_a?(Hash) ? raw["accepted"] : {}
+
+    def scheme = accepted["scheme"] || raw["scheme"]
+
+    def network = accepted["network"] || raw["network"]
+
     def to_h = raw
   end
 end

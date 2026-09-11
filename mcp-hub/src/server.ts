@@ -25,7 +25,19 @@ const WALLET_TOOL = "bottrunk_wallet";
  */
 export async function buildServer(deps: HubDeps): Promise<Server> {
   const fetchImpl = deps.fetchImpl ?? fetch;
-  const catalog = await fetchCatalog(deps.config.apiBase, fetchImpl);
+
+  // A blip at the gateway used to kill the process on startup, which silently
+  // removed all eleven tools from the MCP host with a bare "fetch failed".
+  // Start degraded instead: the free tools still work and bottrunk_catalog
+  // says what went wrong and how to get the paid tools back.
+  let catalog: CatalogService[] = [];
+  let catalogError: string | null = null;
+  try {
+    catalog = await fetchCatalog(deps.config.apiBase, fetchImpl);
+  } catch (e) {
+    catalogError = (e as Error).message;
+    console.error(`bottrunk-mcp: ${catalogError} — starting without paid tools; restart once it is reachable.`);
+  }
   const live = liveServices(catalog);
   const bySlug = new Map(live.map((s) => [toolName(s.slug), s] as const));
 
@@ -39,7 +51,10 @@ export async function buildServer(deps: HubDeps): Promise<Server> {
           "List BotTrunk services (name, price in USDC, inputs, status). Free. Use it to discover what can be bought before calling a paid tool.",
         inputSchema: {
           type: "object",
-          properties: { query: { type: "string", description: "Optional substring filter on name, summary or category." } },
+          properties: {
+            query: { type: "string", description: "Optional substring filter on name, summary or category." },
+            category: { type: "string", description: "Optional exact category filter: Payments, Data, Verification or Translation." },
+          },
           additionalProperties: false,
         },
       },
@@ -62,7 +77,17 @@ export async function buildServer(deps: HubDeps): Promise<Server> {
     const name = req.params.name;
     const args = (req.params.arguments ?? {}) as Record<string, unknown>;
 
-    if (name === CATALOG_TOOL) return text(renderCatalog(catalog, typeof args.query === "string" ? args.query : undefined));
+    if (name === CATALOG_TOOL) {
+      if (catalogError) {
+        return error(
+          `The catalog could not be loaded, so no paid tools are available in this session.\n${catalogError}\n` +
+            `Check https://bottrunk.com/ and restart this MCP server once the gateway answers.`,
+        );
+      }
+      return text(
+        renderCatalog(catalog, typeof args.query === "string" ? args.query : undefined, typeof args.category === "string" ? args.category : undefined),
+      );
+    }
     if (name === WALLET_TOOL) return text(await renderWallet(deps, fetchImpl));
 
     const service = bySlug.get(name);
@@ -103,10 +128,13 @@ async function callPaid(service: CatalogService, args: Record<string, unknown>, 
   }
 }
 
-function renderCatalog(catalog: CatalogService[], query?: string): string {
+function renderCatalog(catalog: CatalogService[], query?: string, category?: string): string {
   const q = query?.toLowerCase();
-  const rows = catalog.filter((s) => !q || [s.name, s.summary, s.category, s.slug, s.description].some((t) => t.toLowerCase().includes(q)));
-  if (!rows.length) return `No services match "${query}".`;
+  const c = category?.toLowerCase();
+  const rows = catalog
+    .filter((s) => !c || s.category.toLowerCase() === c)
+    .filter((s) => !q || [s.name, s.summary, s.category, s.slug, s.description].some((t) => t.toLowerCase().includes(q)));
+  if (!rows.length) return `No services match ${[query && `"${query}"`, category && `category ${category}`].filter(Boolean).join(" in ")}.`;
   return rows
     .map((s) => {
       const status = (s.status ?? "live") === "live" ? "live" : `${s.status} (not callable yet)`;

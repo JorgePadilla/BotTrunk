@@ -148,6 +148,8 @@ describe("paid call through the real x402 client", () => {
     assert.equal(envelope.accepted.amount, "5000");
     assert.ok(envelope.resource.url.endsWith("/s/scrape-markdown"));
     assert.ok("bazaar" in envelope.extensions);
+    // The fake gateway now runs the real gateway's sanity checks, so a 200
+    // here means the scheme and network are where the Ruby parser looks.
     assert.equal(envelope.payload.paymentGroup.length, 1);
     const signed = algosdk.decodeSignedTransaction(Buffer.from(envelope.payload.paymentGroup[0], "base64"));
     assert.equal(signed.txn.sender.toString(), wallet.address);

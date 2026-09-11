@@ -24,13 +24,22 @@ module X402Helpers
     Payments::BuildRequirements.new(service: svc).call[:requirements]
   end
 
-  # A syntactically valid X-PAYMENT header. The transaction bytes are fake;
-  # only the fake adapter or WebMock ever sees them.
-  def payment_header(network: TESTNET[:caip2], scheme: "exact", version: 2)
-    Base64.strict_encode64({
-      x402Version: version, scheme: scheme, network: network,
-      payload: { paymentGroup: [ Base64.strict_encode64("signed-txn") ], paymentIndex: 0 }
-    }.to_json)
+  # A syntactically valid payment header. The transaction bytes are fake; only
+  # the fake adapter or WebMock ever sees them.
+  #
+  # `style: :v2` is what real clients send — @x402-avm, and anything following
+  # the v2 spec — with the scheme and network inside `accepted`. `:v1` is the
+  # older flat shape, which our own Python spike client still sends. The
+  # gateway has to accept both, so the suite builds both.
+  def payment_header(network: TESTNET[:caip2], scheme: "exact", version: 2, style: :v2)
+    inner = { paymentGroup: [ Base64.strict_encode64("signed-txn") ], paymentIndex: 0 }
+    body =
+      if style == :v2
+        { x402Version: version, accepted: { scheme: scheme, network: network, asset: TESTNET[:usdc_asa].to_s, payTo: TEST_PAY_TO }, payload: inner }
+      else
+        { x402Version: version, scheme: scheme, network: network, payload: inner }
+      end
+    Base64.strict_encode64(body.to_json)
   end
 
   def stub_upstream(status: 200, body: { ok: true }.to_json)

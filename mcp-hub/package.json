@@ -1,7 +1,7 @@
 {
   "name": "bottrunk-mcp",
-  "version": "0.1.0",
-  "description": "MCP server that lets Claude, Cursor and any MCP agent buy BotTrunk services pay-per-call with USDC over x402 on Algorand — from the agent's own wallet.",
+  "version": "0.1.1",
+  "description": "MCP server that lets Claude, Cursor and any MCP agent buy BotTrunk services pay-per-call with USDC over x402 on Algorand \u2014 from the agent's own wallet.",
   "license": "MIT",
   "type": "module",
   "bin": {

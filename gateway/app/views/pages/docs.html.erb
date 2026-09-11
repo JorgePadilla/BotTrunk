@@ -99,6 +99,7 @@
         }) %>
         <p class="text-sm text-muted">The MCP server keeps the key on your machine and enforces per-call and per-day caps (<span class="font-mono">BOTTRUNK_MAX_PER_CALL</span>, <span class="font-mono">BOTTRUNK_MAX_PER_DAY</span>); details in the <a class="link" href="https://www.npmjs.com/package/bottrunk-mcp">bottrunk-mcp README on npm</a>.</p>
         <p class="text-sm text-muted"><span class="font-medium text-base-content">What your wallet needs.</span> Build the transfer as an atomic group naming <span class="font-mono">extra.feePayer</span> and the facilitator covers the network fee, so the call costs you USDC only; sign a plain single transfer instead and you pay its ~0.001 ALGO. Either way the paying account must be opted in to USDC (<span class="font-mono">31566704</span>), and an Algorand account holding an asset needs about 0.1 ALGO of minimum balance. Budget <span class="font-medium text-base-content">~0.2 ALGO once</span>, then USDC per call — an agent funded with USDC and no ALGO cannot pay at all.</p>
+        <p class="text-sm text-muted"><span class="font-medium text-base-content">Your agent cannot fund itself.</span> There is no on-ramp inside the loop: a person creates the wallet, sends it USDC and ~0.2 ALGO, runs the one-time opt-in, and restarts the MCP host so the tools reload. An agent can spend only what you have already sent it. The caps ship at <span class="font-mono">BOTTRUNK_MAX_PER_CALL=1000</span> and <span class="font-mono">BOTTRUNK_MAX_PER_DAY=10000</span> USDC — deliberately high, because the catalog goes up to $414 a call. If your agent should never spend that much, set them lower before you fund the wallet.</p>
         <p class="text-sm text-muted"><span class="font-medium text-base-content">Can't run a local command?</span> <span class="font-mono">https://mcp.bottrunk.com/mcp</span> is a remote MCP server with five free, read-only tools — including <span class="font-mono">bottrunk_payment_instructions</span>, which returns the live price, network, asset and <span class="font-mono">payTo</span> for any service so your agent can price a call before committing to it. It holds no keys and can never spend. <%= link_to "Setup for every client", connect_path, class: "underline underline-offset-4 hover:text-base-content" %>.</p>
       </section>
 
@@ -123,15 +124,24 @@
         <%= render Docs::CodeSnippetComponent.new(snippets: { "PAYMENT-SIGNATURE (decoded)" => <<~JSON.strip })
           {
             "x402Version": 2,
-            "scheme": "exact",
-            "network": "#{@requirements.network}",
+            "accepted": {
+              "scheme": "exact",
+              "network": "#{@requirements.network}",
+              "asset": "#{@requirements.asset}",
+              "amount": "#{@requirements.amount}",
+              "payTo": "#{@requirements.pay_to}",
+              "maxTimeoutSeconds": #{@requirements.max_timeout_seconds},
+              "extra": { "decimals": 6, "tag": "x402-global-challenge", "feePayer": "#{Rails.configuration.x402.fee_payer}" }
+            },
             "payload": {
-              "paymentGroup": ["<base64 msgpack of the signed USDC transfer>"],
+              "paymentGroup": ["<base64 msgpack of each signed transaction>"],
               "paymentIndex": 0
-            }
+            },
+            "resource": { "url": "#{@example_service.endpoint_url}" }
           }
         JSON
         %>
+        <p class="text-sm text-muted"><span class="font-medium text-base-content">Note the shape.</span> In x402 v2 the scheme and network live inside <span class="font-mono">accepted</span> — echo back the entry from <span class="font-mono">accepts[]</span> that you chose. The older v1 shape, with <span class="font-mono">scheme</span> and <span class="font-mono">network</span> at the top level, is still accepted. <span class="font-mono">paymentIndex</span> points at your transfer inside <span class="font-mono">paymentGroup</span>: it is <span class="font-mono">0</span> for a plain single transfer, and the index of your transfer in the group when you build a fee-payer group.</p>
         <p class="text-muted">On success the response carries <span class="font-mono">PAYMENT-RESPONSE</span>: base64 JSON with <span class="font-mono">success</span>, <span class="font-mono">transaction</span> (the Algorand txn id), <span class="font-mono">network</span> and <span class="font-mono">payer</span>.</p>
         <div class="rounded-field border hairline bg-base-200 p-5 flex flex-col gap-2">
           <span class="text-[13px] font-medium">Both header vocabularies work, everywhere</span>

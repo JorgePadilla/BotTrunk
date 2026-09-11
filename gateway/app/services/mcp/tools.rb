@@ -86,9 +86,18 @@ module Mcp
         steps: [
           "POST the JSON body to the endpoint with no payment header. You get HTTP 402 with these requirements.",
           "Sign an Algorand transfer of `amount` (atomic units, 6 decimals) of asset `asset` to `payTo` on `network`.",
-          "Retry the same POST with header PAYMENT-SIGNATURE: <base64 of the x402 v2 payment payload>.",
+          "Wrap it in an x402 v2 PaymentPayload — see `payload_shape` below — and base64 the JSON.",
+          "Retry the same POST with header PAYMENT-SIGNATURE: <that base64>. X-PAYMENT is accepted as an alias.",
           "You get 200 with the result and a PAYMENT-RESPONSE header carrying the on-chain transaction id."
         ],
+        payload_shape: {
+          x402Version: 2,
+          accepted: "the entry from accepts[] you are paying — exactly as given above, scheme and network included",
+          payload: { paymentGroup: [ "<base64 msgpack of each signed transaction>" ], paymentIndex: "index of your transfer in paymentGroup; 0 for a plain single transfer" },
+          resource: { url: svc.endpoint_url }
+        },
+        payload_note: "In v2 the scheme and network live inside `accepted`, not at the top level. The v1 flat shape is still accepted. " \
+                      "Full worked example: https://bottrunk.com/docs#payment",
         easier: "Run `npx bottrunk-mcp` on the machine your agent controls — it creates a wallet, answers 402s and enforces your spending caps. Setup for twelve clients: https://bottrunk.com/connect",
         facilitator: Rails.configuration.x402.facilitator_url,
         algo_required: "Build the transfer as an atomic group with extra.feePayer and the facilitator covers the network fee, so the call itself costs you USDC only; " \

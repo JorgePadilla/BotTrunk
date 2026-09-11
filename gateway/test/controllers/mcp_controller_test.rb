@@ -65,8 +65,12 @@ class McpControllerTest < ActionDispatch::IntegrationTest
     assert_equal "90000", payload["payment_requirements"]["amount"]
     assert_equal TEST_PAY_TO, payload["payment_requirements"]["payTo"]
     assert_equal "x402-global-challenge", payload["payment_requirements"]["extra"]["tag"]
-    assert_equal 4, payload["steps"].size
+    assert_equal 5, payload["steps"].size
     assert_match "npx bottrunk-mcp", payload["easier"]
+    # A bot with only this tool has to be able to build the header from it.
+    assert_equal 2, payload["payload_shape"]["x402Version"]
+    assert_includes payload["payload_shape"]["payload"].keys, "paymentGroup"
+    assert_match "inside `accepted`", payload["payload_note"]
   end
 
   test "an on-request service explains itself instead of quoting a payment" do

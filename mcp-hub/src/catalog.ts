@@ -25,8 +25,16 @@ export interface CatalogService {
 }
 
 export async function fetchCatalog(apiBase: string, fetchImpl: typeof fetch = fetch): Promise<CatalogService[]> {
-  const res = await fetchImpl(`${apiBase}/api/v1/catalog`, { headers: { Accept: "application/json" } });
-  if (!res.ok) throw new Error(`Catalog request failed: ${res.status} ${res.statusText}`);
+  const url = `${apiBase}/api/v1/catalog`;
+  let res: Response;
+  try {
+    res = await fetchImpl(url, { headers: { Accept: "application/json" } });
+  } catch (e) {
+    // A bare "fetch failed" told nobody which host was unreachable, which is
+    // the only thing worth knowing when every tool has just disappeared.
+    throw new Error(`could not reach the catalog at ${url}: ${(e as Error).message}`);
+  }
+  if (!res.ok) throw new Error(`catalog request to ${url} failed: ${res.status} ${res.statusText}`);
   const body = (await res.json()) as { services: CatalogService[] };
   return body.services;
 }

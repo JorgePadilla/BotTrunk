@@ -6,6 +6,9 @@ import { atomicToUsdc, type Config } from "./config.js";
 import { SpendTracker } from "./spend.js";
 import type { Wallet } from "./wallet.js";
 
+/** Sent as the User-Agent on paid calls; keep in step with package.json. */
+const VERSION = "0.1.1";
+
 /** What a paid call hands back to the tool layer. */
 export interface PaidResult {
   status: number;
@@ -48,7 +51,11 @@ export function createPayingFetch(config: Config, wallet: Wallet, spend: SpendTr
 
   return async function paidFetch(url: string, init: RequestInit): Promise<PaidResult> {
     quote.delete("last");
-    const res = await paying(url, init);
+    // Identify ourselves, so the gateway's own stats can tell a call from this
+    // package apart from any other node process.
+    const headers = new Headers(init.headers);
+    if (!headers.has("user-agent")) headers.set("user-agent", `bottrunk-mcp/${VERSION}`);
+    const res = await paying(url, { ...init, headers });
     const body = await res.text();
     const result: PaidResult = {
       status: res.status,
