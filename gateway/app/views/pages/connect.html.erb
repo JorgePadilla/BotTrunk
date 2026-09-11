@@ -47,9 +47,9 @@
           <h3 class="text-[22px] font-semibold tracking-tight"><%= client.name %></h3>
           <span class="text-[13px] text-muted"><%= client.kind %></span>
         </div>
-        <p class="text-muted"><%= client.summary %></p>
+        <p class="text-muted"><%= inline_code(client.summary) %></p>
         <%= render Docs::CodeSnippetComponent.new(snippets: { client.label => client.snippet }) %>
-        <p class="text-sm text-muted"><%= client.note %> <%= link_to "#{client.name} docs →", client.docs_url, class: "underline underline-offset-4 hover:text-base-content", target: "_blank", rel: "noopener" %></p>
+        <p class="text-sm text-muted"><%= inline_code(client.note) %> <%= link_to "#{client.name} docs →", client.docs_url, class: "underline underline-offset-4 hover:text-base-content", target: "_blank", rel: "noopener" %></p>
       </section>
     <% end %>
   </div>

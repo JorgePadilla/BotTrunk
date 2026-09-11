@@ -27,6 +27,7 @@ class PagesControllerTest < ActionDispatch::IntegrationTest
     assert_match "MCPServerStdio", response.body
     assert_match "npx bottrunk-mcp wallet", response.body
     assert_select "a[href='https://docs.openclaw.ai/tools/mcp']"
+    assert_select "span.font-mono", text: "--scope user", message: "backticks in the notes render as code"
   end
 
   test "llms.txt is rendered from the catalog so prices cannot drift" do
