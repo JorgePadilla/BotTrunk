@@ -93,6 +93,21 @@ class PaidCallsControllerTest < ActionDispatch::IntegrationTest
     assert_equal "TXID123", JSON.parse(Base64.strict_decode64(response.headers["X-PAYMENT-RESPONSE"]))["transaction"]
   end
 
+  test "a coming-soon service answers 503 before any payment is looked at" do
+    Catalog::Service.treat_all_live = false
+    upstream = stub_upstream
+    begin
+      post paid_call_path("pdf-extract"), params: "{}", headers: { "Content-Type" => "application/json", "X-PAYMENT" => payment_header }
+    ensure
+      Catalog::Service.treat_all_live = true
+    end
+
+    assert_response :service_unavailable
+    assert_equal "coming_soon", response.parsed_body["status"]
+    assert_empty @adapter.verify_calls
+    assert_not_requested upstream
+  end
+
   test "unknown service is 404" do
     post paid_call_path("nope"), params: "{}", headers: { "Content-Type" => "application/json" }
     assert_response :not_found

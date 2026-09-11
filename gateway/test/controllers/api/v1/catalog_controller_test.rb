@@ -14,6 +14,8 @@ module Api
         assert_equal "5000", first["price"]["amount"]
         assert_equal "https://api.bottrunk.com/s/scrape-markdown", first["endpoint"]
         assert_equal "url", first["inputs"][0]["name"]
+        assert_equal "live", first["status"]
+        assert_equal "coming_soon", services.find { |s| s["slug"] == "pdf-extract" }["status"]
       end
 
       test "index filters by category" do

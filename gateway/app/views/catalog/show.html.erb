@@ -13,6 +13,9 @@
       <h1 class="text-4xl md:text-[40px] font-semibold tracking-[-0.03em] leading-[1.15]"><%= @service.name %></h1>
       <p class="text-lg text-muted"><%= @service.description %></p>
       <p class="font-mono text-sm text-muted mt-1">POST <%= @service.endpoint_url %></p>
+      <% unless @service.live? %>
+        <p class="text-sm text-muted"><%= render(Ui::PillComponent.new) { "Coming soon" } %> Listed for discovery; the endpoint answers 503 until it goes live, so nothing is charged.</p>
+      <% end %>
     </div>
     <div class="flex gap-2.5" data-controller="clipboard" data-clipboard-text-value="<%= @service.endpoint_url %>">
       <%= render(Ui::ButtonComponent.new(icon: "copy", data: { action: "clipboard#copy" })) { tag.span("Copy endpoint", data: { clipboard_target: "label" }) } %>

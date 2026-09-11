@@ -11,6 +11,9 @@ Rails.configuration.x402.pay_to = X402Helpers::TEST_PAY_TO
 Rails.configuration.x402.network = :testnet
 Rails.configuration.x402.public_host = "https://api.bottrunk.test"
 
+# The proxy path is tested through pdf-extract, which is coming_soon in the seed.
+Catalog::Service.treat_all_live = true
+
 # No DNS in tests: every host is "public" except the ones that look private.
 Fulfillers::ScrapeMarkdown.resolver = X402Helpers::FakeResolver
 

@@ -8,8 +8,13 @@ module Catalog
   # Seller, Service, Endpoint, Call …), keep this public interface —
   # `all`, `find(slug)`, and the readers below — so no component changes.
   class Service < Data.define(:slug, :name, :summary, :description, :category, :provider, :price_usdc, :latency, :success_rate,
-                              :network, :asset, :facilitator, :inputs, :outputs, :upstream_url, :fulfiller)
+                              :network, :asset, :facilitator, :inputs, :outputs, :upstream_url, :fulfiller, :status)
     CATEGORIES = %w[Data Messaging Verification Translation].freeze
+    STATUSES = %w[live coming_soon].freeze
+
+    # Test hook: the paid-call tests exercise the proxy path through a
+    # coming-soon service, so they flip this on (see test_helper).
+    mattr_accessor :treat_all_live, default: false
 
     # Phase 0: every service proxies to httpbin so the paid loop can be exercised
     # end to end before real upstreams exist.
@@ -17,9 +22,13 @@ module Catalog
 
     # `fulfiller:` names a Fulfillers::* class that runs in-process instead of
     # proxying to `upstream_url` (BotTrunk's own services).
-    def initialize(upstream_url: DEFAULT_UPSTREAM, fulfiller: nil, **attrs) = super
+    def initialize(upstream_url: DEFAULT_UPSTREAM, fulfiller: nil, status: "live", **attrs) = super
 
     def built_in? = fulfiller.present?
+
+    # Only live services take money. The rest stay in the catalog so agents and
+    # people can see what is coming, but POST /s/:slug answers 503 for them.
+    def live? = status == "live" || self.class.treat_all_live
 
     def self.categories = CATEGORIES
 
@@ -62,7 +71,7 @@ module Catalog
       ]
     ),
     Service.new(
-      slug: "pdf-extract", name: "PDF to JSON", category: "Data", provider: "By BotTrunk",
+      slug: "pdf-extract", status: "coming_soon", name: "PDF to JSON", category: "Data", provider: "By BotTrunk",
       summary: "Send a PDF and a schema, get the fields back.",
       description: "Send a PDF URL and a JSON schema; get the fields back as JSON. Tables and multi-column layouts included.",
       price_usdc: 0.02, latency: "3.1 s", success_rate: "98.9%",
@@ -71,7 +80,7 @@ module Catalog
       outputs: [ Field.new("data", "object", "Extracted fields, matching the schema."), Field.new("pages", "integer", "Pages processed.") ]
     ),
     Service.new(
-      slug: "screenshot", name: "Screenshot a page", category: "Data", provider: "By BotTrunk",
+      slug: "screenshot", status: "coming_soon", name: "Screenshot a page", category: "Data", provider: "By BotTrunk",
       summary: "Full-page PNG of any URL.",
       description: "Full-page or viewport PNG of any URL, with optional dark mode and device emulation.",
       price_usdc: 0.01, latency: "1.9 s", success_rate: "99.2%",
@@ -80,7 +89,7 @@ module Catalog
       outputs: [ Field.new("image_url", "string", "Signed URL of the PNG, valid for 1 hour."), Field.new("width", "integer", "Pixels."), Field.new("height", "integer", "Pixels.") ]
     ),
     Service.new(
-      slug: "send-whatsapp", name: "Send a WhatsApp message", category: "Messaging", provider: "Verified seller",
+      slug: "send-whatsapp", status: "coming_soon", name: "Send a WhatsApp message", category: "Messaging", provider: "Verified seller",
       summary: "Reach a phone number your agent can't.",
       description: "Deliver a message to a phone number your agent can't reach otherwise. Delivery receipt returned.",
       price_usdc: 0.05, latency: "2.4 s", success_rate: "97.8%",
@@ -89,7 +98,7 @@ module Catalog
       outputs: [ Field.new("message_id", "string", "Provider message id."), Field.new("status", "string", "sent, delivered, or failed.") ]
     ),
     Service.new(
-      slug: "verify-business-hn", name: "Verify a Honduran business", category: "Verification", provider: "Human-fulfilled",
+      slug: "verify-business-hn", status: "coming_soon", name: "Verify a Honduran business", category: "Verification", provider: "Human-fulfilled",
       summary: "A local visits, photographs, checks the registry.",
       description: "A verified local visits the address, photographs the premises, and checks the mercantile registry. Proof bundle returned within 48 h.",
       price_usdc: 5.00, latency: "~36 h", success_rate: "100%",
@@ -98,7 +107,7 @@ module Catalog
       outputs: [ Field.new("verified", "boolean", "Whether the business exists at the address."), Field.new("proof", "object", "Photos and registry excerpt.") ]
     ),
     Service.new(
-      slug: "translate-es-en", name: "Translate ES ↔ EN", category: "Translation", provider: "Human-fulfilled",
+      slug: "translate-es-en", status: "coming_soon", name: "Translate ES ↔ EN", category: "Translation", provider: "Human-fulfilled",
       summary: "Human-reviewed, with Central American context.",
       description: "Human-reviewed translation with Central American idiom and legal terms handled correctly.",
       price_usdc: 0.50, latency: "~4 h", success_rate: "99.1%",

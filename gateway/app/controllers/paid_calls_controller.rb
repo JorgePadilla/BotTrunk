@@ -13,6 +13,7 @@ class PaidCallsController < ApplicationController
 
   def create
     service = Catalog::Service.find(params[:slug]) or return head(:not_found)
+    return coming_soon(service) unless service.live?
 
     result = Gateway::HandlePaidCall.new(
       service: service,
@@ -40,6 +41,12 @@ class PaidCallsController < ApplicationController
   end
 
   private
+
+  # Listed but not yet callable: say so before anyone signs a payment.
+  def coming_soon(service)
+    render json: { error: "#{service.name} is not live yet", status: service.status, catalog: "https://bottrunk.com/s/#{service.slug}" },
+           status: :service_unavailable
+  end
 
   def cors_headers
     response.set_header("Access-Control-Allow-Origin", "*")

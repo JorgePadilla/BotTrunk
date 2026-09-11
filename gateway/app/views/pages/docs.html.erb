@@ -26,14 +26,18 @@
         <h2 class="text-[22px] font-semibold tracking-tight">Connect your agent</h2>
         <p class="text-muted">Any x402-capable client handles the 402 → pay → retry dance for you. Pick the one that matches your stack.</p>
         <%= render Docs::CodeSnippetComponent.new(snippets: {
-          "MCP" => <<~JSON.strip,
-            // Claude Desktop, Cursor, or any MCP host. One server, every service as a tool.
-            {
-              "mcpServers": {
-                "bottrunk": { "url": "https://mcp.bottrunk.com" }
-              }
-            }
-          JSON
+          "MCP" => <<~SH.strip,
+            # Claude Desktop, Claude Code, Cursor — any MCP host. Every live service becomes a tool.
+            npx bottrunk-mcp wallet          # creates ~/.bottrunk/wallet.json, prints the address
+            # send it a little USDC on Algorand (+ ~0.2 ALGO once), then:
+            npx bottrunk-mcp wallet optin
+
+            # Claude Code
+            claude mcp add bottrunk -- npx -y bottrunk-mcp
+
+            # Claude Desktop / Cursor (claude_desktop_config.json / .cursor/mcp.json)
+            { "mcpServers": { "bottrunk": { "command": "npx", "args": ["-y", "bottrunk-mcp"] } } }
+          SH
           "Python" => <<~PY.strip,
             # pip install x402 py-algorand-sdk
             from x402.clients import requests as x402_requests
@@ -45,10 +49,16 @@
             print(r.headers["X-PAYMENT-RESPONSE"])                 # settlement receipt
           PY
           "TypeScript" => <<~TS.strip,
-            // npm install @x402-avm/fetch
+            // npm install @x402-avm/fetch @x402-avm/avm @x402-avm/core
+            import { x402Client } from "@x402-avm/core/client";
+            import { ExactAvmScheme } from "@x402-avm/avm/exact/client";
+            import { toClientAvmSigner } from "@x402-avm/avm";
             import { wrapFetchWithPayment } from "@x402-avm/fetch";
 
-            const fetchWithPay = wrapFetchWithPayment(fetch, account);
+            const signer = toClientAvmSigner(process.env.AVM_PRIVATE_KEY); // base64 64-byte key
+            const client = new x402Client().register("algorand:wGHE2Pwdvd7S12BL5FaOP20EGYesN73ktiC1qzkkit8=",
+              new ExactAvmScheme(signer, { algodUrl: "https://mainnet-api.algonode.cloud" }));
+            const fetchWithPay = wrapFetchWithPayment(fetch, client);
             const r = await fetchWithPay("#{@example_service.endpoint_url}", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
@@ -69,7 +79,7 @@
               -d '{"url": "https://example.com/pricing"}'
           SH
         }) %>
-        <p class="text-sm text-muted">Your agent's wallet needs a little ALGO for fees and must be opted in to the USDC asset (<span class="font-mono">31566704</span> on MainNet, <span class="font-mono">10458941</span> on TestNet). That's a one-time transaction from any Algorand wallet.</p>
+        <p class="text-sm text-muted">The MCP server keeps the key on your machine and enforces per-call and per-day caps (<span class="font-mono">BOTTRUNK_MAX_PER_CALL</span>, <span class="font-mono">BOTTRUNK_MAX_PER_DAY</span>); details in the <a class="link" href="https://github.com/JorgePadilla/BotTrunk/tree/main/mcp-hub#readme">bottrunk-mcp README</a>. Your agent's wallet needs a little ALGO for fees and must be opted in to the USDC asset (<span class="font-mono">31566704</span> on MainNet, <span class="font-mono">10458941</span> on TestNet). That's a one-time transaction from any Algorand wallet.</p>
       </section>
 
       <section id="402" class="flex flex-col gap-4 scroll-mt-24">
