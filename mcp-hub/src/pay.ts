@@ -7,7 +7,7 @@ import { SpendTracker } from "./spend.js";
 import type { Wallet } from "./wallet.js";
 
 /** Sent as the User-Agent on paid calls; keep in step with package.json. */
-const VERSION = "0.1.1";
+const VERSION = "0.2.0";
 
 /** What a paid call hands back to the tool layer. */
 export interface PaidResult {

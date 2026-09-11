@@ -104,7 +104,7 @@ export async function balances(config: Config, address: string, fetchImpl: typeo
 export async function optInToUsdc(config: Config, wallet: Wallet, network: string, mnemonic: string): Promise<string> {
   const assetId = USDC_ASSET[network];
   if (!assetId) throw new Error(`Unknown network ${network}`);
-  const algod = new algosdk.Algodv2("", config.algod[network], "");
+  const algod = new algosdk.Algodv2("", config.algod[network]);
   const params = await algod.getTransactionParams().do();
   const txn = algosdk.makeAssetTransferTxnWithSuggestedParamsFromObject({
     sender: wallet.address,

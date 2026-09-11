@@ -12,6 +12,7 @@ import { createPayingFetch } from "../pay.js";
 import { buildServer } from "../server.js";
 import { SpendCapError, SpendTracker } from "../spend.js";
 import { createWallet, ensureReady, loadWallet, walletFromMnemonic } from "../wallet.js";
+import { buildFundGroup, simulateFundGroup } from "../fund.js";
 import { catalogBody, startFakeGateway, type FakeGateway } from "./fake_gateway.js";
 
 // Quiet the AVM scheme's console.log so test output stays readable.
@@ -289,5 +290,82 @@ describe("readiness", () => {
     assert.equal(ready.optedIn, true);
     assert.equal(ready.usdc, 1.5);
     fs.rmSync(home, { recursive: true, force: true });
+  });
+});
+
+describe("one-approval funding group", () => {
+  let gw: FakeGateway;
+  const MNEMONIC = algosdk.secretKeyToMnemonic(algosdk.generateAccount().sk);
+  const wallet = walletFromMnemonic(MNEMONIC, "env");
+  const OPERATOR = "UTWS33TM7IT7NINJSFWS5KVGL73G4ERJMYDKHF7KE4WDXHYO4L7V2PNMRE";
+
+  before(async () => {
+    gw = await startFakeGateway();
+  });
+  after(async () => {
+    await gw.close();
+  });
+
+  function config(): Config {
+    return loadConfig({ BOTTRUNK_HOME: tmpHome(), BOTTRUNK_MNEMONIC: "unused", BOTTRUNK_ALGOD_TESTNET: gw.url });
+  }
+
+  async function build(overrides: Partial<Parameters<typeof buildFundGroup>[0]> = {}) {
+    return buildFundGroup({
+      config: config(),
+      wallet,
+      mnemonic: MNEMONIC,
+      network: TESTNET,
+      operator: OPERATOR,
+      usdcAtomic: 500_000n,
+      ...overrides,
+    });
+  }
+
+  it("puts the opt-in between the two operator transfers, so USDC can never arrive first", async () => {
+    const group = await build();
+
+    assert.equal(group.txns.length, 3);
+    assert.equal(group.txns[0].type, "pay");
+    assert.equal(group.txns[1].type, "axfer");
+    assert.equal(group.txns[2].type, "axfer");
+    assert.equal(group.txns[1].sender.toString(), wallet.address, "only the key holder can sign an opt-in");
+    assert.equal(group.txns[2].sender.toString(), OPERATOR);
+    assert.equal(group.agentIndex, 1);
+  });
+
+  it("pools every fee onto the operator, so the agent needs no ALGO of its own", async () => {
+    const group = await build();
+
+    assert.equal(group.txns[1].fee, 0n);
+    assert.equal(group.txns[2].fee, 0n);
+    assert.ok(group.txns[0].fee >= 3000n, "transaction 0 covers the whole group");
+  });
+
+  it("assigns one group id across all three, which is why it must be built before anyone signs", async () => {
+    const group = await build();
+    const ids = group.txns.map((t) => Buffer.from(t.group ?? new Uint8Array()).toString("base64"));
+
+    assert.equal(new Set(ids).size, 1);
+    assert.equal(ids[0], group.groupId);
+    assert.ok(group.agentSigned.length > 0);
+  });
+
+  it("asks the chain whether the group works, and reports the node's own verdict when it does not", async () => {
+    const good = await simulateFundGroup(config(), await build());
+    assert.equal(good.ok, true);
+    assert.equal(good.round, 64948542);
+
+    gw.simulateFails = true;
+    const bad = await simulateFundGroup(config(), await build());
+    gw.simulateFails = false;
+    assert.equal(bad.ok, false);
+    assert.match(String(bad.failure), /must optin/);
+  });
+
+  it("refuses the shapes that cannot mean anything", async () => {
+    await assert.rejects(build({ operator: "not-an-address" }), /not an Algorand address/);
+    await assert.rejects(build({ operator: wallet.address }), /cannot be the same account/);
+    await assert.rejects(build({ usdcAtomic: 0n }), /funds no USDC/);
   });
 });

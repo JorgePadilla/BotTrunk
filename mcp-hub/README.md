@@ -17,9 +17,31 @@ Requires Node 20+.
 # 1. Create the agent's wallet and print its address
 npx bottrunk-mcp wallet
 
-# 2. Send it a little USDC on the Algorand network (and ~0.2 ALGO once), then opt in to USDC
-npx bottrunk-mcp wallet optin
+# 2. Fund it. Two sends to that address, in this order:
+#      0.3 ALGO   (0.1 for the account to exist, 0.1 to hold USDC, the rest for fees)
+#      the USDC you want this agent to be able to spend
+#    The USDC opt-in in between happens by itself on the first paid call.
 ```
+
+An agent cannot fund itself: an Algorand account needs ALGO before it can hold
+anything, and only the key holder can sign an ASA opt-in. USDC sent before the
+opt-in is **rejected, not held**, which is why the order matters.
+
+**Already run an Algorand account?** Skip all of it — put its 25 words in
+`BOTTRUNK_MNEMONIC` and the agent uses that account directly.
+
+**One approval instead of two sends:**
+
+```sh
+npx bottrunk-mcp wallet fund --from <your address> --usdc 5
+```
+
+Builds a single atomic group — fund, opt in, deliver USDC — signs the agent's
+opt-in, and checks the whole thing against real chain state with algod's
+`simulate` before anyone is asked to approve it. Nothing is submitted and
+nothing is spent by that check. You sign transactions 0 and 2 with your own
+wallet and submit all three together; all three land or none do, so the
+ordering trap cannot happen. The group expires in about 45 minutes.
 
 Then add the server to your client.
 
@@ -89,7 +111,8 @@ Services marked `coming_soon` in the catalog are listed but not exposed as tools
 | `BOTTRUNK_MAX_PER_CALL` | `1000` | Refuse any single call above this many USDC. |
 | `BOTTRUNK_MAX_PER_DAY` | `10000` | Refuse once today's total (UTC) would pass this many USDC. |
 | `BOTTRUNK_API` | `https://api.bottrunk.com` | Gateway base URL (catalog + paid endpoints). |
-| `ALGORAND_NETWORK` | `mainnet` | Network for `wallet optin` only; paid calls follow whatever the 402 says. |
+| `ALGORAND_NETWORK` | `mainnet` | Network for `wallet optin` and `wallet fund`; paid calls follow whatever the 402 says. |
+| `BOTTRUNK_OPERATOR` | — | Default `--from` address for `wallet fund`. |
 
 Pass them through your client's `env` block:
 

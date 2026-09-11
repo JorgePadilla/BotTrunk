@@ -10,6 +10,8 @@ export interface FakeGateway {
   payments: { header: string; body: unknown }[];
   close(): Promise<void>;
   priceAtomic: string;
+  /** Flip to make /v2/transactions/simulate answer the way a real node does for a doomed group. */
+  simulateFails: boolean;
 }
 
 const GENESIS_HASH = TESTNET.split(":")[1];
@@ -57,6 +59,7 @@ export function catalogBody(priceAtomic: string) {
 }
 
 export async function startFakeGateway(priceAtomic = "5000"): Promise<FakeGateway> {
+  const state = { simulateFails: false };
   const payments: FakeGateway["payments"] = [];
   const server = http.createServer(async (req, res) => {
     const url = new URL(req.url ?? "/", "http://x");
@@ -74,6 +77,21 @@ export async function startFakeGateway(priceAtomic = "5000"): Promise<FakeGatewa
         "genesis-id": "testnet-v1.0",
         "last-round": 1000,
         "min-fee": 1000,
+      });
+    }
+    // Enough of algod's simulate to prove we read the verdict and gate on it.
+    // `?fail=1` makes it answer the way a real node does for a group that
+    // cannot work, so both branches are covered.
+    if (url.pathname === "/v2/transactions/simulate") {
+      const failing = state.simulateFails;
+      return json(200, {
+        version: 2,
+        "last-round": 64948542,
+        "txn-groups": [
+          failing
+            ? { "failure-message": "receiver error: must optin, asset 10458941 missing from AGENT", "failed-at": [2], "txn-results": [] }
+            : { "txn-results": [{}, {}, {}] },
+        ],
       });
     }
     if (url.pathname.startsWith("/v2/accounts/")) {
@@ -143,6 +161,12 @@ export async function startFakeGateway(priceAtomic = "5000"): Promise<FakeGatewa
     url: base,
     payments,
     priceAtomic,
+    get simulateFails() {
+      return state.simulateFails;
+    },
+    set simulateFails(v: boolean) {
+      state.simulateFails = v;
+    },
     close: () => new Promise((resolve) => server.close(() => resolve())),
   };
 }
