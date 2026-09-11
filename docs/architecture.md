@@ -110,7 +110,11 @@ Class ↔ file: `Payments::VerifyPayment` → `app/services/payments/verify_paym
 
 ## 6. mcp-hub
 
-TypeScript, `@modelcontextprotocol/sdk`, stateless. On start (and every N minutes) it fetches `GET /api/v1/catalog` from the gateway and registers one MCP tool per endpoint (`scrape_markdown`, `pdf_extract`, …) with the input schema and price in the tool description. Calling a tool performs the x402 flow against the gateway using the agent's configured wallet. It never talks to the database and never holds keys server-side beyond the agent's own configuration.
+TypeScript, published to npm as **`bottrunk-mcp`** (`npx bottrunk-mcp`), stdio transport, stateless apart from two files under `~/.bottrunk/` on the agent's machine. On start it fetches `GET /api/v1/catalog` and registers one MCP tool per **live** service (`bottrunk_scrape_markdown`, …) with the catalog's input fields as the JSON schema and the price in the description, plus two free tools: `bottrunk_catalog` (discovery, includes coming-soon services) and `bottrunk_wallet` (address, balances, caps). A paid tool call goes through `@x402-avm/fetch` with an `ExactAvmScheme` per network (explicit algod URL — the scheme's default is TestNet) and a `ClientAvmSigner` built from the agent's key; the client copies `resource`, `accepted` and `extensions` from the 402 into the payload, so settles are tagged and Bazaar-cataloged like any other. Caps (`BOTTRUNK_MAX_PER_CALL`, `BOTTRUNK_MAX_PER_DAY`) are enforced in the client's `onBeforePaymentCreation` hook, before anything is signed; spend is tracked in `~/.bottrunk/spend.json` per UTC day.
+
+Wallet: `npx bottrunk-mcp wallet` generates a 25-word account into `~/.bottrunk/wallet.json` (0600) or `BOTTRUNK_MNEMONIC` supplies one; `wallet optin` does the USDC opt-in. The gateway never sees the key. Tests (`npm test`, node:test) drive the real x402 client through an in-process fake gateway + fake algod, including one full 402 → signed ASA transfer → 200 round trip and the stdio transport.
+
+Gateway side: `Catalog::Service#status` (`live` | `coming_soon`) is exposed by `/api/v1/catalog`; `POST /s/:slug` answers **503** for anything not live, before the 402, so placeholder services can be listed without ever charging anyone.
 
 ## 7. Cross-cutting
 

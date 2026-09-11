@@ -1,0 +1,54 @@
+{
+  "name": "bottrunk-mcp",
+  "version": "0.1.0",
+  "description": "MCP server that lets Claude, Cursor and any MCP agent buy BotTrunk services pay-per-call with USDC over x402 on Algorand — from the agent's own wallet.",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "bottrunk-mcp": "dist/cli.js"
+  },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "!dist/test",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsc -p tsconfig.json --watch",
+    "test": "npm run build && node --test \"dist/test/**/*.test.js\"",
+    "prepublishOnly": "npm test",
+    "start": "node dist/cli.js"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "x402",
+    "algorand",
+    "usdc",
+    "ai-agents",
+    "bottrunk"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JorgePadilla/BotTrunk.git",
+    "directory": "mcp-hub"
+  },
+  "homepage": "https://bottrunk.com/docs",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "@x402-avm/avm": "~2.6.1",
+    "@x402-avm/core": "~2.6.1",
+    "@x402-avm/fetch": "~2.6.1",
+    "algosdk": "^3.7.0",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.6.0"
+  }
+}

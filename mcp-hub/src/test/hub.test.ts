@@ -1,0 +1,236 @@
+import assert from "node:assert/strict";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import { after, before, describe, it } from "node:test";
+import algosdk from "algosdk";
+import { Client } from "@modelcontextprotocol/sdk/client/index.js";
+import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
+import { atomicToUsdc, loadConfig, TESTNET, usdcToAtomic, type Config } from "../config.js";
+import { inputSchema, liveServices, toolName } from "../catalog.js";
+import { createPayingFetch } from "../pay.js";
+import { buildServer } from "../server.js";
+import { SpendCapError, SpendTracker } from "../spend.js";
+import { createWallet, loadWallet, walletFromMnemonic } from "../wallet.js";
+import { catalogBody, startFakeGateway, type FakeGateway } from "./fake_gateway.js";
+
+// Quiet the AVM scheme's console.log so test output stays readable.
+console.log = () => {};
+
+function tmpHome(): string {
+  return fs.mkdtempSync(path.join(os.tmpdir(), "bottrunk-test-"));
+}
+
+function configFor(gw: FakeGateway, home: string, extra: NodeJS.ProcessEnv = {}): Config {
+  return loadConfig({
+    BOTTRUNK_HOME: home,
+    BOTTRUNK_API: gw.url,
+    BOTTRUNK_ALGOD_MAINNET: gw.url,
+    BOTTRUNK_ALGOD_TESTNET: gw.url,
+    ...extra,
+  });
+}
+
+describe("config", () => {
+  it("parses USDC amounts to µUSDC and back", () => {
+    assert.equal(usdcToAtomic("0.005"), 5000n);
+    assert.equal(usdcToAtomic("1000"), 1_000_000_000n);
+    assert.equal(atomicToUsdc(5000n), "0.005");
+    assert.equal(atomicToUsdc(1_000_000_000n), "1000");
+    assert.throws(() => usdcToAtomic("$5"), /Not a USDC amount/);
+  });
+
+  it("defaults to the production gateway and the agreed caps", () => {
+    const c = loadConfig({});
+    assert.equal(c.apiBase, "https://api.bottrunk.com");
+    assert.equal(c.maxPerCallAtomic, usdcToAtomic("1000"));
+    assert.equal(c.maxPerDayAtomic, usdcToAtomic("10000"));
+  });
+});
+
+describe("catalog mapping", () => {
+  const services = catalogBody("5000").services as Parameters<typeof liveServices>[0];
+
+  it("exposes only live services as tools", () => {
+    assert.deepEqual(liveServices(services).map((s) => s.slug), ["scrape-markdown"]);
+  });
+
+  it("derives MCP-safe tool names and a JSON schema from the fields", () => {
+    assert.equal(toolName("scrape-markdown"), "bottrunk_scrape_markdown");
+    const schema = inputSchema(services[0]) as { required: string[]; properties: Record<string, { type: string }> };
+    assert.deepEqual(schema.required, ["url"]);
+    assert.equal(schema.properties.selector.type, "string");
+  });
+});
+
+describe("wallet", () => {
+  it("creates a 0600 wallet file once and reloads the same address", () => {
+    const home = tmpHome();
+    const config = loadConfig({ BOTTRUNK_HOME: home });
+    assert.equal(loadWallet(config), null);
+    const created = createWallet(config);
+    assert.match(created.address, /^[A-Z2-7]{58}$/);
+    assert.equal(fs.statSync(config.walletFile).mode & 0o777, 0o600);
+    assert.equal(loadWallet(config)?.address, created.address);
+    assert.throws(() => createWallet(config), /already exists/);
+  });
+
+  it("prefers BOTTRUNK_MNEMONIC over the file", () => {
+    const account = algosdk.generateAccount();
+    const mnemonic = algosdk.secretKeyToMnemonic(account.sk);
+    const wallet = walletFromMnemonic(mnemonic, "env");
+    assert.equal(wallet.address, account.addr.toString());
+    assert.equal(wallet.signer.address, account.addr.toString());
+  });
+});
+
+describe("spend caps", () => {
+  it("refuses a call above the per-call cap", () => {
+    const home = tmpHome();
+    const config = loadConfig({ BOTTRUNK_HOME: home, BOTTRUNK_MAX_PER_CALL: "0.004" });
+    const spend = new SpendTracker(config);
+    assert.throws(() => spend.assertAllowed(5000n), SpendCapError);
+    assert.doesNotThrow(() => spend.assertAllowed(4000n));
+  });
+
+  it("accumulates a UTC-day total and resets the next day", () => {
+    const home = tmpHome();
+    const config = loadConfig({ BOTTRUNK_HOME: home, BOTTRUNK_MAX_PER_DAY: "0.01" });
+    let now = new Date("2026-09-11T23:59:00Z");
+    const spend = new SpendTracker(config, () => now);
+    spend.record(5000n);
+    spend.record(4000n);
+    assert.equal(spend.spentToday(), 9000n);
+    assert.throws(() => spend.assertAllowed(2000n), /today's cap/);
+    now = new Date("2026-09-12T00:01:00Z");
+    assert.equal(spend.spentToday(), 0n);
+    assert.doesNotThrow(() => spend.assertAllowed(2000n));
+  });
+});
+
+describe("paid call through the real x402 client", () => {
+  let gw: FakeGateway;
+  before(async () => {
+    gw = await startFakeGateway("5000");
+  });
+  after(() => gw.close());
+
+  it("answers a 402 with a signed USDC transfer and records the spend", async () => {
+    const home = tmpHome();
+    const config = configFor(gw, home);
+    const wallet = createWallet(config);
+    const spend = new SpendTracker(config);
+    const paid = createPayingFetch(config, wallet, spend);
+
+    const result = await paid(`${gw.url}/s/scrape-markdown`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url: "https://example.com" }),
+    });
+
+    assert.equal(result.status, 200);
+    assert.equal(JSON.parse(result.body).markdown, "# https://example.com");
+    assert.equal(result.payment?.amountUsdc, "0.005");
+    assert.equal(result.payment?.transaction, "FAKETXN");
+    assert.equal(spend.spentToday(), 5000n);
+
+    // The payload the gateway received is a complete v2 envelope with a signed ASA transfer.
+    assert.equal(gw.payments.length, 1);
+    const envelope = gw.payments[0].body as {
+      x402Version: number;
+      accepted: { network: string; amount: string };
+      resource: { url: string };
+      extensions: Record<string, unknown>;
+      payload: { paymentGroup: string[]; paymentIndex: number };
+    };
+    assert.equal(envelope.x402Version, 2);
+    assert.equal(envelope.accepted.network, TESTNET);
+    assert.equal(envelope.accepted.amount, "5000");
+    assert.ok(envelope.resource.url.endsWith("/s/scrape-markdown"));
+    assert.ok("bazaar" in envelope.extensions);
+    assert.equal(envelope.payload.paymentGroup.length, 1);
+    const signed = algosdk.decodeSignedTransaction(Buffer.from(envelope.payload.paymentGroup[0], "base64"));
+    assert.equal(signed.txn.sender.toString(), wallet.address);
+    assert.equal(signed.txn.assetTransfer?.amount, 5000n);
+    assert.equal(signed.txn.assetTransfer?.assetIndex, 10458941n);
+  });
+
+  it("does not sign anything when the price is over the per-call cap", async () => {
+    const home = tmpHome();
+    const config = configFor(gw, home, { BOTTRUNK_MAX_PER_CALL: "0.001" });
+    const wallet = createWallet(config);
+    const spend = new SpendTracker(config);
+    const paid = createPayingFetch(config, wallet, spend);
+    const before = gw.payments.length;
+    await assert.rejects(
+      paid(`${gw.url}/s/scrape-markdown`, { method: "POST", body: "{}" }),
+      /above the per-call cap/,
+    );
+    assert.equal(gw.payments.length, before);
+    assert.equal(spend.spentToday(), 0n);
+  });
+});
+
+describe("MCP server", () => {
+  let gw: FakeGateway;
+  before(async () => {
+    gw = await startFakeGateway("5000");
+  });
+  after(() => gw.close());
+
+  async function connect(withWallet: boolean) {
+    const home = tmpHome();
+    const config = configFor(gw, home);
+    const wallet = withWallet ? createWallet(config) : null;
+    const spend = new SpendTracker(config);
+    const paidFetch = wallet ? createPayingFetch(config, wallet, spend) : null;
+    const server = await buildServer({ config, wallet, spend, paidFetch, version: "test" });
+    const [clientT, serverT] = InMemoryTransport.createLinkedPair();
+    await server.connect(serverT);
+    const client = new Client({ name: "test", version: "0" });
+    await client.connect(clientT);
+    return { client, wallet };
+  }
+
+  it("lists the free tools plus one paid tool per live service", async () => {
+    const { client } = await connect(true);
+    const { tools } = await client.listTools();
+    assert.deepEqual(
+      tools.map((t) => t.name).sort(),
+      ["bottrunk_catalog", "bottrunk_scrape_markdown", "bottrunk_wallet"],
+    );
+    const paidTool = tools.find((t) => t.name === "bottrunk_scrape_markdown")!;
+    assert.match(paidTool.description ?? "", /0\.005 USDC/);
+    assert.deepEqual((paidTool.inputSchema as { required: string[] }).required, ["url"]);
+  });
+
+  it("catalog and wallet tools work and mention coming-soon services", async () => {
+    const { client, wallet } = await connect(true);
+    const cat = await client.callTool({ name: "bottrunk_catalog", arguments: {} });
+    const catText = (cat.content as { text: string }[])[0].text;
+    assert.match(catText, /bottrunk_scrape_markdown/);
+    assert.match(catText, /coming_soon \(not callable yet\)/);
+
+    const w = await client.callTool({ name: "bottrunk_wallet", arguments: {} });
+    const wText = (w.content as { text: string }[])[0].text;
+    assert.match(wText, new RegExp(wallet!.address));
+    assert.match(wText, /1\.500000 USDC/);
+    assert.match(wText, /1000 USDC per call/);
+  });
+
+  it("pays and returns the service output with a receipt line", async () => {
+    const { client } = await connect(true);
+    const r = await client.callTool({ name: "bottrunk_scrape_markdown", arguments: { url: "https://example.com" } });
+    assert.equal(r.isError ?? false, false);
+    const text = (r.content as { text: string }[])[0].text;
+    assert.match(text, /"markdown": "# https:\/\/example.com"/);
+    assert.match(text, /paid 0\.005 USDC · txn FAKETXN/);
+  });
+
+  it("explains how to create a wallet instead of failing silently", async () => {
+    const { client } = await connect(false);
+    const r = await client.callTool({ name: "bottrunk_scrape_markdown", arguments: { url: "https://example.com" } });
+    assert.equal(r.isError, true);
+    assert.match((r.content as { text: string }[])[0].text, /npx bottrunk-mcp wallet/);
+  });
+});
