@@ -24,7 +24,7 @@
 
       <section id="connect" class="flex flex-col gap-4 scroll-mt-24">
         <h2 class="text-[22px] font-semibold tracking-tight">Connect your agent</h2>
-        <p class="text-muted">Any x402-capable client handles the 402 → pay → retry dance for you. Pick the one that matches your stack.</p>
+        <p class="text-muted">Any x402-capable client handles the 402 → pay → retry dance for you. Pick the one that matches your stack — or follow the <%= link_to "step-by-step setup for twelve agent clients", connect_path, class: "underline underline-offset-4 hover:text-base-content" %>.</p>
         <%= render Docs::CodeSnippetComponent.new(snippets: {
           "MCP" => <<~SH.strip,
             # Claude Desktop, Claude Code, Cursor — any MCP host. Every live service becomes a tool.

@@ -71,7 +71,7 @@ class CatalogControllerTest < ActionDispatch::IntegrationTest
     get service_url("verify-business-hn")
     assert_response :success
     assert_select "a[href^='mailto:hello@bottrunk.com']", text: "Request access"
-    assert_select "a[href='/docs#connect']", text: "Pay from your agent", count: 0
+    assert_select "a[href='/connect']", text: "Pay from your agent", count: 0
     assert_match "On request", response.body
   end
 
@@ -81,7 +81,7 @@ class CatalogControllerTest < ActionDispatch::IntegrationTest
     assert_select "h1", text: "Scrape URL to Markdown"
     assert_select "pre", minimum: 1
     assert_select "a[role=tab][href='#call']", text: "Call it"
-    assert_select "a[href='/docs#connect']", text: "Pay from your agent"
+    assert_select "a[href='/connect']", text: "Pay from your agent"
   end
 
   test "theme cookie drives data-theme" do

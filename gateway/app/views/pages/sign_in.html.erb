@@ -8,7 +8,7 @@
   </div>
 
   <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-    <%= render(Ui::CardComponent.new(href: docs_path(anchor: "connect"))) do %>
+    <%= render(Ui::CardComponent.new(href: connect_path)) do %>
       <div class="flex flex-col gap-3">
         <span class="size-9 rounded-full bg-base-200 flex items-center justify-center"><%= icon("plug") %></span>
         <h2 class="font-semibold tracking-tight">I'm building an agent</h2>

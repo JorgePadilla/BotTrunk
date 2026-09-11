@@ -13,6 +13,22 @@ class PagesControllerTest < ActionDispatch::IntegrationTest
     assert_includes response.body, "/api/v1/catalog"
   end
 
+  test "connect lists every client with its own snippet" do
+    get connect_url
+    assert_response :success
+    assert_select "h1", text: "Connect your agent"
+    assert_select "h3", count: Docs::McpClient.all.size
+    assert_select "section#openclaw h3", text: "OpenClaw"
+    assert_select "section#hermes h3", text: "Hermes Agent"
+    assert_match "openclaw mcp add bottrunk", response.body
+    assert_match "mcp_servers:", response.body
+    assert_match "context_servers", response.body          # Zed
+    assert_match "&quot;servers&quot;", response.body      # VS Code, not mcpServers
+    assert_match "MCPServerStdio", response.body
+    assert_match "npx bottrunk-mcp wallet", response.body
+    assert_select "a[href='https://docs.openclaw.ai/tools/mcp']"
+  end
+
   test "llms.txt is rendered from the catalog so prices cannot drift" do
     get "/llms.txt"
     assert_response :success
@@ -55,12 +71,12 @@ class PagesControllerTest < ActionDispatch::IntegrationTest
   test "sign_in explains agents need no account" do
     get sign_in_url
     assert_response :success
-    assert_select "a[href='/docs#connect']"
+    assert_select "a[href='/connect']"
     assert_select "a[href='/sell#early-access']"
   end
 
   test "every page carries a description and OpenGraph tags (the Bazaar reads them)" do
-    [ root_url, docs_url, sell_url, service_url("scrape-markdown") ].each do |url|
+    [ root_url, docs_url, connect_url, sell_url, service_url("scrape-markdown") ].each do |url|
       get url
       assert_select "meta[name=description][content]"
       assert_select "meta[property='og:title'][content]"
@@ -68,17 +84,12 @@ class PagesControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
-  test "llms.txt is served" do
-    get "/llms.txt"
-    assert_response :success
-    assert_includes response.body, "/api/v1/catalog"
-  end
-
   test "navbar links resolve" do
     get root_url
     assert_select "nav a[href='/docs']"
     assert_select "nav a[href='/sell']"
-    assert_select "a[href='/sign_in']"
-    assert_select "a[href='/docs#connect']"
+    assert_select "nav a[href='/connect']"
+    assert_select "a[href='/connect']", text: "Connect agent"
+    assert_select "a[href='/sign_in']", count: 0, message: "there are no accounts, so no dead Sign in"
   end
 end

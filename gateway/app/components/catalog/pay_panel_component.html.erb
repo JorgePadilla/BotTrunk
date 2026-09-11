@@ -23,7 +23,7 @@
     <%= render(Ui::ButtonComponent.new(variant: :primary, class: "w-full", icon: "mail", href: request_link)) { "Request access" } %>
     <p class="text-xs text-muted text-center">A person does this work — we agree scope and timing by email, then it is a normal paid call.</p>
   <% else %>
-    <%= render(Ui::ButtonComponent.new(variant: :primary, class: "w-full", icon: "zap", href: "/docs#connect")) { "Pay from your agent" } %>
+    <%= render(Ui::ButtonComponent.new(variant: :primary, class: "w-full", icon: "zap", href: "/connect")) { "Pay from your agent" } %>
     <p class="text-xs text-muted text-center">Any x402 client · settles on Algorand in ~4 s</p>
   <% end %>
 </div>

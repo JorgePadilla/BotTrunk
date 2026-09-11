@@ -23,6 +23,7 @@ Rails.application.routes.draw do
   get "docs", to: "pages#docs"
   get "sell", to: "pages#sell"
   post "sell", to: "seller_inquiries#create", as: :seller_inquiries
+  get "connect", to: "pages#connect"
   get "sign_in", to: "pages#sign_in"
   get "llms.txt", to: "pages#llms", as: :llms, format: false
 

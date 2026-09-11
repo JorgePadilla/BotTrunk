@@ -17,6 +17,8 @@ claude mcp add bottrunk -- npx -y bottrunk-mcp     # Claude Code
 # Claude Desktop / Cursor: { "mcpServers": { "bottrunk": { "command": "npx", "args": ["-y", "bottrunk-mcp"] } } }
 ```
 
+Steps for Claude Desktop, Cursor, VS Code, Cline, Windsurf, Zed, OpenClaw, Hermes Agent, Goose, the OpenAI Agents SDK and LangChain: [bottrunk.com/connect](https://bottrunk.com/connect).
+
 Ask the agent *"what can you buy on BotTrunk?"* (free), then *"scrape https://example.com/pricing to markdown"* — it costs 0.09 USDC, paid from the agent's own wallet, and comes back with the transaction id. Details, caps and configuration in [`mcp-hub/README.md`](mcp-hub/README.md).
 
 No MCP? Any x402 client works — Python, TypeScript or plain curl — see [bottrunk.com/docs](https://bottrunk.com/docs).

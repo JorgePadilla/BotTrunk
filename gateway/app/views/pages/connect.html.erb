@@ -1,0 +1,71 @@
+<% content_for :title, "Connect your agent — BotTrunk" %>
+<% content_for :description, "Point Claude Code, Claude Desktop, Cursor, VS Code, Cline, Windsurf, Zed, OpenClaw, Hermes, Goose, the OpenAI Agents SDK or LangChain at BotTrunk, and let your agent pay per call in USDC." %>
+<% content_for :nav_active, "Connect" %>
+
+<div class="flex flex-col gap-16 py-16 md:py-24">
+  <div class="flex flex-col gap-4 max-w-2xl">
+    <h1 class="text-4xl md:text-[40px] font-semibold tracking-[-0.03em] leading-[1.15]">Connect your agent</h1>
+    <p class="text-lg text-muted">One npm package, <span class="font-mono">bottrunk-mcp</span>, turns every service in the catalog into a tool your agent can call and pay for. It runs on your machine, signs with a wallet only you control, and refuses anything above the caps you set.</p>
+  </div>
+
+  <section class="flex flex-col gap-6">
+    <div class="flex flex-col gap-2 max-w-2xl">
+      <h2 class="text-[26px] font-semibold tracking-tight">First: give the agent a wallet</h2>
+      <p class="text-muted">Do this once, wherever the agent runs. The key is written to <span class="font-mono">~/.bottrunk/wallet.json</span> (mode 0600) and never leaves the machine — BotTrunk only ever sees a signed transfer.</p>
+    </div>
+    <div class="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_320px] gap-8 items-start">
+      <%= render Docs::CodeSnippetComponent.new(snippets: { "Terminal" => <<~SH.strip })
+        npx bottrunk-mcp wallet        # creates the wallet, prints its address
+        # send that address a little USDC on Algorand, and ~0.2 ALGO once
+        npx bottrunk-mcp wallet optin  # one-time USDC opt-in
+      SH
+      %>
+      <div class="flex flex-col gap-3 text-sm text-muted">
+        <p>Already have an agent wallet? Set <span class="font-mono">BOTTRUNK_MNEMONIC</span> instead and skip the file.</p>
+        <p>Spending caps travel with the config: <span class="font-mono">BOTTRUNK_MAX_PER_CALL</span> and <span class="font-mono">BOTTRUNK_MAX_PER_DAY</span>, in USDC. The server refuses anything above them before it signs.</p>
+        <p><%= link_to "Package and options on npm →", "https://www.npmjs.com/package/bottrunk-mcp", class: "underline underline-offset-4 hover:text-base-content" %></p>
+      </div>
+    </div>
+  </section>
+
+  <hr class="hairline">
+
+  <section class="flex flex-col gap-3">
+    <h2 class="text-[26px] font-semibold tracking-tight">Then: point your client at it</h2>
+    <p class="text-muted max-w-2xl">Every snippet below comes from that client's own documentation. Same server, same tools, twelve different ways of spelling it.</p>
+    <nav class="flex flex-wrap gap-2 mt-3" aria-label="Clients">
+      <% Docs::McpClient.all.each do |client| %>
+        <a href="#<%= client.slug %>" class="btn btn-sm btn-outline border-base-300 text-muted hover:text-base-content rounded-full h-[34px] px-3.5 font-medium"><%= client.name %></a>
+      <% end %>
+    </nav>
+  </section>
+
+  <div class="flex flex-col gap-14">
+    <% Docs::McpClient.all.each do |client| %>
+      <section id="<%= client.slug %>" class="flex flex-col gap-3.5 scroll-mt-24">
+        <div class="flex items-baseline justify-between gap-4 flex-wrap">
+          <h3 class="text-[22px] font-semibold tracking-tight"><%= client.name %></h3>
+          <span class="text-[13px] text-muted"><%= client.kind %></span>
+        </div>
+        <p class="text-muted"><%= client.summary %></p>
+        <%= render Docs::CodeSnippetComponent.new(snippets: { client.label => client.snippet }) %>
+        <p class="text-sm text-muted"><%= client.note %> <%= link_to "#{client.name} docs →", client.docs_url, class: "underline underline-offset-4 hover:text-base-content", target: "_blank", rel: "noopener" %></p>
+      </section>
+    <% end %>
+  </div>
+
+  <hr class="hairline">
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-12 lg:gap-20 items-start">
+    <section class="flex flex-col gap-3.5">
+      <h2 class="text-[22px] font-semibold tracking-tight">Something else?</h2>
+      <p class="text-muted">Anything that speaks MCP over stdio works: the command is always <span class="font-mono">npx -y bottrunk-mcp</span>. And nothing forces you to use MCP at all — the endpoints are plain HTTP with an x402 paywall, so curl, Python or TypeScript work the same way.</p>
+      <div class="mt-2"><%= render(Ui::ButtonComponent.new(href: "/docs", icon: "arrow-right")) { "Read the protocol docs" } %></div>
+    </section>
+    <section class="flex flex-col gap-3.5">
+      <h2 class="text-[22px] font-semibold tracking-tight">What your agent gets</h2>
+      <p class="text-muted">Two free tools — <span class="font-mono">bottrunk_catalog</span> to see what exists and what it costs, <span class="font-mono">bottrunk_wallet</span> to check the balance and today's spend — plus one paid tool per live service. Ask it "what can you buy on BotTrunk?" to start.</p>
+      <div class="mt-2"><%= render(Ui::ButtonComponent.new(href: root_path, icon: "arrow-right")) { "See the catalog" } %></div>
+    </section>
+  </div>
+</div>

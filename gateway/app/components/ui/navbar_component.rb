@@ -2,7 +2,7 @@
 
 module Ui
   class NavbarComponent < ApplicationComponent
-    LINKS = [ [ "Catalog", "/" ], [ "Docs", "/docs" ], [ "Sell", "/sell" ] ].freeze
+    LINKS = [ [ "Catalog", "/" ], [ "Connect", "/connect" ], [ "Docs", "/docs" ], [ "Sell", "/sell" ] ].freeze
 
     def initialize(active: "Catalog")
       @active = active.presence || "Catalog"

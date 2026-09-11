@@ -15,7 +15,7 @@
       <div class="hidden lg:block"><%= render Ui::SearchInputComponent.new(value: helpers.params[:q]) %></div>
       <%= render Ui::ThemeToggleComponent.new %>
       <%= render(Ui::ButtonComponent.new(size: :sm, href: "/sell")) { "Sell an API" } %>
-      <%= render(Ui::ButtonComponent.new(variant: :primary, size: :sm, href: "/docs#connect")) { "Connect agent" } %>
+      <%= render(Ui::ButtonComponent.new(variant: :primary, size: :sm, href: "/connect")) { "Connect agent" } %>
     </div>
   </div>
 </header>

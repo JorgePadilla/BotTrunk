@@ -15,6 +15,9 @@ class PagesController < ApplicationController
     @submitted = params[:submitted].present?
   end
 
+  def connect
+  end
+
   def sign_in
   end
 

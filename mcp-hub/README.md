@@ -39,7 +39,7 @@ Then add the server to your client.
 claude mcp add bottrunk -- npx -y bottrunk-mcp
 ```
 
-**Cursor** — `.cursor/mcp.json`:
+**Cursor** — `~/.cursor/mcp.json` (or `.cursor/mcp.json` per project):
 
 ```json
 {
@@ -50,6 +50,25 @@ claude mcp add bottrunk -- npx -y bottrunk-mcp
 ```
 
 Restart the client. Ask the agent *"what can you buy on BotTrunk?"* and then *"scrape https://example.com/pricing to markdown"* — the first is free, the second costs 0.09 USDC and comes back with the transaction id.
+
+## Other clients
+
+Same server everywhere; only the spelling changes. Full steps with links to each client's own docs: https://bottrunk.com/connect
+
+| Client | Where it goes |
+|---|---|
+| Claude Code | `claude mcp add bottrunk -- npx -y bottrunk-mcp` |
+| Claude Desktop | `claude_desktop_config.json` → `mcpServers` |
+| Cursor | `~/.cursor/mcp.json` → `mcpServers` |
+| VS Code (Copilot) | `.vscode/mcp.json` → **`servers`**, with `"type": "stdio"` |
+| Cline | `~/.cline/mcp.json` → `mcpServers` |
+| Windsurf | `~/.codeium/windsurf/mcp_config.json` → `mcpServers` |
+| Zed | `settings.json` → **`context_servers`** |
+| OpenClaw | `openclaw mcp add bottrunk --command npx --arg -y --arg bottrunk-mcp` |
+| Hermes Agent | `~/.hermes/config.yaml` → `mcp_servers` |
+| Goose | `goose configure` → Command-Line Extension → `npx -y bottrunk-mcp` |
+| OpenAI Agents SDK | `MCPServerStdio(params={"command": "npx", "args": ["-y", "bottrunk-mcp"]})` |
+| LangChain / LangGraph | `MultiServerMCPClient({"bottrunk": {...,"transport": "stdio"}})` |
 
 ## Tools
 

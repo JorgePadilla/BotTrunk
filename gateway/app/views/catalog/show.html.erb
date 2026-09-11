@@ -19,7 +19,7 @@
     </div>
     <div class="flex gap-2.5" data-controller="clipboard" data-clipboard-text-value="<%= @service.endpoint_url %>">
       <%= render(Ui::ButtonComponent.new(icon: "copy", data: { action: "clipboard#copy" })) { tag.span("Copy endpoint", data: { clipboard_target: "label" }) } %>
-      <%= render(Ui::ButtonComponent.new(variant: :primary, href: "/docs#connect")) { "Add to my agent" } %>
+      <%= render(Ui::ButtonComponent.new(variant: :primary, href: "/connect")) { "Add to my agent" } %>
     </div>
   </div>
 
