@@ -44,8 +44,8 @@ module Stats
       assert_equal @now.to_date, report.days.last.date
       assert_equal 2, report.days.last.page_views
       assert_equal 1, report.days.last.settled
-      assert_equal 1, report.days[-3].page_views
-      assert_equal 1, report.days[-3].settled
+      assert_equal 1, report.days[-4].page_views # the Firefox view, 3 days ago
+      assert_equal 1, report.days[-3].settled    # T2, 2 days ago
     end
 
     test "per-service rows, referrers, pages and clients" do
