@@ -23,14 +23,14 @@ Build phase and usage measurement run continuously until the review; the email s
 
 ## Qualification checklist (from the email)
 
-- [ ] Build and test the x402 endpoint on TestNet.
-- [ ] Deploy to MainNet with a public HTTPS endpoint (`api.bottrunk.com`).
-- [ ] Use the GoPlausible facilitator and enable Bazaar discovery.
-- [ ] Add the required `x402-global-challenge` tag.
-- [ ] Complete at least one real MainNet payment and confirm USDC is received.
-- [ ] Confirm the endpoint appears in the Bazaar and on the leaderboard.
-- [ ] Keep driving real usage through early October.
-- [ ] Submit the project via the Foundation's form before the late-September deadline.
+- [x] Build and test the x402 endpoint on TestNet. — Sept 10: `bin/pay` settled on TestNet (`CEIJ37…JS6Q` and others; see deploy.md incident log).
+- [x] Deploy to MainNet with a public HTTPS endpoint (`api.bottrunk.com`). — Live on Render since Sept 11; TLS on apex/api/www; `ALGORAND_NETWORK=mainnet`.
+- [x] Use the GoPlausible facilitator and enable Bazaar discovery. — `/verify` + `/settle` on facilitator.goplausible.xyz; 402 carries `extensions.bazaar`; x402 Doctor 9/9.
+- [x] Add the required `x402-global-challenge` tag. — In `accepts[0].extra.tag`, and echoed back by the Bazaar record (verified Sept 11).
+- [x] Complete at least one real MainNet payment and confirm USDC is received. — MainNet settles from the payer wallet (`JJZEUY73…DEJQ` first); gateway wallet `UTWS33…MRE` holds 15.02 USDC on MainNet.
+- [x] Confirm the endpoint appears in the Bazaar and on the leaderboard. — Verified Sept 11: `/discovery/resources` lists `POST https://api.bottrunk.com/s/scrape-markdown` (merchant `UTWS33…`); leaderboard shows **BotTrunk · BAZAAR · HACKATHON · api.bottrunk.com** at #88 of 89 ($0.005). Top-50 cutoff that day ≈ $0.30.
+- [ ] Keep driving real usage through early October. — **The open item.** Volume must come from other people's agents (one self-payment is enough; never script self-calls). See plan.md Phase 1: mcp-hub, "pay with wallet", distribution.
+- [ ] Submit the project via the Foundation's form before the late-September deadline. — Project-information form sent Sept 10 (Foundation confirmed by email). The *final* submission form (deadline **Sep 29, 11:45 pm ET**) has not arrived yet — watch the inbox.
 
 ## Mechanics (from the build & submit post)
 
