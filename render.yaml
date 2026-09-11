@@ -30,7 +30,7 @@ services:
       - key: BOTTRUNK_PUBLIC_HOST
         value: https://api.bottrunk.com
       - key: ALGORAND_NETWORK
-        value: testnet         # flip to mainnet once the gateway wallet is opted in to USDC 31566704
+        value: mainnet         # gateway wallet opted in to USDC 31566704 on Sept 11, 2026
       - key: APP_HOST
         value: bottrunk.com
 

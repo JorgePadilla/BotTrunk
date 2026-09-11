@@ -1,6 +1,6 @@
 # Deploying the gateway (Render)
 
-**Status (Sept 10, 2026):** live at https://bottrunk-gateway.onrender.com (service `srv-dahjcb6q1p3s73dqem4g`, Ohio; Postgres 18 `bottrunk-db`). First blueprint deploy succeeded on the first try (2m03s). Custom domains live since Sept 10: **https://bottrunk.com** (site), **https://api.bottrunk.com** (same service), `www` → apex. DNS at Namecheap: `A @ 216.24.57.1`, `CNAME www` and `CNAME api` → `bottrunk-gateway.onrender.com`. Still on TestNet; the MainNet switch is next.
+**Status (Sept 10, 2026):** live at https://bottrunk-gateway.onrender.com (service `srv-dahjcb6q1p3s73dqem4g`, Ohio; Postgres 18 `bottrunk-db`). First blueprint deploy succeeded on the first try (2m03s). Custom domains live since Sept 10: **https://bottrunk.com** (site), **https://api.bottrunk.com** (same service), `www` → apex. DNS at Namecheap: `A @ 216.24.57.1`, `CNAME www` and `CNAME api` → `bottrunk-gateway.onrender.com`. **MainNet since Sept 11, 2026** (`ALGORAND_NETWORK=mainnet` in `render.yaml`; gateway wallet opted in to USDC `31566704`).
 
 One Docker web service + one Postgres, described in `render.yaml` at the repo root. ~$13/month (Starter web $7 + Basic Postgres $6). Decided Sept 10, 2026 over Fly (managed Postgres there starts at $38) and Kamal on a VPS (ops time we don't have before the challenge deadline).
 
@@ -23,7 +23,7 @@ One Docker web service + one Postgres, described in `render.yaml` at the repo ro
 ## Going to MainNet (the challenge requirement)
 
 1. In Defly, switch the **gateway** account (`UTWS…MRE`) to MainNet, fund it with a few ALGO, **opt in to USDC `31566704`** (0.1 ALGO min balance + fee).
-2. Render → service → Environment → set `ALGORAND_NETWORK=mainnet` → Save (triggers a redeploy). `payTo` stays the same address — one wallet, two networks.
+2. The service is blueprint-managed: change `ALGORAND_NETWORK` in `render.yaml` and push (a dashboard edit would be overwritten on the next blueprint sync). `payTo` stays the same address — one wallet, two networks.
 3. `curl` the 402 again: `network` must now be `algorand:wGHE2Pwdvd7S12BL5FaOP20EGYesN73ktiC1qzkkit8=` and `asset` `31566704`.
 4. First real payment: the spike payer (`bin/agent-wallet`) uses the same key on both networks. `ALGORAND_NETWORK=mainnet bin/agent-wallet` shows its MainNet balances; send it ~0.5 ALGO and 1–2 USDC from Defly, `ALGORAND_NETWORK=mainnet bin/agent-wallet optin`, then `BOTTRUNK_URL=https://api.bottrunk.com bin/pay` (the client follows whatever network the 402 announces). Keep only small amounts on this hot key.
 5. Check https://facilitator.goplausible.xyz/dashboard/transactions (MAINNET) and `/dashboard/leaderboards`: BotTrunk should appear as a merchant with the `api.bottrunk.com` resource, and the Bazaar (`/discovery/resources`) should list the service with its description and schema.
