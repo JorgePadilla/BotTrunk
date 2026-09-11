@@ -19,7 +19,7 @@ module Notifications
 
     def call
       current = report
-      Deliver.call(AdminMailer.with(report: current.to_h).digest)
+      Deliver.call(AdminMailer.with(report: current.to_h).digest) if ApplicationMailer.admin_address
       Result.success(report: current)
     end
 

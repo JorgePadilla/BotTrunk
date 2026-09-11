@@ -12,8 +12,8 @@ module Notifications
     def call
       return Result.success(sent: false) if @order.blank?
 
-      Deliver.call(AdminMailer.with(order: @order).new_order)
-      Deliver.call(DepositMailer.with(order: @order).received)
+      Deliver.call(AdminMailer.with(order: @order).new_order) if ApplicationMailer.admin_address
+      Deliver.call(DepositMailer.with(order: @order).received) if @order.contact_email.present?
       Result.success(sent: true)
     end
   end

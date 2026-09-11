@@ -10,7 +10,7 @@ module Notifications
     def call
       return Result.success(sent: false) if @inquiry.blank?
 
-      Deliver.call(AdminMailer.with(inquiry: @inquiry).new_inquiry)
+      Deliver.call(AdminMailer.with(inquiry: @inquiry).new_inquiry) if ApplicationMailer.admin_address
       Deliver.call(SellerMailer.with(inquiry: @inquiry).acknowledgement)
       Result.success(sent: true)
     end

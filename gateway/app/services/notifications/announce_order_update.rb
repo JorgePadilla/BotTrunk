@@ -13,6 +13,7 @@ module Notifications
     def call
       action = MAILS[@order&.status]
       return Result.success(sent: false, reason: :nothing_to_say) if action.nil?
+      return Result.success(sent: false, reason: :no_recipient) if @order.contact_email.blank?
 
       Deliver.call(DepositMailer.with(order: @order).public_send(action))
       Result.success(sent: true)

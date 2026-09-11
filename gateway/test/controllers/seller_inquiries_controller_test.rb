@@ -19,10 +19,15 @@ class SellerInquiriesControllerTest < ActionDispatch::IntegrationTest
 
   test "a valid inquiry reaches us and acknowledges the seller" do
     with_admin_email do
-      assert_enqueued_emails 2 do
+      perform_enqueued_jobs do
         post seller_inquiries_url, params: { seller_inquiry: VALID }
       end
     end
+
+    # Enqueued is not sent. This went out for hours in production having only
+    # been enqueued, and nothing was ever delivered.
+    assert_equal 2, ActionMailer::Base.deliveries.size
+    assert_equal [ MailHelpers::ADMIN, "dev@example.com" ], ActionMailer::Base.deliveries.flat_map(&:to)
   end
 
   test "a submission is a request, not a listing" do

@@ -9,9 +9,14 @@ module Notifications
   # an error for the payer. Failures are logged; the ledger and the order are
   # the record of truth.
   #
-  # A mailer that decided not to send (no recipient) returns an
-  # ActionMailer::Base::NullMail, which has nothing to deliver — that is a
-  # success here, not a failure.
+  # **Nothing here may touch the message.** Reading `mail.to` processes the
+  # mailer, and Active Job then refuses to enqueue it — "you've accessed the
+  # message before asking to deliver it later" — because only the mailer's
+  # *arguments* travel with the job, so any change made here would be silently
+  # lost. A guard that read the recipient to check there was one broke every
+  # email in production, and the rescue below meant it did so quietly. Whether
+  # there is anyone to write to is decided by the caller, from the record,
+  # before the mail is built.
   class Deliver
     def initialize(mail:)
       @mail = mail
@@ -20,19 +25,11 @@ module Notifications
     def self.call(mail) = new(mail: mail).call
 
     def call
-      return Result.success(sent: false, reason: :no_recipient) unless deliverable?
-
       @mail.deliver_later
       Result.success(sent: true)
     rescue StandardError => e
-      Rails.logger.error("mail: could not enqueue #{describe}: #{e.class}: #{e.message}")
+      Rails.logger.error("mail: could not enqueue #{@mail.class.name}: #{e.class}: #{e.message}")
       Result.failure(e.message, code: :mail_error)
     end
-
-    private
-
-    def deliverable? = @mail.respond_to?(:to) && @mail.to.present?
-
-    def describe = @mail.try(:subject).presence || @mail.class.name
   end
 end
