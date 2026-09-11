@@ -1,5 +1,5 @@
 <% content_for :title, "Docs — BotTrunk" %>
-<% content_for :description, "How a paid x402 call works on BotTrunk: connect your agent (MCP, Python, TypeScript, curl), the 402 body, the payment header, networks." %>
+<% content_for :description, "How a paid x402 call works on BotTrunk: connect your agent (MCP, Python, TypeScript, curl), the 402 body, the payment header, the error contract and networks." %>
 <% content_for :nav_active, "Docs" %>
 
 <div class="flex flex-col gap-16 py-16 md:py-24">
@@ -16,9 +16,9 @@
         <p class="text-muted">The <a href="https://x402.org" class="underline underline-offset-4 hover:text-base-content">x402 protocol</a> turns the HTTP status code that was reserved for this in 1997 into a real payment flow. Four steps, about four seconds on Algorand:</p>
         <ol class="flex flex-col gap-3 text-sm list-decimal pl-5 marker:text-muted">
           <li><span class="font-medium">Ask.</span> <span class="text-muted">Your agent calls the endpoint. It gets a 402 whose body says what to pay, to whom, on which network.</span></li>
-          <li><span class="font-medium">Pay.</span> <span class="text-muted">The agent signs a USDC transfer for that amount and retries the same request with an <span class="font-mono">X-PAYMENT</span> header.</span></li>
+          <li><span class="font-medium">Pay.</span> <span class="text-muted">The agent signs a USDC transfer for that amount and retries the same request with a <span class="font-mono">PAYMENT-SIGNATURE</span> header.</span></li>
           <li><span class="font-medium">Verify &amp; fulfil.</span> <span class="text-muted">We check the payment with the facilitator, then run the service upstream. Nothing is charged if the upstream fails.</span></li>
-          <li><span class="font-medium">Settle.</span> <span class="text-muted">The transfer is submitted on-chain. The response carries an <span class="font-mono">X-PAYMENT-RESPONSE</span> header with the transaction id.</span></li>
+          <li><span class="font-medium">Settle.</span> <span class="text-muted">The transfer is submitted on-chain. The response carries a <span class="font-mono">PAYMENT-RESPONSE</span> header with the transaction id.</span></li>
         </ol>
       </section>
 
@@ -46,7 +46,7 @@
             r = session.post("#{@example_service.endpoint_url}",
                              json={"url": "https://example.com/pricing"})
             print(r.json()["markdown"])
-            print(r.headers["X-PAYMENT-RESPONSE"])                 # settlement receipt
+            print(r.headers["PAYMENT-RESPONSE"])                 # settlement receipt
           PY
           "TypeScript" => <<~TS.strip,
             // npm install @x402-avm/fetch @x402-avm/avm @x402-avm/core
@@ -93,11 +93,13 @@
             # 2. Pay and retry with the signed transfer, base64-encoded.
             curl -X POST #{@example_service.endpoint_url} \\
               -H "Content-Type: application/json" \\
-              -H "X-PAYMENT: <base64 payment payload>" \\
+              -H "PAYMENT-SIGNATURE: <base64 payment payload>" \\
               -d '{"url": "https://example.com/pricing"}'
           SH
         }) %>
-        <p class="text-sm text-muted">The MCP server keeps the key on your machine and enforces per-call and per-day caps (<span class="font-mono">BOTTRUNK_MAX_PER_CALL</span>, <span class="font-mono">BOTTRUNK_MAX_PER_DAY</span>); details in the <a class="link" href="https://github.com/JorgePadilla/BotTrunk/tree/main/mcp-hub#readme">bottrunk-mcp README</a>. Your agent's wallet needs a little ALGO for fees and must be opted in to the USDC asset (<span class="font-mono">31566704</span> on MainNet, <span class="font-mono">10458941</span> on TestNet). That's a one-time transaction from any Algorand wallet.</p>
+        <p class="text-sm text-muted">The MCP server keeps the key on your machine and enforces per-call and per-day caps (<span class="font-mono">BOTTRUNK_MAX_PER_CALL</span>, <span class="font-mono">BOTTRUNK_MAX_PER_DAY</span>); details in the <a class="link" href="https://www.npmjs.com/package/bottrunk-mcp">bottrunk-mcp README on npm</a>.</p>
+        <p class="text-sm text-muted"><span class="font-medium text-base-content">What your wallet needs.</span> Build the transfer as an atomic group naming <span class="font-mono">extra.feePayer</span> and the facilitator covers the network fee, so the call costs you USDC only; sign a plain single transfer instead and you pay its ~0.001 ALGO. Either way the paying account must be opted in to USDC (<span class="font-mono">31566704</span>), and an Algorand account holding an asset needs about 0.1 ALGO of minimum balance. Budget <span class="font-medium text-base-content">~0.2 ALGO once</span>, then USDC per call — an agent funded with USDC and no ALGO cannot pay at all.</p>
+        <p class="text-sm text-muted"><span class="font-medium text-base-content">Can't run a local command?</span> <span class="font-mono">https://mcp.bottrunk.com/mcp</span> is a remote MCP server with five free, read-only tools — including <span class="font-mono">bottrunk_payment_instructions</span>, which returns the live price, network, asset and <span class="font-mono">payTo</span> for any service so your agent can price a call before committing to it. It holds no keys and can never spend. <%= link_to "Setup for every client", connect_path, class: "underline underline-offset-4 hover:text-base-content" %>.</p>
       </section>
 
       <section id="402" class="flex flex-col gap-4 scroll-mt-24">
@@ -117,8 +119,8 @@
 
       <section id="payment" class="flex flex-col gap-4 scroll-mt-24">
         <h2 class="text-[22px] font-semibold tracking-tight">The payment header</h2>
-        <p class="text-muted"><span class="font-mono">X-PAYMENT</span> is base64 of a JSON object carrying the signed Algorand transaction group. Clients build it; you only need to know the shape if you're writing one.</p>
-        <%= render Docs::CodeSnippetComponent.new(snippets: { "X-PAYMENT (decoded)" => <<~JSON.strip })
+        <p class="text-muted"><span class="font-mono">PAYMENT-SIGNATURE</span> is base64 of a JSON object carrying the signed Algorand transaction group. Clients build it; you only need to know the shape if you're writing one.</p>
+        <%= render Docs::CodeSnippetComponent.new(snippets: { "PAYMENT-SIGNATURE (decoded)" => <<~JSON.strip })
           {
             "x402Version": 2,
             "scheme": "exact",
@@ -130,7 +132,12 @@
           }
         JSON
         %>
-        <p class="text-muted">On success the response carries <span class="font-mono">X-PAYMENT-RESPONSE</span>: base64 JSON with <span class="font-mono">success</span>, <span class="font-mono">transaction</span> (the Algorand txn id), <span class="font-mono">network</span> and <span class="font-mono">payer</span>. If verification fails you get the 402 again with an <span class="font-mono">error</span>; if the upstream service fails you get a <span class="font-mono">502</span> and are not charged.</p>
+        <p class="text-muted">On success the response carries <span class="font-mono">PAYMENT-RESPONSE</span>: base64 JSON with <span class="font-mono">success</span>, <span class="font-mono">transaction</span> (the Algorand txn id), <span class="font-mono">network</span> and <span class="font-mono">payer</span>.</p>
+        <div class="rounded-field border hairline bg-base-200 p-5 flex flex-col gap-2">
+          <span class="text-[13px] font-medium">Both header vocabularies work, everywhere</span>
+          <p class="text-sm text-muted">x402 v2 renamed the headers; we read and emit both, so a v1 client needs no changes. Requests: <span class="font-mono">PAYMENT-SIGNATURE</span>, alias <span class="font-mono">X-PAYMENT</span> — v2 wins if you send both. The 402 also carries <span class="font-mono">PAYMENT-REQUIRED</span>, the base64 of the same challenge body, so you can read the price without parsing JSON. The 200 carries <span class="font-mono">PAYMENT-RESPONSE</span> and <span class="font-mono">X-PAYMENT-RESPONSE</span> with identical values.</p>
+          <p class="text-sm text-muted">CORS is open (<span class="font-mono">Access-Control-Allow-Origin: *</span>) with the payment headers allowed on the request and exposed on the response, so a browser wallet or dApp can pay these endpoints directly.</p>
+        </div>
       </section>
 
       <section id="networks" class="flex flex-col gap-4 scroll-mt-24">
@@ -139,9 +146,9 @@
           <table class="w-full text-sm">
             <thead><tr class="border-b hairline text-left text-muted"><th class="py-2 pr-4 font-medium">Network</th><th class="py-2 pr-4 font-medium">CAIP-2 id</th><th class="py-2 font-medium">USDC asset</th></tr></thead>
             <tbody>
-              <% Payments::Networks::ALGORAND.each do |name, net| %>
+              <% Payments::Networks::ALGORAND.slice(Rails.configuration.x402.network).each do |name, net| %>
                 <tr class="border-b hairline align-top">
-                  <td class="py-3 pr-4">Algorand <%= name.to_s.titleize %><%= " (current)" if name == Rails.configuration.x402.network %></td>
+                  <td class="py-3 pr-4">Algorand <%= name.to_s.titleize %></td>
                   <td class="py-3 pr-4 font-mono text-xs break-all"><%= net[:caip2] %></td>
                   <td class="py-3 font-mono"><%= net[:usdc_asa] %></td>
                 </tr>
@@ -149,7 +156,56 @@
             </tbody>
           </table>
         </div>
+        <p class="text-sm text-muted">MainNet is the only network served. The code supports TestNet, but there is no public TestNet endpoint, so the smallest real call is $0.02 — rehearse for free with the 402 probe or <span class="font-mono">bottrunk_payment_instructions</span> instead.</p>
         <p class="text-sm text-muted">Payments are verified and settled by the <a href="https://facilitator.goplausible.xyz/docs" class="underline underline-offset-4 hover:text-base-content">GoPlausible facilitator</a>. BotTrunk never holds your keys and never holds your funds: the transfer goes from your wallet to the receiving address in one on-chain transaction.</p>
+      </section>
+
+      <section id="errors" class="flex flex-col gap-6 scroll-mt-24">
+        <div class="flex flex-col gap-3">
+          <h2 class="text-[22px] font-semibold tracking-tight">Errors, limits and retries</h2>
+          <p class="text-muted">The contract an agent needs in order to fail safely. Every one of these strings is what the gateway actually returns.</p>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead><tr class="border-b hairline text-left text-muted"><th class="py-2 pr-4 font-medium">Status</th><th class="py-2 pr-4 font-medium"><span class="font-mono">error</span> in the body</th><th class="py-2 font-medium">Charged</th></tr></thead>
+            <tbody>
+              <% [
+                [ "200", "—", "Yes. <span class=\"font-mono\">PAYMENT-RESPONSE</span> carries the transaction id." ],
+                [ "402", "<span class=\"font-mono\">Payment required</span>", "No — you sent no payment header. This is the probe." ],
+                [ "402", "<span class=\"font-mono\">missing or malformed X-PAYMENT header</span>, <span class=\"font-mono\">unsupported x402 version</span>, <span class=\"font-mono\">scheme mismatch</span>, <span class=\"font-mono\">network mismatch</span>, or the facilitator's own <span class=\"font-mono\">invalidReason</span>", "No. Verification refused it." ],
+                [ "402", "<span class=\"font-mono\">settlement failed</span>", "No — but the work was done. See below." ],
+                [ "422", "A validation message: <span class=\"font-mono\">url must be a public http(s) URL</span>, <span class=\"font-mono\">url resolves to a private address</span>, <span class=\"font-mono\">selector \"…\" matched nothing on this page</span>, and so on.", "No." ],
+                [ "502", "<span class=\"font-mono\">fetch failed with N</span>, <span class=\"font-mono\">page too large</span>, <span class=\"font-mono\">fetch failed: …</span>", "No. The upstream let us down." ],
+                [ "503", "<span class=\"font-mono\">&lt;name&gt; is not live yet</span>, with <span class=\"font-mono\">status</span> and <span class=\"font-mono\">catalog</span>", "No. Listed for discovery, not callable." ]
+              ].each do |status, error, charged| %>
+                <tr class="border-b hairline align-top">
+                  <td class="py-3 pr-4 font-mono"><%= status %></td>
+                  <td class="py-3 pr-4 text-muted"><%= raw error %></td>
+                  <td class="py-3 text-muted"><%= raw charged %></td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+        <div class="rounded-field border hairline bg-base-200 p-5 flex flex-col gap-2">
+          <span class="text-[13px] font-medium">The one retry that can cost you twice</span>
+          <p class="text-sm text-muted">A 402, 422, 502 or 503 means nothing settled, so retrying is free. <span class="font-mono">settlement failed</span> is different: verification passed, the service already ran, and the transfer did not settle as far as we could tell. If it did land on-chain anyway, signing a fresh payment pays for the same work twice. Check the payer address on <a href="https://allo.info" class="underline underline-offset-4 hover:text-base-content">an explorer</a> before re-signing. An agent whose rule is "on 402, sign and retry" should make an exception for this string.</p>
+        </div>
+        <table class="w-full text-sm">
+          <tbody>
+            <% [
+              [ "Client timeout", "Allow at least 30 seconds. Fetch plus verify plus settle measures about 4.6 s end to end, and built-in services time out at 20 s on their own. The per-service latency published on this site measures fulfilment only — it does not include settlement, so do not budget from it." ],
+              [ "Rate limits", "None published. Be reasonable; abusive traffic is blocked at the edge rather than metered." ],
+              [ "Idempotency", "A signed payment is consumed when it settles, so never replay the same signature after a client-side timeout. Check the explorer first, then sign a fresh payment if nothing landed." ],
+              [ "Catalog status", "<span class=\"font-mono\">live</span> services are priced and callable. <span class=\"font-mono\">on_request</span> services are real work done by people, arranged by email first; their endpoints answer 503, so nothing can be charged by accident." ]
+            ].each do |label, body| %>
+              <tr class="border-b hairline align-top">
+                <td class="py-3 pr-6 w-44 font-medium whitespace-nowrap"><%= label %></td>
+                <td class="py-3 text-muted"><%= raw body %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
       </section>
 
       <section id="api" class="flex flex-col gap-4 scroll-mt-24">
@@ -167,16 +223,16 @@
     <aside class="flex flex-col gap-10 lg:pt-1.5 lg:sticky lg:top-8">
       <nav class="flex flex-col gap-2 text-sm" aria-label="On this page">
         <span class="text-[13px] font-medium text-muted">On this page</span>
-        <% [ [ "How a paid call works", "#how" ], [ "Connect your agent", "#connect" ], [ "The 402 response", "#402" ], [ "The payment header", "#payment" ], [ "Networks", "#networks" ], [ "Catalog API", "#api" ] ].each do |label, anchor| %>
+        <% [ [ "How a paid call works", "#how" ], [ "Connect your agent", "#connect" ], [ "The 402 response", "#402" ], [ "The payment header", "#payment" ], [ "Networks", "#networks" ], [ "Errors, limits and retries", "#errors" ], [ "Catalog API", "#api" ] ].each do |label, anchor| %>
           <a href="<%= anchor %>" class="text-muted hover:text-base-content"><%= label %></a>
         <% end %>
       </nav>
       <hr class="hairline">
       <%= render Gateway::CallTimelineComponent.new(heading: "A call, end to end", stamp: "~4 s", steps: [
         { title: "402 Payment Required", meta: "#{@requirements.amount} µUSDC · #{@example_service.slug}" },
-        { title: "X-PAYMENT verified", meta: "facilitator /verify" },
+        { title: "PAYMENT-SIGNATURE verified", meta: "facilitator /verify" },
         { title: "Upstream responded", meta: "200 OK · timed" },
-        { title: "Settled on Algorand", meta: "X-PAYMENT-RESPONSE · txn id" }
+        { title: "Settled on Algorand", meta: "PAYMENT-RESPONSE · txn id" }
       ]) %>
       <hr class="hairline">
       <div class="flex flex-col gap-3">

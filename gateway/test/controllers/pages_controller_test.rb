@@ -44,6 +44,31 @@ class PagesControllerTest < ActionDispatch::IntegrationTest
     assert_no_match(/pdf-extract/, response.body)
   end
 
+  test "llms.txt states the wallet needs ALGO once, and does not advertise a TestNet we do not serve" do
+    get "/llms.txt"
+
+    assert_match "~0.2 ALGO once", response.body
+    assert_match "cannot pay at all", response.body
+    assert_match "MainNet** only", response.body
+    assert_no_match(/10458941/, response.body)
+  end
+
+  test "llms.txt publishes the error contract and the retry hazard" do
+    get "/llms.txt"
+
+    assert_match "settlement failed", response.body
+    assert_match "pays twice", response.body
+    assert_match "selector", response.body
+    assert_match "PAYMENT-REQUIRED", response.body
+  end
+
+  test "no page links to the private repository" do
+    [ root_path, docs_path, connect_path, sell_path ].each do |path|
+      get path
+      assert_no_match(/github\.com\/JorgePadilla/, response.body, path)
+    end
+  end
+
   test "docs still renders when no payTo is configured" do
     original = Rails.configuration.x402.pay_to
     Rails.configuration.x402.pay_to = nil

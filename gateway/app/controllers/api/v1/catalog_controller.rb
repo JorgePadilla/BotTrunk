@@ -25,7 +25,8 @@ module Api
           slug: s.slug, name: s.name, summary: s.summary, description: s.description, category: s.category,
           provider: s.provider, endpoint: s.endpoint_url, method: "POST", status: s.status,
           price: { amount: s.price_atomic.to_s, asset: "USDC", decimals: 6 },
-          inputs: s.inputs.map(&:to_h), outputs: s.outputs.map(&:to_h)
+          inputs: s.inputs.map(&:to_h), outputs: s.outputs.map(&:to_h),
+          behaviour: s.documented_behaviour.map { |label, body| { topic: label, detail: body.delete("`") } }
         }
       end
     end

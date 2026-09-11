@@ -16,6 +16,10 @@ module Api
         assert_equal "https://api.bottrunk.com/s/scrape-markdown", scrape["endpoint"]
         assert_equal "url", scrape["inputs"][0]["name"]
         assert_equal "live", scrape["status"]
+        topics = scrape["behaviour"].map { |b| b["topic"] }
+        assert_includes topics, "A selector that matches nothing"
+        assert_includes topics, "Private addresses"
+        assert_includes scrape["behaviour"].find { |b| b["topic"] == "Method" }["detail"], "POST"
 
         assert_equal "on_request", services.find { |s| s["slug"] == "verify-business-hn" }["status"]
         assert_equal "live", services.find { |s| s["slug"] == "deposit-bac-1000" }["status"]

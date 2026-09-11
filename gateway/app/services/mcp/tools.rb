@@ -91,7 +91,9 @@ module Mcp
         ],
         easier: "Run `npx bottrunk-mcp` on the machine your agent controls — it creates a wallet, answers 402s and enforces your spending caps. Setup for twelve clients: https://bottrunk.com/connect",
         facilitator: Rails.configuration.x402.facilitator_url,
-        fee_payer: "The facilitator pays the Algorand network fee, so you need USDC only."
+        algo_required: "Build the transfer as an atomic group with extra.feePayer and the facilitator covers the network fee, so the call itself costs you USDC only; " \
+                       "sign a plain transfer instead and you pay its ~0.001 ALGO yourself. Either way the paying account must be opted in to the USDC asset, " \
+                       "which needs about 0.1 ALGO of Algorand minimum balance. Budget ~0.2 ALGO once, then USDC per call."
       )
     end
 

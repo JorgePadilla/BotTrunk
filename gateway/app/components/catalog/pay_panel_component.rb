@@ -18,17 +18,20 @@ module Catalog
 
     def variants = @variants
 
-    def price_suffix
-      parts = [ "USDC per call" ]
-      parts << metrics.performance if metrics&.any?
-      parts << "measured over #{metrics.calls} #{'call'.pluralize(metrics.calls)}" if metrics&.any?
-      parts.compact.join(" · ")
-    end
+    # The price line stays a price line. Measured numbers go in the facts
+    # below it, where there is room to say what they actually measure —
+    # "p50 38 ms" next to a price invites an agent to budget a 38 ms timeout
+    # for a call that takes four seconds to settle.
+    def price_suffix = "USDC per call"
 
     def facts
       rows = [ [ "Network", service.network ], [ "Asset", service.asset ], [ "Facilitator", service.facilitator ], [ "Provider", service.provider.delete_prefix("By ") ] ]
       rows << [ "Priced in", "L#{helpers.number_with_delimiter(service.price_hnl)} at today's rate" ] if service.lempira?
-      rows << [ "Paid calls", metrics.calls.to_s ] if metrics&.any?
+      return rows unless metrics&.any?
+
+      rows << [ "Paid calls", metrics.calls.to_s ]
+      rows << [ "Fulfilment", "p50 #{metrics.latency}, settlement extra" ] if metrics.latency
+      rows << [ "Reliability", metrics.reliability ] if metrics.reliability
       rows
     end
 

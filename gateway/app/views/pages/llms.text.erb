@@ -12,7 +12,27 @@ Every service is `POST https://api.bottrunk.com/s/<slug>` with a JSON body.
 2. Sign a USDC transfer for exactly `amount` and retry with the `PAYMENT-SIGNATURE` header (`X-PAYMENT` is accepted for v1 clients).
 3. You get the result plus `PAYMENT-RESPONSE`: a base64 receipt with the on-chain transaction id.
 
-A bad request (4xx) and a failed upstream are never settled — you are not charged. The facilitator pays the Algorand network fee, so an agent needs USDC only.
+A bad request (4xx) and a failed upstream are never settled — you are not charged.
+
+**What your wallet needs.** Build the transfer as an atomic group naming `extra.feePayer` and the facilitator covers the network fee, so the call costs you USDC only; sign a plain single transfer instead and you pay its ~0.001 ALGO. Either way the paying account must be opted in to USDC asset 31566704, and an Algorand account holding an asset needs about 0.1 ALGO of minimum balance. Budget **~0.2 ALGO once**, then USDC per call. An agent funded with USDC and no ALGO cannot pay at all.
+
+## What you get back, and whether it costs you
+
+| Status | `error` in the body | Charged |
+|---|---|---|
+| 200 | — | yes, `PAYMENT-RESPONSE` carries the transaction id |
+| 402 | `Payment required` | no — you sent no payment header |
+| 402 | `missing or malformed X-PAYMENT header`, `unsupported x402 version`, `scheme mismatch`, `network mismatch`, or the facilitator's own `invalidReason` | no |
+| 402 | `settlement failed` | no — verification passed and the work ran, but the transfer did not settle |
+| 422 | a validation message (`url must be a public http(s) URL`, `url resolves to a private address`, `selector "…" matched nothing on this page`, …) | no |
+| 502 | `fetch failed with N`, `page too large`, `fetch failed: …` | no |
+| 503 | `<name> is not live yet`, with `status` and `catalog` | no — listed for discovery, not callable |
+
+**Retry rules.** A 402, 422, 502 or 503 means nothing was settled, so retrying is free. The one to handle carefully is `settlement failed`: the service already did the work, and if the transfer did land on-chain despite the error, signing a fresh payment pays twice. Check the payer address on an explorer before re-signing, or call `GET /orders/{order_id}` for human-fulfilled services. Everything else is safe to retry.
+
+**Timeouts.** Allow at least 30 s per paid call: fetching plus verify plus settle has measured around 4.6 s end to end, and built-in services themselves time out at 20 s. The per-service latency published on the site measures fulfilment only, not settlement.
+
+**Rate limits.** None published today. Be reasonable; abusive traffic gets blocked at the edge.
 
 ## MCP
 
@@ -29,9 +49,12 @@ Setup for Claude Code, Claude Desktop, Cursor, VS Code, Cline, Windsurf, Zed, Op
 
 ## Services
 
+Every built-in service shares these limits: pages over 2 MB are refused (`page too large`), connect times out at 5 s and the whole fetch at 20 s, at most 3 redirects are followed, requests go out as `BotTrunk/0.1 (+https://bottrunk.com/docs)`, hostnames resolving to private/loopback/link-local space are refused with 422 before any request is made, and the endpoints are POST-only. Per-service behaviour is in `behaviour[]` on https://api.bottrunk.com/api/v1/catalog/{slug} — read it before you pay, it is the part that is not in the schema.
+
 <% @services.each do |service| %>
 - **<%= service.slug %>** — <%= service.summary %> <%= service.lempira? ? "Priced from the Banco Central de Honduras reference rate (about #{usdc(service.price_atomic, decimals: 2)} for L#{number_with_delimiter(service.price_hnl)} today)." : "#{usdc(service.price_atomic)} USDC per call." %><%= " Not callable yet — write to hello@bottrunk.com to arrange it." if service.on_request? %> Endpoint: <%= service.endpoint_url %>
-<% end %>
+<% service.behaviour.each do |label, body| %>  - <%= label %>: <%= body.delete("`") %>
+<% end %><% end %>
 
 ## Catalog and status
 
@@ -45,5 +68,8 @@ Setup for Claude Code, Claude Desktop, Cursor, VS Code, Cline, Windsurf, Zed, Op
 ## Payments
 
 - Protocol: x402 v2, scheme `exact`. Facilitator: https://facilitator.goplausible.xyz
-- Networks: Algorand MainNet (USDC asset 31566704) and TestNet (USDC asset 10458941).
+- Network: Algorand **MainNet** only (USDC asset 31566704). There is no public TestNet endpoint — the smallest real call is $0.02.
+- Rehearse for free before you spend: the 402 probe costs nothing, and https://mcp.bottrunk.com/mcp exposes `bottrunk_payment_instructions`, which returns the live price, network, asset and payTo for any service.
+- Headers: request `PAYMENT-SIGNATURE` (alias `X-PAYMENT`); 402 `PAYMENT-REQUIRED`; 200 `PAYMENT-RESPONSE` (alias `X-PAYMENT-RESPONSE`). Both vocabularies work on every endpoint.
+- CORS is open (`Access-Control-Allow-Origin: *`) and the payment headers are allowed and exposed, so a browser wallet can pay directly.
 - Contact: hello@bottrunk.com

@@ -84,6 +84,22 @@ class CatalogControllerTest < ActionDispatch::IntegrationTest
     assert_select "a[href='/connect']", text: "Pay from your agent"
   end
 
+  test "a built-in service publishes how it behaves, including what it refuses" do
+    get service_url("scrape-markdown")
+
+    assert_select "h2", text: "How it behaves"
+    assert_select "a[role=tab][href='#behaviour']", text: "Behaviour"
+    assert_match "Refused with 422 and not charged", response.body
+    assert_match "BotTrunk/0.1", response.body
+    assert_match "render_js", response.body
+  end
+
+  test "a human-fulfilled service has no built-in limits to publish" do
+    get service_url("verify-business-hn")
+
+    assert_select "a[role=tab][href='#behaviour']", count: 0
+  end
+
   test "theme cookie drives data-theme" do
     cookies[:theme] = "bottrunk-dark"
     get root_url

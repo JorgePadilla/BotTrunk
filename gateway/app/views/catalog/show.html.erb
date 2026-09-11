@@ -23,7 +23,7 @@
     </div>
   </div>
 
-  <%= render Ui::TabsComponent.new(tabs: [ [ "Overview", "#overview" ], [ "Call it", "#call" ], [ "Input", "#input" ], [ "Output", "#output" ] ], active: "Overview") %>
+  <%= render Ui::TabsComponent.new(tabs: [ [ "Overview", "#overview" ], [ "Call it", "#call" ] ] + (@service.documented_behaviour.any? ? [ [ "Behaviour", "#behaviour" ] ] : []) + [ [ "Input", "#input" ], [ "Output", "#output" ] ], active: "Overview") %>
 
   <div class="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_360px] gap-12 lg:gap-20 items-start">
     <section class="flex flex-col gap-12">
@@ -70,6 +70,23 @@
         }) %>
       </div>
 
+      <% if @service.documented_behaviour.any? %>
+        <div id="behaviour" class="flex flex-col gap-3.5 scroll-mt-24">
+          <h2 class="text-[22px] font-semibold tracking-tight">How it behaves</h2>
+          <p class="text-muted">The decisions this service makes on your behalf, and the ones that end in a refusal. A 4xx is never settled, so a refusal costs you nothing.</p>
+          <table class="w-full text-sm">
+            <tbody>
+              <% @service.documented_behaviour.each do |label, body| %>
+                <tr class="border-b hairline align-top">
+                  <td class="py-3 pr-6 w-44 font-medium"><%= label %></td>
+                  <td class="py-3 text-muted"><%= inline_code(body) %></td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      <% end %>
+
       <% if @service.human_fulfilled? %>
         <div class="flex flex-col gap-3.5">
           <h2 class="text-[22px] font-semibold tracking-tight">Who does the work</h2>
@@ -93,7 +110,7 @@
       <%= render Gateway::CallTimelineComponent.new(stamp: @metrics.any? ? "last #{@metrics.calls} #{'call'.pluralize(@metrics.calls)}" : "how a call runs", steps: [
         { title: "402 Payment Required", meta: "#{number_with_delimiter(@service.price_atomic)} µUSDC requested" },
         { title: "Payment verified", meta: "PAYMENT-SIGNATURE · #{@service.facilitator}" },
-        { title: "Work done", meta: @metrics.any? ? "p50 #{@metrics.latency}" : (@service.human_fulfilled? ? "by a person, within the stated window" : "in process, no upstream hop") },
+        { title: "Work done", meta: @metrics.any? ? "p50 #{@metrics.latency}, fulfilment only" : (@service.human_fulfilled? ? "by a person, within the stated window" : "in process, no upstream hop") },
         { title: "Settled on-chain", meta: "receipt returned · seller 85%" }
       ]) %>
     </aside>

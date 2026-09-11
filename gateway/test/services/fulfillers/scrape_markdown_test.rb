@@ -43,6 +43,36 @@ module Fulfillers
       assert_not_includes out["markdown"], "# Pricing"
     end
 
+    test "a selector that matches nothing is refused, not silently widened to the whole page" do
+      stub_request(:get, "https://example.com/pricing").to_return(status: 200, body: HTML)
+      result = ScrapeMarkdown.new(input: { "url" => "https://example.com/pricing", "selector" => "#nope" }).call
+
+      assert_equal 422, result[:status]
+      assert_includes JSON.parse(result[:body])["error"], "matched nothing"
+    end
+
+    test "a malformed selector is refused rather than raising" do
+      stub_request(:get, "https://example.com/pricing").to_return(status: 200, body: HTML)
+      result = ScrapeMarkdown.new(input: { "url" => "https://example.com/pricing", "selector" => "h2[" }).call
+
+      assert_equal 422, result[:status]
+      assert_includes JSON.parse(result[:body])["error"], "not a valid CSS selector"
+    end
+
+    test "a URL that answers with JSON is refused, not returned as markdown" do
+      stub_request(:get, "https://example.com/api").to_return(status: 200, body: '{"a":1}', headers: { "Content-Type" => "application/json; charset=utf-8" })
+      result = ScrapeMarkdown.new(input: { "url" => "https://example.com/api" }).call
+
+      assert_equal 422, result[:status]
+      assert_includes JSON.parse(result[:body])["error"], "not an HTML page"
+    end
+
+    test "a server that sends no content-type still gets scraped" do
+      stub_request(:get, "https://example.com/bare").to_return(status: 200, body: HTML)
+
+      assert_equal 200, ScrapeMarkdown.new(input: { "url" => "https://example.com/bare" }).call[:status]
+    end
+
     test "rejects non-http and private URLs as 422 without fetching" do
       [ "ftp://x", "not a url", "", "http://localhost/admin", "http://db.internal/", "http://nxdomain.test/" ].each do |url|
         result = ScrapeMarkdown.new(input: { "url" => url }).call

@@ -9,6 +9,11 @@ module Catalog
     CACHE_KEY = "catalog/metrics"
     TTL = 60.seconds
 
+    # A percentage over a handful of calls is not a success rate — "100%" from
+    # five calls reads as a guarantee and is worth nothing. Below this we
+    # publish the raw count instead and let the reader judge.
+    MIN_FOR_RATE = 20
+
     Row = Data.define(:slug, :calls, :p50_ms, :success_rate, :volume, :last_at) do
       def any? = calls.to_i.positive?
 
@@ -25,8 +30,14 @@ module Catalog
         percent == percent.round ? "#{percent.round}%" : "#{percent.round(1)}%"
       end
 
-      # "p50 812 ms · 100% success" — nil until there is something real to say.
-      def performance = any? ? [ ("p50 #{latency}" if latency), ("#{success} success" if success) ].compact.join(" · ").presence : nil
+      def reliability
+        return nil unless any? && success_rate
+        return "#{success} success" if calls >= MIN_FOR_RATE
+
+        failures = (calls * (1 - success_rate)).round
+        failures.zero? ? "none failed yet" : "#{failures} of #{calls} failed"
+      end
+
     end
 
     Totals = Data.define(:calls, :volume, :services, :last_at) do

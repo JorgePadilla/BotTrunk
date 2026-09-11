@@ -9,7 +9,7 @@ module Catalog
   # `all`, `find(slug)`, and the readers below — so no component changes.
   class Service < Data.define(:slug, :name, :summary, :description, :category, :provider, :price_usdc,
                               :network, :asset, :facilitator, :inputs, :outputs, :upstream_url, :fulfiller,
-                              :status, :price_hnl, :family, :family_label, :family_summary)
+                              :status, :price_hnl, :family, :family_label, :family_summary, :behaviour)
     CATEGORIES = %w[Payments Data Verification Translation].freeze
 
     # live        — callable now, priced, in the Bazaar
@@ -32,7 +32,22 @@ module Catalog
     # `family:` groups variants of one product (the deposit tiers) into a
     # single catalog card.
     def initialize(upstream_url: DEFAULT_UPSTREAM, fulfiller: nil, status: "live", price_hnl: nil, price_usdc: nil,
-                   family: nil, family_label: nil, family_summary: nil, **attrs) = super
+                   family: nil, family_label: nil, family_summary: nil, behaviour: [], **attrs) = super
+
+    # What a payer is actually buying, beyond the schema: the decisions this
+    # service makes on their behalf. Published because the alternative is that
+    # people discover them by paying. The limits every built-in shares
+    # (`Fulfillers::Base`) are appended by `shared_behaviour`.
+    def documented_behaviour = behaviour + (built_in? ? shared_behaviour : [])
+
+    def shared_behaviour
+      [
+        [ "Size and time", "Pages over 2 MB are refused with `page too large`. Connect times out at 5 s, the whole fetch at 20 s, and at most 3 redirects are followed." ],
+        [ "Who we look like", "Requests go out as `BotTrunk/0.1 (+https://bottrunk.com/docs)`. Sites that block unknown agents will block this one." ],
+        [ "Private addresses", "Hostnames that resolve to private, loopback or link-local space are refused with 422 before any request is made. Do not point this at localhost or an intranet." ],
+        [ "Method", "`POST` only. A `GET` on the same path returns this page." ]
+      ]
+    end
 
     def built_in? = fulfiller.present?
 
@@ -122,6 +137,14 @@ module Catalog
       summary: "Any public page as clean, LLM-ready markdown.",
       description: "Any public page as clean, LLM-ready markdown. Nav, scripts and footers stripped; links and structure preserved. Optional CSS selector to scope the extraction.",
       price_usdc: 0.09,
+      behaviour: [
+        [ "What is stripped", "`script`, `style`, `noscript`, `nav`, `footer`, `header`, `aside`, `form`, `iframe`, `svg`, `template` — removed before conversion, so their text never reaches you." ],
+        [ "What is kept", "Headings, paragraphs, lists, tables, links and emphasis, as GitHub-flavored markdown. Runs of blank lines are collapsed." ],
+        [ "Where it reads from", "Your `selector` if you give one. Otherwise the first of `main`, `article`, `body`." ],
+        [ "A selector that matches nothing", "Refused with 422 and not charged, rather than quietly returning the whole page. A malformed selector is refused the same way." ],
+        [ "Non-HTML URLs", "A URL that answers with JSON, a PDF or an image is refused with 422. A server that sends no content-type at all is scraped anyway." ],
+        [ "No JavaScript", "The page is fetched, not rendered. A site that builds its content client-side returns almost nothing. `render_js` is accepted and ignored." ]
+      ],
       network: "Algorand MainNet", asset: "USDC", facilitator: "GoPlausible",
       inputs: [
         Field.new("url", "string", "Public http(s) URL to fetch.", "https://example.com/pricing"),

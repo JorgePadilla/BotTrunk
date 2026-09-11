@@ -15,7 +15,7 @@ module Catalog
       assert_not row.any?
       assert_nil row.latency
       assert_nil row.success
-      assert_nil row.performance
+      assert_nil row.reliability
       assert_equal 0, row.volume
     end
 
@@ -30,8 +30,22 @@ module Catalog
       assert_equal 1_000.0, row.p50_ms
       assert_equal "1.0 s", row.latency
       assert_equal "75%", row.success
-      assert_equal "p50 1.0 s · 75% success", row.performance
+      assert_equal "1 of 4 failed", row.reliability
       assert_equal 360_000, row.volume
+    end
+
+    test "a handful of calls reports counts, not a success percentage" do
+      3.times { call_for("scrape-markdown", latency: 100) }
+      row = Metrics.for("scrape-markdown")
+
+      assert_equal "none failed yet", row.reliability
+      assert_equal "100%", row.success
+    end
+
+    test "past the threshold it becomes a rate" do
+      Metrics::MIN_FOR_RATE.times { call_for("scrape-markdown", latency: 100) }
+
+      assert_equal "100% success", Metrics.for("scrape-markdown").reliability
     end
 
     test "latency under a second reads in milliseconds" do
