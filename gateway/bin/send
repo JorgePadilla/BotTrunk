@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# Send ALGO or USDC from the machine-local payer wallet. See script/send.py.
+#   bin/send <to> --usd 10 | --algo 2.5 | --usdc 1     (ALGORAND_NETWORK=mainnet for real money)
+set -euo pipefail
+cd "$(dirname "$0")/.."
+PY="$(bin/python-env)"
+exec "$PY" script/send.py "$@"
