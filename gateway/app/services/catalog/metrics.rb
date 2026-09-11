@@ -70,7 +70,7 @@ module Catalog
         Arel.sql("count(*)"),
         Arel.sql("coalesce(sum(amount), 0)"),
         Arel.sql("max(created_at)"),
-        Arel.sql("percentile_cont(0.5) within group (order by upstream_latency_ms)"),
+        Arel.sql("percentile_cont(0.5) within group (order by upstream_latency_ms::float8)"),
         Arel.sql("count(*) filter (where upstream_status is null or upstream_status < 400)")
       ).to_h do |slug, count, volume, last_at, p50, ok|
         [ slug, Row.new(slug: slug, calls: count, p50_ms: p50&.to_f, success_rate: count.positive? ? ok.to_f / count : nil, volume: volume.to_i, last_at: last_at) ]
