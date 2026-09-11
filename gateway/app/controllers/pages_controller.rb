@@ -2,6 +2,8 @@
 
 # Static-ish marketing and documentation pages. No state, no services.
 class PagesController < ApplicationController
+  after_action :track_page_view
+
   def docs
     @example_service = Catalog::Service.find("scrape-markdown")
     @requirements = Payments::BuildRequirements.new(service: @example_service, config: docs_config).call[:requirements]

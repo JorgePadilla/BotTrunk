@@ -104,8 +104,29 @@ class PaidCallsControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :service_unavailable
     assert_equal "coming_soon", response.parsed_body["status"]
+    assert_equal "coming_soon", Event.last.name
     assert_empty @adapter.verify_calls
     assert_not_requested upstream
+  end
+
+  test "a 402 probe and a rejected payment are recorded as events, a settled call is not" do
+    stub_upstream(body: { ok: true }.to_json)
+
+    post paid_call_path("pdf-extract"), params: "{}", headers: { "Content-Type" => "application/json", "User-Agent" => "bottrunk-mcp/0.1.0" }
+    assert_equal [ "payment_required" ], Event.pluck(:name)
+    assert_equal "bottrunk-mcp", Event.last.client
+    assert_equal "pdf-extract", Event.last.service_slug
+
+    Payments::Adapters.stubs_current = FakePaymentAdapter.new(valid: false)
+    post paid_call_path("pdf-extract"), params: "{}", headers: { "Content-Type" => "application/json", "X-PAYMENT" => payment_header }
+    assert_equal "payment_rejected", Event.last.name
+    assert_equal "fake: invalid", Event.last.properties["reason"]
+
+    Payments::Adapters.stubs_current = @adapter
+    assert_no_difference("Event.count") do
+      post paid_call_path("pdf-extract"), params: "{}", headers: { "Content-Type" => "application/json", "X-PAYMENT" => payment_header }
+    end
+    assert_response :success
   end
 
   test "unknown service is 404" do

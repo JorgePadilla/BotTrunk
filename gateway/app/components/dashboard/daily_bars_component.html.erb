@@ -1,0 +1,13 @@
+<figure class="flex flex-col gap-2">
+  <figcaption class="flex items-baseline justify-between text-[13px] text-muted">
+    <span><%= label %></span>
+    <span class="font-mono tabular-nums"><%= total %> · peak <%= max %></span>
+  </figcaption>
+  <svg viewBox="0 0 <%= Dashboard::DailyBarsComponent::WIDTH %> <%= Dashboard::DailyBarsComponent::HEIGHT %>" preserveAspectRatio="none" class="w-full h-20 text-base-content" role="img" aria-label="<%= label %>, last <%= series.size %> days">
+    <line x1="0" y1="<%= Dashboard::DailyBarsComponent::HEIGHT - 0.5 %>" x2="<%= Dashboard::DailyBarsComponent::WIDTH %>" y2="<%= Dashboard::DailyBarsComponent::HEIGHT - 0.5 %>" stroke="currentColor" stroke-opacity="0.15"/>
+    <% bars.each do |b| %>
+      <rect x="<%= b[:x] %>" y="<%= b[:y] %>" width="<%= b[:w] %>" height="<%= b[:h] %>" fill="currentColor" fill-opacity="<%= b[:h].zero? ? 0 : 0.85 %>"><title><%= b[:title] %></title></rect>
+    <% end %>
+  </svg>
+  <div class="flex justify-between text-[11px] text-muted font-mono"><span><%= series.first&.first %></span><span><%= series.last&.first %></span></div>
+</figure>

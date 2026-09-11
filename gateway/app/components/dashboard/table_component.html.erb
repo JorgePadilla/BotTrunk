@@ -1,0 +1,24 @@
+<% if rows.empty? %>
+  <p class="text-sm text-muted"><%= empty %></p>
+<% else %>
+  <div class="overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="border-b hairline text-[12px] uppercase tracking-wide text-muted">
+          <% columns.each_with_index do |col, i| %>
+            <th class="py-2 pr-4 font-medium <%= numeric?(i) ? "text-right" : "text-left" %>"><%= col %></th>
+          <% end %>
+        </tr>
+      </thead>
+      <tbody>
+        <% rows.each do |row| %>
+          <tr class="border-b hairline align-top">
+            <% row.each_with_index do |cell, i| %>
+              <td class="py-2.5 pr-4 <%= numeric?(i) ? "text-right font-mono tabular-nums" : "" %>"><%= cell %></td>
+            <% end %>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% end %>

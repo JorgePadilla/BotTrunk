@@ -1,20 +1,20 @@
-<div class="rounded-field border hairline bg-base-200 overflow-hidden" data-controller="tabs" data-tabs-active-class="tab-active">
-  <div class="flex items-center justify-between border-b hairline px-3">
+<div class="rounded-field border hairline bg-base-200 overflow-hidden" data-controller="tabs clipboard" data-tabs-active-class="tab-active">
+  <div class="flex items-center justify-between gap-3 border-b hairline px-3">
     <div role="tablist" class="tabs tabs-border tabs-sm">
       <% languages.each_with_index do |lang, i| %>
         <button type="button" role="tab" data-tabs-target="tab" data-action="tabs#select" data-tabs-index-param="<%= i %>"
                 class="tab px-2 mr-3 font-medium <%= i.zero? ? "tab-active" : "text-muted" %>"><%= lang %></button>
       <% end %>
     </div>
+    <% if copy? %>
+      <button type="button" data-action="clipboard#copy" class="btn btn-ghost btn-xs shrink-0 text-muted" aria-label="Copy">
+        <%= icon("copy", class: "size-3.5") %><span data-clipboard-target="label">Copy</span>
+      </button>
+    <% end %>
   </div>
   <% each_snippet do |lang, code, i| %>
-    <div data-tabs-target="panel" <%= "hidden" unless i.zero? %> class="relative" data-controller="clipboard">
+    <div data-tabs-target="panel" <%= "hidden" unless i.zero? %>>
       <pre class="font-mono text-[13px] leading-[1.7] p-5 overflow-x-auto" data-clipboard-target="source"><%= code %></pre>
-      <% if copy? %>
-        <button type="button" data-action="clipboard#copy" class="btn btn-ghost btn-xs absolute top-3 right-3 text-muted" aria-label="Copy">
-          <%= icon("copy", class: "size-3.5") %><span data-clipboard-target="label">Copy</span>
-        </button>
-      <% end %>
     </div>
   <% end %>
 </div>

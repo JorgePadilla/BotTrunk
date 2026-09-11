@@ -7,7 +7,7 @@ One Docker web service + one Postgres, described in `render.yaml` at the repo ro
 ## First deploy (once, ~30 min)
 
 1. **Render account** → New → **Blueprint** → connect `JorgePadilla/BotTrunk` → Render reads `render.yaml` and proposes `bottrunk-gateway` + `bottrunk-db`. Apply.
-2. When it asks for `RAILS_MASTER_KEY`, paste the contents of `gateway/config/master.key` (the one in your password manager). Nothing else is secret: `DATABASE_URL` is injected from the database, the rest are plain values in the blueprint.
+2. When it asks for `RAILS_MASTER_KEY`, paste the contents of `gateway/config/master.key` (the one in your password manager). `ADMIN_PASSWORD` is the other secret: any long random string; it is the HTTP basic-auth password for `/admin/stats` (user name is ignored — type `admin`). Leave it empty and the admin routes answer 401 to everyone. `DATABASE_URL` is injected from the database, the rest are plain values in the blueprint.
 3. First build takes ~5 min (Docker image, `assets:precompile`). The entrypoint runs `db:prepare` on boot, so migrations apply automatically. Health check is `GET /up`.
 4. Open the `*.onrender.com` URL: catalog, `/docs`, and `curl -X POST …/s/scrape-markdown` must return a 402 with `payTo` = the gateway wallet.
 

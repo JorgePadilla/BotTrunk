@@ -23,6 +23,8 @@ services:
         value: info
       - key: RAILS_MASTER_KEY
         sync: false            # paste from gateway/config/master.key in the Render dashboard
+      - key: ADMIN_PASSWORD
+        sync: false            # HTTP basic auth for /admin/stats (user: anything, e.g. admin)
       - key: DATABASE_URL
         fromDatabase:
           name: bottrunk-db

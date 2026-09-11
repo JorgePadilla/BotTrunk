@@ -1,4 +1,6 @@
 class CatalogController < ApplicationController
+  after_action :track_page_view
+
   def index
     @category = params[:category].presence
     @query = params[:q].to_s.strip.presence

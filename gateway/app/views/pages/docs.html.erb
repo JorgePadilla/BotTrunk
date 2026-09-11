@@ -66,6 +66,24 @@
             });
             console.log(await r.json());
           TS
+          "Ruby" => <<~RB.strip,
+            # gem "faraday"  — the two HTTP steps are plain; only the signing is chain-specific.
+            require "faraday"; require "json"; require "base64"
+
+            api = Faraday.new("#{@example_service.endpoint_url.sub(%r{/s/.*}, "")}", headers: { "Content-Type" => "application/json" })
+            body = { url: "https://example.com/pricing" }.to_json
+
+            r = api.post("/s/#{@example_service.slug}", body)                   # 1. ask → 402
+            requirements = JSON.parse(r.body).fetch("accepts").first    # amount, payTo, network, asset
+
+            # 2. sign a USDC transfer for `requirements` with your Algorand key
+            #    (no Ruby x402 gem yet — until then run it through `npx bottrunk-mcp`
+            #    or the TypeScript client above), then retry:
+            payment = Base64.strict_encode64(signed_payload.to_json)
+            r = api.post("/s/#{@example_service.slug}", body) { |req| req.headers["PAYMENT-SIGNATURE"] = payment }
+            puts JSON.parse(r.body)["markdown"]
+            puts r.headers["payment-response"]                           # settlement receipt
+          RB
           "curl" => <<~SH.strip
             # 1. Ask — you get the 402 shown below.
             curl -X POST #{@example_service.endpoint_url} \\

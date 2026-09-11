@@ -1,0 +1,8 @@
+<dl class="grid grid-cols-2 md:grid-cols-4 gap-x-8 gap-y-6">
+  <% stats.each do |stat| %>
+    <div class="flex flex-col gap-1">
+      <dd class="font-mono text-2xl font-medium tracking-tight tabular-nums"><%= stat[:value] %></dd>
+      <dt class="text-[13px] text-muted"><%= stat[:label] %><% if stat[:hint].present? %> · <%= stat[:hint] %><% end %></dt>
+    </div>
+  <% end %>
+</dl>

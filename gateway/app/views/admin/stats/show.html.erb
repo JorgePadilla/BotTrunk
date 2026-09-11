@@ -1,0 +1,82 @@
+<% content_for :title, "Stats — BotTrunk admin" %>
+<% r = @report %>
+
+<div class="flex flex-col gap-14 py-12 md:py-16">
+  <header class="flex flex-col md:flex-row md:items-end justify-between gap-6">
+    <div class="flex flex-col gap-2">
+      <p class="text-[13px] text-muted">Admin · generated <%= r.generated_at.utc.strftime("%Y-%m-%d %H:%M UTC") %></p>
+      <h1 class="text-4xl font-semibold tracking-[-0.03em]">What is happening</h1>
+      <p class="text-muted">Visits and probes from <span class="font-mono">events</span>, money from <span class="font-mono">calls</span>. Nothing here is a cookie or a third party.</p>
+    </div>
+    <nav class="flex gap-2" aria-label="Range">
+      <% [ 7, 30, 90 ].each do |d| %>
+        <%= link_to "#{d} days", admin_stats_path(days: d), class: (d == @days ? "btn btn-sm" : "btn btn-sm btn-ghost text-muted") %>
+      <% end %>
+    </nav>
+  </header>
+
+  <section class="flex flex-col gap-8">
+    <% r.windows.each do |w| %>
+      <div class="flex flex-col gap-4">
+        <h2 class="text-[13px] uppercase tracking-wide text-muted"><%= w.label %></h2>
+        <%= render Dashboard::StatRowComponent.new(stats: [
+          { label: "page views", value: w.page_views, hint: "#{w.visitors} visitors" },
+          { label: "402 probes", value: w.probes, hint: "#{w.rejected} rejected payments" },
+          { label: "settled calls", value: w.settled, hint: "#{w.payers} payers" },
+          { label: "volume", value: usdc(w.volume), hint: "#{usdc(w.commission)} commission" }
+        ]) %>
+      </div>
+    <% end %>
+  </section>
+
+  <section class="grid grid-cols-1 lg:grid-cols-3 gap-10">
+    <%= render Dashboard::DailyBarsComponent.new(series: r.days.map { |d| [ d.date, d.page_views ] }, label: "Page views per day") %>
+    <%= render Dashboard::DailyBarsComponent.new(series: r.days.map { |d| [ d.date, d.probes ] }, label: "402 probes per day") %>
+    <%= render Dashboard::DailyBarsComponent.new(series: r.days.map { |d| [ d.date, d.settled ] }, label: "Settled calls per day") %>
+  </section>
+
+  <section class="flex flex-col gap-4">
+    <h2 class="text-[22px] font-semibold tracking-tight">Per service · last <%= @days %> days</h2>
+    <%= render Dashboard::TableComponent.new(
+      columns: [ "Service", "Status", "402 probes", "Rejected", "Settled", "Volume" ], numeric: [ 2, 3, 4, 5 ],
+      rows: r.services.map { |s| [ link_to(s.name, service_path(s.slug), class: "link link-hover"), s.status.tr("_", " "), s.probes, s.rejected, s.settled, usdc(s.volume) ] }
+    ) %>
+  </section>
+
+  <section class="grid grid-cols-1 lg:grid-cols-3 gap-10">
+    <div class="flex flex-col gap-4">
+      <h2 class="text-[22px] font-semibold tracking-tight">Referrers</h2>
+      <%= render Dashboard::TableComponent.new(columns: [ "Host", "Views" ], numeric: [ 1 ], rows: r.referrers, empty: "No referrers yet — direct visits only.") %>
+    </div>
+    <div class="flex flex-col gap-4">
+      <h2 class="text-[22px] font-semibold tracking-tight">Pages</h2>
+      <%= render Dashboard::TableComponent.new(columns: [ "Path", "Views" ], numeric: [ 1 ], rows: r.pages.map { |path, n| [ tag.span(path, class: "font-mono"), n ] }) %>
+    </div>
+    <div class="flex flex-col gap-4">
+      <h2 class="text-[22px] font-semibold tracking-tight">API clients</h2>
+      <%= render Dashboard::TableComponent.new(columns: [ "Client", "Requests" ], numeric: [ 1 ], rows: r.clients, empty: "No API traffic yet.") %>
+    </div>
+  </section>
+
+  <section class="flex flex-col gap-4">
+    <h2 class="text-[22px] font-semibold tracking-tight">Recent settled calls</h2>
+    <%= render Dashboard::TableComponent.new(
+      columns: [ "When (UTC)", "Service", "Payer", "Amount", "Commission", "Upstream", "Txn" ], numeric: [ 3, 4 ],
+      rows: r.recent_calls.map { |c| [
+        c.created_at.utc.strftime("%m-%d %H:%M"), c.service_slug, tag.span(short_address(c.payer_address), class: "font-mono"),
+        usdc(c.amount), usdc(c.commission), "#{c.upstream_status} · #{c.upstream_latency_ms} ms",
+        (c.transaction_id ? link_to(short_address(c.transaction_id, head: 8, tail: 4), "https://allo.info/tx/#{c.transaction_id}", class: "link link-hover font-mono", target: "_blank", rel: "noopener") : "—")
+      ] },
+      empty: "No settled calls yet."
+    ) %>
+  </section>
+
+  <section class="flex flex-col gap-4">
+    <h2 class="text-[22px] font-semibold tracking-tight">Recent probes</h2>
+    <%= render Dashboard::TableComponent.new(
+      columns: [ "When (UTC)", "Event", "Service", "Client", "Reason" ],
+      rows: r.recent_probes.map { |e| [ e.created_at.utc.strftime("%m-%d %H:%M"), e.name.tr("_", " "), e.service_slug, e.client, e.properties["reason"].to_s.truncate(80) ] },
+      empty: "Nobody has hit a paid endpoint yet."
+    ) %>
+  </section>
+</div>

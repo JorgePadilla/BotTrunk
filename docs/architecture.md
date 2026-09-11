@@ -116,10 +116,16 @@ Wallet: `npx bottrunk-mcp wallet` generates a 25-word account into `~/.bottrunk/
 
 Gateway side: `Catalog::Service#status` (`live` | `coming_soon`) is exposed by `/api/v1/catalog`; `POST /s/:slug` answers **503** for anything not live, before the 402, so placeholder services can be listed without ever charging anyone.
 
-## 7. Cross-cutting
+## 7. Analytics and the admin dashboard
+
+First-party and cookieless. `Analytics::Track` writes one `events` row per page view (`page_view`), catalog API hit (`catalog_api`), 402 probe (`payment_required`), rejected payment (`payment_rejected`) or hit on a not-yet-live service (`coming_soon`). It stores a coarse `client` label derived from the user agent (`bottrunk-mcp`, `x402-client`, `curl`, `python`, `node`, `browser`, `bot`), the referrer host, and a `visitor` hash that rotates daily (SHA-256 of ip + ua + date + secret, truncated) — never the IP or the raw user agent. Settled payments are not events; `calls` is the ledger and the source of truth for money. Tracking is best-effort: the service rescues everything and logs, so a broken analytics insert can never fail a request. Controllers call it through the `TracksEvents` concern (`after_action :track_page_view` on public pages; `PaidCallsController#track_paywall` for 402s).
+
+`GET /admin/stats` (HTTP basic auth, password from `ADMIN_PASSWORD` or credentials `admin.password`; no password means no access) renders `Stats::Overview`: rolling windows (24 h / 7 d / 30 d / all time) of views, visitors, probes, rejected payments, settled calls, unique payers, volume and commission; per-day bars; per-service rows; top referrers, pages and API clients; the last 20 settled calls (linked to allo.info) and probes. Components live in `app/components/dashboard/` (`StatRowComponent`, `DailyBarsComponent` — inline SVG, no chart library — and `TableComponent`).
+
+## 8. Cross-cutting
 
 - **Jobs:** Solid Queue. Anything that talks to the facilitator after the response is sent, payouts, health checks.
 - **Rate limiting:** rack-attack in front of the paywall; unpaid 402 probes are cheap but not free.
-- **Observability:** Rails structured logging with `request_id`, `call_id`, `tx_id` tags; the `calls` table is the audit log.
+- **Observability:** Rails structured logging with `request_id`, `call_id`, `tx_id` tags; the `calls` table is the audit log; `events` + `/admin/stats` for traffic (§7).
 - **Security:** secrets in Rails credentials; wallet mnemonics never on the server (the gateway only *receives*); CSP on; `allow_browser versions: :modern`.
 - **i18n:** English first; `es` locale added when the seller UI opens to LATAM developers.

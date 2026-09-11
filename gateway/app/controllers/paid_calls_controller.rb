@@ -15,12 +15,14 @@ class PaidCallsController < ApplicationController
     service = Catalog::Service.find(params[:slug]) or return head(:not_found)
     return coming_soon(service) unless service.live?
 
+    payment_header = request.headers["PAYMENT-SIGNATURE"].presence || request.headers[Payments::Payload::HEADER]
     result = Gateway::HandlePaidCall.new(
       service: service,
-      payment_header: request.headers["PAYMENT-SIGNATURE"].presence || request.headers[Payments::Payload::HEADER],
+      payment_header: payment_header,
       body: request.raw_post,
       headers: { "Content-Type" => request.content_type, "Accept" => request.headers["Accept"] }.compact
     ).call
+    track_paywall(service, result, paid: payment_header.present?)
 
     data = result.data
     data[:headers]&.each { |k, v| response.set_header(k, v) }
@@ -42,8 +44,17 @@ class PaidCallsController < ApplicationController
 
   private
 
+  # A 402 without a payment header is a probe (someone looked); a 402 with one
+  # is a rejected payment (someone tried). Settled calls are in `calls`.
+  def track_paywall(service, result, paid:)
+    return unless result.code == :payment_required
+
+    track_event(paid ? "payment_rejected" : "payment_required", service_slug: service.slug, reason: result.error)
+  end
+
   # Listed but not yet callable: say so before anyone signs a payment.
   def coming_soon(service)
+    track_event("coming_soon", service_slug: service.slug)
     render json: { error: "#{service.name} is not live yet", status: service.status, catalog: "https://bottrunk.com/s/#{service.slug}" },
            status: :service_unavailable
   end

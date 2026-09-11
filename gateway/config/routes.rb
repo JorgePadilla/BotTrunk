@@ -25,6 +25,11 @@ Rails.application.routes.draw do
   post "sell", to: "seller_inquiries#create", as: :seller_inquiries
   get "sign_in", to: "pages#sign_in"
 
+  # Operator dashboard (HTTP basic auth, see Admin::BaseController)
+  namespace :admin do
+    get "stats", to: "stats#show"
+  end
+
   # Machine-readable catalog (read by mcp-hub)
   namespace :api do
     namespace :v1 do

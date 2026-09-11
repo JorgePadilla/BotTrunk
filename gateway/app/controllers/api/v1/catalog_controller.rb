@@ -4,6 +4,9 @@ module Api
   module V1
     # Public, read-only catalog for machines (the MCP hub reads this — ADR 0007).
     class CatalogController < ActionController::API
+      include TracksEvents
+      after_action -> { track_event("catalog_api", service_slug: params[:slug].presence) }
+
       def index
         services = Catalog::Service.all
         services = services.select { |s| s.category == params[:category] } if params[:category].present?

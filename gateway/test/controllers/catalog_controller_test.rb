@@ -8,6 +8,17 @@ class CatalogControllerTest < ActionDispatch::IntegrationTest
     assert_select "a[href='/s/scrape-markdown']"
   end
 
+  test "page views are recorded with the referrer host, service pages with their slug" do
+    get root_url, headers: { "Referer" => "https://www.npmjs.com/package/bottrunk-mcp", "User-Agent" => "Mozilla/5.0 Chrome" }
+    get service_url("scrape-markdown"), headers: { "User-Agent" => "Mozilla/5.0 Chrome" }
+    get api_v1_catalog_url, headers: { "User-Agent" => "bottrunk-mcp/0.1.0" }
+
+    assert_equal %w[page_view page_view catalog_api], Event.order(:id).pluck(:name)
+    assert_equal "npmjs.com", Event.first.referrer_host
+    assert_equal "scrape-markdown", Event.second.service_slug
+    assert_equal "bottrunk-mcp", Event.last.client
+  end
+
   test "index filters by category" do
     get root_url(category: "Messaging")
     assert_response :success

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_10_130000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_11_050000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -31,6 +31,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_10_130000) do
     t.integer "upstream_status"
     t.index ["service_slug"], name: "index_calls_on_service_slug"
     t.index ["transaction_id"], name: "index_calls_on_transaction_id", unique: true, where: "(transaction_id IS NOT NULL)"
+  end
+
+  create_table "events", force: :cascade do |t|
+    t.string "client", default: "other", null: false
+    t.datetime "created_at", null: false
+    t.string "name", null: false
+    t.string "path"
+    t.jsonb "properties", default: {}, null: false
+    t.string "referrer_host"
+    t.string "service_slug"
+    t.string "visitor"
+    t.index ["created_at"], name: "index_events_on_created_at"
+    t.index ["name", "created_at"], name: "index_events_on_name_and_created_at"
   end
 
   create_table "seller_inquiries", force: :cascade do |t|
