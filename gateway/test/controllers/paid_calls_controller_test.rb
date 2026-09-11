@@ -81,8 +81,13 @@ class PaidCallsControllerTest < ActionDispatch::IntegrationTest
 
   test "a settled call still returns 200 when the ledger blows up" do
     stub_upstream(body: { ok: true }.to_json)
-    Call.stub(:create!, ->(*) { raise ActiveRecord::StatementInvalid, "relation calls does not exist" }) do
+    Call.singleton_class.alias_method(:create_without_boom!, :create!)
+    Call.define_singleton_method(:create!) { |*| raise ActiveRecord::StatementInvalid, "relation calls does not exist" }
+    begin
       post paid_call_path("pdf-extract"), params: "{}", headers: { "Content-Type" => "application/json", "X-PAYMENT" => payment_header }
+    ensure
+      Call.singleton_class.alias_method(:create!, :create_without_boom!)
+      Call.singleton_class.remove_method(:create_without_boom!)
     end
     assert_response :success
     assert_equal "TXID123", JSON.parse(Base64.strict_decode64(response.headers["X-PAYMENT-RESPONSE"]))["transaction"]

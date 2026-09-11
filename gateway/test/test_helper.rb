@@ -3,7 +3,6 @@ require_relative "../config/environment"
 require "rails/test_help"
 require "view_component/test_case"
 require "webmock/minitest"
-require "minitest/mock"
 
 Dir[Rails.root.join("test/support/**/*.rb")].each { |f| require f }
 
