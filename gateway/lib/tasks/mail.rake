@@ -40,7 +40,6 @@ namespace :mail do
     puts "[mail:preview] seven emails sent to #{to} over #{method} from #{ActionMailer::Base.default[:from]}"
     puts "[mail:preview] nothing was written: #{order.persisted? ? 'the order shown is real but unchanged' : 'no orders exist yet, so a sample was used'}"
   end
-
 end
 
 # Sample records and state shuffling for mail:preview. A module so the helpers

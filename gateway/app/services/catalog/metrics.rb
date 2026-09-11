@@ -37,7 +37,6 @@ module Catalog
         failures = (calls * (1 - success_rate)).round
         failures.zero? ? "none failed yet" : "#{failures} of #{calls} failed"
       end
-
     end
 
     Totals = Data.define(:calls, :volume, :services, :last_at) do
