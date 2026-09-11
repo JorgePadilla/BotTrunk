@@ -8,6 +8,7 @@
 | [stack.md](stack.md) | Every gem and library, why it's there, what we deliberately don't use |
 | [x402-algorand.md](x402-algorand.md) | Protocol facts: headers, payment requirements, facilitator endpoints, asset ids, discovery |
 | [money-flow.pdf](money-flow.pdf) | Where each 0.005 USDC goes: the wallets and their addresses, one paid call step by step, the 15/85 split, sweeping to a bank |
+| [service-economics.pdf](service-economics.pdf) | Every service: price, the 15/85 split, network and facilitator fees, fulfilment cost and net margin — the deposit tiers worked through at the live rate (11 Sep 2026) |
 | [deploy.md](deploy.md) | Render deploy runbook, custom domain, switching the gateway to MainNet |
 | [adr/](adr/) | Architecture Decision Records — one file per decision, never edited after acceptance (superseded instead) |
 
