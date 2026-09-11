@@ -17,7 +17,8 @@ module X402Helpers
   TESTNET = Payments::Networks.algorand(:testnet)
 
   def service = Catalog::Service.find("scrape-markdown")          # built-in (Fulfillers::ScrapeMarkdown)
-  def proxied_service = Catalog::Service.find("pdf-extract")     # proxied to upstream_url (httpbin for now)
+  def proxied_service = Catalog::Service.find("test-proxy")       # proxied to upstream_url (test-only, see test_helper)
+  def on_request_service = Catalog::Service.find("test-on-request") # listed but never callable
 
   def requirements_for(svc = service)
     Payments::BuildRequirements.new(service: svc).call[:requirements]

@@ -1,15 +1,15 @@
 <%= render Ui::CardComponent.new(href: helpers.service_path(service), class: "flex flex-col gap-7") do %>
   <div class="flex flex-col gap-2">
     <div class="flex items-start justify-between gap-3">
-      <h3 class="text-lg font-semibold tracking-tight text-balance"><%= service.name %></h3>
-      <% unless service.live? %>
-        <span class="shrink-0 whitespace-nowrap mt-0.5"><%= render(Ui::PillComponent.new) { "Coming soon" } %></span>
+      <h3 class="text-lg font-semibold tracking-tight text-balance"><%= title %></h3>
+      <% if badge %>
+        <span class="shrink-0 whitespace-nowrap mt-0.5"><%= render(Ui::PillComponent.new) { badge } %></span>
       <% end %>
     </div>
-    <p class="text-[15px] text-muted"><%= service.summary %></p>
+    <p class="text-[15px] text-muted"><%= summary %></p>
   </div>
-  <div class="flex items-end justify-between">
-    <%= render Catalog::PriceComponent.new(amount: service.usd_price, suffix: "per call · #{service.latency}") %>
-    <span class="text-[13px] text-muted"><%= service.provider %></span>
+  <div class="flex items-end justify-between gap-4">
+    <%= render Catalog::PriceComponent.new(amount: service.usd_price, prefix: price_prefix, suffix: price_suffix) %>
+    <span class="text-[13px] text-muted text-right shrink-0"><%= service.provider %></span>
   </div>
 <% end %>

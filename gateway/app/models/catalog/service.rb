@@ -7,36 +7,46 @@ module Catalog
   # before the schema exists. When the ActiveRecord model lands (Phase 1:
   # Seller, Service, Endpoint, Call …), keep this public interface —
   # `all`, `find(slug)`, and the readers below — so no component changes.
-  class Service < Data.define(:slug, :name, :summary, :description, :category, :provider, :price_usdc, :latency, :success_rate,
-                              :network, :asset, :facilitator, :inputs, :outputs, :upstream_url, :fulfiller, :status, :price_hnl)
-    CATEGORIES = %w[Data Payments Messaging Verification Translation].freeze
-    STATUSES = %w[live coming_soon].freeze
+  class Service < Data.define(:slug, :name, :summary, :description, :category, :provider, :price_usdc,
+                              :network, :asset, :facilitator, :inputs, :outputs, :upstream_url, :fulfiller,
+                              :status, :price_hnl, :family, :family_label, :family_summary)
+    CATEGORIES = %w[Payments Data Verification Translation].freeze
 
-    # Test hook: the paid-call tests exercise the proxy path through a
-    # coming-soon service, so they flip this on (see test_helper).
-    mattr_accessor :treat_all_live, default: false
+    # live        — callable now, priced, in the Bazaar
+    # on_request  — real work we do, arranged by email first (the endpoint answers 503)
+    STATUSES = %w[live on_request].freeze
 
-    # Phase 0: every service proxies to httpbin so the paid loop can be exercised
-    # end to end before real upstreams exist.
+    # Phase 0: any service without its own fulfiller proxies here so the paid
+    # loop can be exercised end to end before real upstreams exist.
     DEFAULT_UPSTREAM = "https://httpbin.org/anything"
+
+    # Test hooks: the paid-call tests exercise the proxy path and the
+    # not-live path through services that do not exist in the public catalog.
+    mattr_accessor :treat_all_live, default: false
+    mattr_accessor :extra, default: []
 
     # `fulfiller:` names a Fulfillers::* class that runs in-process instead of
     # proxying to `upstream_url` (BotTrunk's own services).
-    # `price_hnl:` marks a lempira-denominated service: its USDC price is
-    # derived from the day's exchange rate (Pricing::LempiraDeposit), not fixed.
-    def initialize(upstream_url: DEFAULT_UPSTREAM, fulfiller: nil, status: "live", price_hnl: nil, price_usdc: nil, **attrs) = super
+    # `price_hnl:` marks a lempira-denominated service: its USDC price comes
+    # from the day's exchange rate (Pricing::LempiraDeposit), not a constant.
+    # `family:` groups variants of one product (the deposit tiers) into a
+    # single catalog card.
+    def initialize(upstream_url: DEFAULT_UPSTREAM, fulfiller: nil, status: "live", price_hnl: nil, price_usdc: nil,
+                   family: nil, family_label: nil, family_summary: nil, **attrs) = super
 
     def built_in? = fulfiller.present?
 
-    # Only live services take money. The rest stay in the catalog so agents and
-    # people can see what is coming, but POST /s/:slug answers 503 for them.
+    # Only live services take money. `on_request` ones are listed so people
+    # can see what we do, but POST /s/:slug answers 503 for them.
     def live? = status == "live" || self.class.treat_all_live
+
+    def on_request? = status == "on_request"
 
     def self.categories = CATEGORIES
 
-    def self.all = SEED
+    def self.all = SEED + extra
 
-    def self.find(slug) = SEED.find { |s| s.slug == slug }
+    def self.find(slug) = all.find { |s| s.slug == slug }
 
     def endpoint_url = "https://api.bottrunk.com/s/#{slug}"
 
@@ -56,38 +66,41 @@ module Catalog
 
     def to_param = slug
 
+    # Every service sharing this one's family, cheapest first (itself alone when it has none).
+    def variants = family ? self.class.all.select { |s| s.family == family } : [ self ]
+
+    # A request body an agent can copy: every input that carries an example.
+    def example_body
+      pairs = inputs.reject { |f| f.example.nil? }.map { |f| [ f.name, f.example ] }
+      pairs = inputs.first(1).map { |f| [ f.name, f.example_value ] } if pairs.empty?
+      pairs.to_h
+    end
+
+    # The MCP tool name bottrunk-mcp exposes for this service.
+    def tool_name = "bottrunk_#{slug.tr("-", "_")}"
+
     # Case-insensitive substring match on the words people actually type.
     def matches?(query)
       q = query.to_s.downcase
-      [ name, summary, description, category, provider, slug ].any? { |text| text.downcase.include?(q) }
+      [ name, summary, description, category, provider, slug, family_label ].compact.any? { |text| text.downcase.include?(q) }
+    end
+
+    # Display groups for the catalog: variants of one product collapse into a
+    # single card, everything else stands alone. Order is preserved.
+    def self.grouped(services = all)
+      services.group_by { |s| s.family || s.slug }.values
     end
   end
 
   Service::SEED = [
-    Service.new(
-      slug: "scrape-markdown", name: "Scrape URL to Markdown", category: "Data", provider: "By BotTrunk", fulfiller: "Fulfillers::ScrapeMarkdown",
-      summary: "Any public page as clean, LLM-ready markdown.",
-      description: "Any public page as clean, LLM-ready markdown. Handles JS-rendered sites; links preserved, nav and footer stripped.",
-      price_usdc: 0.09, latency: "0.8 s", success_rate: "99.6%",
-      network: "Algorand MainNet", asset: "USDC", facilitator: "GoPlausible",
-      inputs: [
-        Field.new("url", "string", "Public http(s) URL to fetch.", "https://example.com/pricing"),
-        Field.new("render_js", "boolean", "Reserved: headless rendering is not available yet; the flag is accepted and ignored."),
-        Field.new("selector", "string", "Optional CSS selector to scope the extraction.")
-      ],
-      outputs: [
-        Field.new("markdown", "string", "Body content as GitHub-flavored markdown.", "# Pricing\n\nSimple, honest pricing…"),
-        Field.new("title", "string", "Document title.", "Pricing — Example"),
-        Field.new("word_count", "integer", "Words in markdown, for budgeting tokens.", 412)
-      ]
-    ),
     *[ 1_000, 2_500, 5_000, 10_000 ].map do |hnl|
+      pretty = hnl.to_s.reverse.scan(/\d{1,3}/).join(",").reverse
       Service.new(
-        slug: "deposit-bac-#{hnl}", name: "Deposit L#{hnl.to_s.reverse.scan(/\d{1,3}/).join(",").reverse} to a BAC account", category: "Payments", provider: "Human-fulfilled",
-        fulfiller: "Fulfillers::DepositBac", price_hnl: hnl,
-        summary: "Pay someone in Honduras: L#{hnl.to_s.reverse.scan(/\d{1,3}/).join(",").reverse} lands in their BAC Credomatic account.",
-        description: "Send #{hnl.to_s.reverse.scan(/\d{1,3}/).join(",").reverse} lempiras to any BAC Credomatic account in Honduras. Priced in USDC at the day's reference rate with a fixed spread and fee; a person makes the bank transfer within 24 hours and you get the receipt reference. Poll GET /orders/{order_id} for status.",
-        latency: "≤ 24 h", success_rate: "100%",
+        slug: "deposit-bac-#{hnl}", name: "Deposit L#{pretty} to a BAC account", category: "Payments", provider: "Human-fulfilled",
+        fulfiller: "Fulfillers::DepositBac", price_hnl: hnl, family: "deposit-bac", family_label: "Pay someone in Honduras",
+        family_summary: "Send lempiras to any BAC Credomatic account in Honduras. A person makes the bank transfer within 24 hours and returns the receipt reference.",
+        summary: "Send L#{pretty} in lempiras to any BAC Credomatic account. A person makes the transfer within 24 hours and you get the receipt.",
+        description: "Send #{pretty} lempiras to any BAC Credomatic account in Honduras. Priced in USDC at the day's Banco Central reference rate with a fixed spread and fee; a person makes the bank transfer within 24 hours and returns the receipt reference. Poll GET /orders/{order_id} for status.",
         network: "Algorand MainNet", asset: "USDC", facilitator: "GoPlausible",
         inputs: [
           Field.new("beneficiary_name", "string", "Account holder's name as the bank has it.", "María Pérez"),
@@ -105,48 +118,104 @@ module Catalog
       )
     end,
     Service.new(
-      slug: "pdf-extract", status: "coming_soon", name: "PDF to JSON", category: "Data", provider: "By BotTrunk",
-      summary: "Send a PDF and a schema, get the fields back.",
-      description: "Send a PDF URL and a JSON schema; get the fields back as JSON. Tables and multi-column layouts included.",
-      price_usdc: 0.02, latency: "3.1 s", success_rate: "98.9%",
+      slug: "scrape-markdown", name: "Scrape URL to Markdown", category: "Data", provider: "By BotTrunk", fulfiller: "Fulfillers::ScrapeMarkdown",
+      summary: "Any public page as clean, LLM-ready markdown.",
+      description: "Any public page as clean, LLM-ready markdown. Nav, scripts and footers stripped; links and structure preserved. Optional CSS selector to scope the extraction.",
+      price_usdc: 0.09,
       network: "Algorand MainNet", asset: "USDC", facilitator: "GoPlausible",
-      inputs: [ Field.new("url", "string", "Public URL of the PDF."), Field.new("schema", "object", "JSON schema of the fields to extract.") ],
-      outputs: [ Field.new("data", "object", "Extracted fields, matching the schema."), Field.new("pages", "integer", "Pages processed.") ]
+      inputs: [
+        Field.new("url", "string", "Public http(s) URL to fetch.", "https://example.com/pricing"),
+        Field.new("render_js", "boolean", "Reserved: headless rendering is not available yet; the flag is accepted and ignored."),
+        Field.new("selector", "string", "Optional CSS selector to scope the extraction.")
+      ],
+      outputs: [
+        Field.new("markdown", "string", "Body content as GitHub-flavored markdown.", "# Pricing\n\nSimple, honest pricing…"),
+        Field.new("title", "string", "Document title.", "Pricing — Example"),
+        Field.new("word_count", "integer", "Words in markdown, for budgeting tokens.", 412)
+      ]
     ),
     Service.new(
-      slug: "screenshot", status: "coming_soon", name: "Screenshot a page", category: "Data", provider: "By BotTrunk",
-      summary: "Full-page PNG of any URL.",
-      description: "Full-page or viewport PNG of any URL, with optional dark mode and device emulation.",
-      price_usdc: 0.01, latency: "1.9 s", success_rate: "99.2%",
+      slug: "page-metadata", name: "Page metadata", category: "Data", provider: "By BotTrunk", fulfiller: "Fulfillers::PageMetadata",
+      summary: "Title, description, OpenGraph, favicon and feeds — without reading the page.",
+      description: "Everything a machine needs to describe a page it has not read: title, meta description, canonical URL, language, favicon, the full OpenGraph and Twitter card sets, any RSS/Atom feeds it advertises, and its robots directive. One request instead of fetching and parsing HTML yourself.",
+      price_usdc: 0.02,
       network: "Algorand MainNet", asset: "USDC", facilitator: "GoPlausible",
-      inputs: [ Field.new("url", "string", "Public http(s) URL."), Field.new("full_page", "boolean", "Capture the whole page. Default true.") ],
-      outputs: [ Field.new("image_url", "string", "Signed URL of the PNG, valid for 1 hour."), Field.new("width", "integer", "Pixels."), Field.new("height", "integer", "Pixels.") ]
+      inputs: [ Field.new("url", "string", "Public http(s) URL.", "https://stripe.com") ],
+      outputs: [
+        Field.new("title", "string", "Document title.", "Stripe | Financial Infrastructure"),
+        Field.new("description", "string", "Meta or OpenGraph description."),
+        Field.new("canonical", "string", "Canonical URL, absolute."),
+        Field.new("open_graph", "object", "Every og:* tag, keyed without the prefix."),
+        Field.new("twitter", "object", "Every twitter:* tag."),
+        Field.new("feeds", "array", "RSS/Atom feeds declared in the head."),
+        Field.new("favicon", "string", "Absolute favicon URL.")
+      ]
     ),
     Service.new(
-      slug: "send-whatsapp", status: "coming_soon", name: "Send a WhatsApp message", category: "Messaging", provider: "Verified seller",
-      summary: "Reach a phone number your agent can't.",
-      description: "Deliver a message to a phone number your agent can't reach otherwise. Delivery receipt returned.",
-      price_usdc: 0.05, latency: "2.4 s", success_rate: "97.8%",
+      slug: "extract-links", name: "Extract links", category: "Data", provider: "By BotTrunk", fulfiller: "Fulfillers::ExtractLinks",
+      summary: "Every link on a page, absolute, de-duplicated, split internal vs external.",
+      description: "Every link on a page resolved to an absolute URL, de-duplicated, with its anchor text and rel, and split into internal and external. What a crawling agent needs to decide where to go next, without downloading and parsing the HTML itself.",
+      price_usdc: 0.02,
       network: "Algorand MainNet", asset: "USDC", facilitator: "GoPlausible",
-      inputs: [ Field.new("to", "string", "E.164 phone number."), Field.new("text", "string", "Message body, up to 1,000 characters.") ],
-      outputs: [ Field.new("message_id", "string", "Provider message id."), Field.new("status", "string", "sent, delivered, or failed.") ]
+      inputs: [
+        Field.new("url", "string", "Public http(s) URL.", "https://example.com"),
+        Field.new("same_host", "boolean", "Only links on the same host. Default false."),
+        Field.new("limit", "integer", "Maximum links to return (1–500). Default 500.", 100)
+      ],
+      outputs: [
+        Field.new("links", "array", "Objects with url, text, rel and internal."),
+        Field.new("total", "integer", "Links found after de-duplication.", 87),
+        Field.new("internal", "integer", "How many are on the same host.", 64),
+        Field.new("external", "integer", "How many point elsewhere.", 23)
+      ]
     ),
     Service.new(
-      slug: "verify-business-hn", status: "coming_soon", name: "Verify a Honduran business", category: "Verification", provider: "Human-fulfilled",
-      summary: "A local visits, photographs, checks the registry.",
-      description: "A verified local visits the address, photographs the premises, and checks the mercantile registry. Proof bundle returned within 48 h.",
-      price_usdc: 5.00, latency: "~36 h", success_rate: "100%",
+      slug: "url-health", name: "URL health & TLS check", category: "Data", provider: "By BotTrunk", fulfiller: "Fulfillers::UrlHealth",
+      summary: "Status, redirect chain, timing and certificate expiry for any URL.",
+      description: "Is this URL alive, where does it end up, and when does its certificate expire? Returns the status code, the full redirect chain with per-hop timings, the response headers that matter, and the TLS issuer and expiry date. The checks a careful human runs before trusting a link.",
+      price_usdc: 0.02,
+      network: "Algorand MainNet", asset: "USDC", facilitator: "GoPlausible",
+      inputs: [ Field.new("url", "string", "Public http(s) URL.", "https://bottrunk.com") ],
+      outputs: [
+        Field.new("ok", "boolean", "True when the final status is below 400.", true),
+        Field.new("status", "integer", "Final HTTP status.", 200),
+        Field.new("final_url", "string", "Where the redirects ended."),
+        Field.new("chain", "array", "Each hop with its status and response time."),
+        Field.new("response_ms", "integer", "Total time across hops.", 284),
+        Field.new("tls", "object", "issuer, expires_at, days_left — for https URLs.")
+      ]
+    ),
+    Service.new(
+      slug: "domain-dns", name: "Domain DNS records", category: "Data", provider: "By BotTrunk", fulfiller: "Fulfillers::DomainDns",
+      summary: "A, AAAA, MX, NS, TXT and CNAME in one call, plus who runs the mail.",
+      description: "The full DNS record set of a domain in one call — A, AAAA, MX, NS, TXT, CNAME — with a read on what the records give away: which provider handles the mail, whether SPF and DMARC are set, and which services the domain has verified. Useful for checking whether a company is real and who hosts it.",
+      price_usdc: 0.03,
+      network: "Algorand MainNet", asset: "USDC", facilitator: "GoPlausible",
+      inputs: [ Field.new("domain", "string", "Hostname, with or without scheme.", "stripe.com") ],
+      outputs: [
+        Field.new("a", "array", "IPv4 addresses.", [ "34.120.54.55" ]),
+        Field.new("mx", "array", "Mail exchangers with preference, lowest first."),
+        Field.new("ns", "array", "Nameservers."),
+        Field.new("txt", "array", "TXT records, joined."),
+        Field.new("hints", "object", "email provider, spf, dmarc, verifications.")
+      ]
+    ),
+    Service.new(
+      slug: "verify-business-hn", name: "Verify a Honduran business", category: "Verification", provider: "Human-fulfilled", status: "on_request",
+      summary: "A local visits the address, photographs the premises and checks the registry.",
+      description: "A verified local visits the address, photographs the premises, confirms the business is operating, and checks the mercantile registry. Proof bundle (photos, coordinates, registry excerpt) returned within 48 hours. Arranged by email first so we can agree scope and city; then it is a normal paid call.",
+      price_usdc: 25.00,
       network: "Algorand MainNet", asset: "USDC", facilitator: "GoPlausible",
       inputs: [ Field.new("name", "string", "Business name."), Field.new("address", "string", "Street address, city.") ],
-      outputs: [ Field.new("verified", "boolean", "Whether the business exists at the address."), Field.new("proof", "object", "Photos and registry excerpt.") ]
+      outputs: [ Field.new("verified", "boolean", "Whether the business exists and operates at the address."), Field.new("proof", "object", "Photos, coordinates and registry excerpt.") ]
     ),
     Service.new(
-      slug: "translate-es-en", status: "coming_soon", name: "Translate ES ↔ EN", category: "Translation", provider: "Human-fulfilled",
-      summary: "Human-reviewed, with Central American context.",
-      description: "Human-reviewed translation with Central American idiom and legal terms handled correctly.",
-      price_usdc: 0.50, latency: "~4 h", success_rate: "99.1%",
+      slug: "translate-es-en", name: "Translate ES ↔ EN (human)", category: "Translation", provider: "Human-fulfilled", status: "on_request",
+      summary: "Human-reviewed translation with Central American context, up to 1,000 words.",
+      description: "Human translation and review, up to 1,000 words, with Central American idiom and legal terminology handled correctly — the difference between a machine translation and something you can sign. Arranged by email first so we can agree the deadline; then it is a normal paid call.",
+      price_usdc: 15.00,
       network: "Algorand MainNet", asset: "USDC", facilitator: "GoPlausible",
-      inputs: [ Field.new("text", "string", "Up to 2,000 words."), Field.new("direction", "string", "es-en or en-es.") ],
+      inputs: [ Field.new("text", "string", "Up to 1,000 words."), Field.new("direction", "string", "es-en or en-es.") ],
       outputs: [ Field.new("text", "string", "Translated text."), Field.new("notes", "string", "Translator notes, if any.") ]
     )
   ].freeze

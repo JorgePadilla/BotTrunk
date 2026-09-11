@@ -30,14 +30,14 @@ class PaidCallsControllerTest < ActionDispatch::IntegrationTest
 
   test "PAYMENT-SIGNATURE (x402 v2 header) is accepted and PAYMENT-RESPONSE is returned" do
     stub_upstream(body: { ok: true }.to_json)
-    post paid_call_path("pdf-extract"), params: "{}", headers: { "Content-Type" => "application/json", "PAYMENT-SIGNATURE" => payment_header }
+    post paid_call_path("test-proxy"), params: "{}", headers: { "Content-Type" => "application/json", "PAYMENT-SIGNATURE" => payment_header }
     assert_response :success
     assert_equal response.headers["X-PAYMENT-RESPONSE"], response.headers["PAYMENT-RESPONSE"]
     assert_equal "TXID123", JSON.parse(Base64.strict_decode64(response.headers["PAYMENT-RESPONSE"]))["transaction"]
   end
 
   test "OPTIONS preflight answers with CORS headers" do
-    options paid_call_path("pdf-extract"), headers: { "Origin" => "https://example.app" }
+    options paid_call_path("test-proxy"), headers: { "Origin" => "https://example.app" }
     assert_response :no_content
     assert_includes response.headers["Access-Control-Allow-Headers"], "PAYMENT-SIGNATURE"
   end
@@ -46,7 +46,7 @@ class PaidCallsControllerTest < ActionDispatch::IntegrationTest
     stub_upstream(body: { data: { total: 42 } }.to_json)
 
     assert_difference("Call.count", 1) do
-      post paid_call_path("pdf-extract"), params: { url: "https://example.com/x.pdf" }.to_json,
+      post paid_call_path("test-proxy"), params: { url: "https://example.com/x.pdf" }.to_json,
            headers: { "Content-Type" => "application/json", "X-PAYMENT" => payment_header }
     end
 
@@ -63,7 +63,7 @@ class PaidCallsControllerTest < ActionDispatch::IntegrationTest
     Payments::Adapters.stubs_current = FakePaymentAdapter.new(valid: false)
     upstream = stub_upstream
 
-    post paid_call_path("pdf-extract"), params: "{}", headers: { "Content-Type" => "application/json", "X-PAYMENT" => payment_header }
+    post paid_call_path("test-proxy"), params: "{}", headers: { "Content-Type" => "application/json", "X-PAYMENT" => payment_header }
 
     assert_response :payment_required
     assert_equal "fake: invalid", response.parsed_body["error"]
@@ -72,7 +72,7 @@ class PaidCallsControllerTest < ActionDispatch::IntegrationTest
 
   test "upstream failure is 502 and is not settled" do
     stub_upstream(status: 500, body: "boom")
-    post paid_call_path("pdf-extract"), params: "{}", headers: { "Content-Type" => "application/json", "X-PAYMENT" => payment_header }
+    post paid_call_path("test-proxy"), params: "{}", headers: { "Content-Type" => "application/json", "X-PAYMENT" => payment_header }
 
     assert_response :bad_gateway
     assert_empty @adapter.settle_calls
@@ -84,7 +84,7 @@ class PaidCallsControllerTest < ActionDispatch::IntegrationTest
     Call.singleton_class.alias_method(:create_without_boom!, :create!)
     Call.define_singleton_method(:create!) { |*| raise ActiveRecord::StatementInvalid, "relation calls does not exist" }
     begin
-      post paid_call_path("pdf-extract"), params: "{}", headers: { "Content-Type" => "application/json", "X-PAYMENT" => payment_header }
+      post paid_call_path("test-proxy"), params: "{}", headers: { "Content-Type" => "application/json", "X-PAYMENT" => payment_header }
     ensure
       Call.singleton_class.alias_method(:create!, :create_without_boom!)
       Call.singleton_class.remove_method(:create_without_boom!)
@@ -93,17 +93,17 @@ class PaidCallsControllerTest < ActionDispatch::IntegrationTest
     assert_equal "TXID123", JSON.parse(Base64.strict_decode64(response.headers["X-PAYMENT-RESPONSE"]))["transaction"]
   end
 
-  test "a coming-soon service answers 503 before any payment is looked at" do
+  test "a service that is not live answers 503 before any payment is looked at" do
     Catalog::Service.treat_all_live = false
     upstream = stub_upstream
     begin
-      post paid_call_path("pdf-extract"), params: "{}", headers: { "Content-Type" => "application/json", "X-PAYMENT" => payment_header }
+      post paid_call_path("test-on-request"), params: "{}", headers: { "Content-Type" => "application/json", "X-PAYMENT" => payment_header }
     ensure
       Catalog::Service.treat_all_live = true
     end
 
     assert_response :service_unavailable
-    assert_equal "coming_soon", response.parsed_body["status"]
+    assert_equal "on_request", response.parsed_body["status"]
     assert_equal "coming_soon", Event.last.name
     assert_empty @adapter.verify_calls
     assert_not_requested upstream
@@ -112,26 +112,26 @@ class PaidCallsControllerTest < ActionDispatch::IntegrationTest
   test "a 402 probe and a rejected payment are recorded as events, a settled call is not" do
     stub_upstream(body: { ok: true }.to_json)
 
-    post paid_call_path("pdf-extract"), params: "{}", headers: { "Content-Type" => "application/json", "User-Agent" => "bottrunk-mcp/0.1.0" }
+    post paid_call_path("test-proxy"), params: "{}", headers: { "Content-Type" => "application/json", "User-Agent" => "bottrunk-mcp/0.1.0" }
     assert_equal [ "payment_required" ], Event.pluck(:name)
     assert_equal "bottrunk-mcp", Event.last.client
-    assert_equal "pdf-extract", Event.last.service_slug
+    assert_equal "test-proxy", Event.last.service_slug
 
     Payments::Adapters.stubs_current = FakePaymentAdapter.new(valid: false)
-    post paid_call_path("pdf-extract"), params: "{}", headers: { "Content-Type" => "application/json", "X-PAYMENT" => payment_header }
+    post paid_call_path("test-proxy"), params: "{}", headers: { "Content-Type" => "application/json", "X-PAYMENT" => payment_header }
     assert_equal "payment_rejected", Event.last.name
     assert_equal "fake: invalid", Event.last.properties["reason"]
 
     Payments::Adapters.stubs_current = @adapter
     assert_no_difference("Event.count") do
-      post paid_call_path("pdf-extract"), params: "{}", headers: { "Content-Type" => "application/json", "X-PAYMENT" => payment_header }
+      post paid_call_path("test-proxy"), params: "{}", headers: { "Content-Type" => "application/json", "X-PAYMENT" => payment_header }
     end
     assert_response :success
   end
 
   test "a 4xx from the service is passed through and never charged" do
     stub_upstream(status: 422, body: { error: "bad url" }.to_json)
-    post paid_call_path("pdf-extract"), params: "{}", headers: { "Content-Type" => "application/json", "X-PAYMENT" => payment_header }
+    post paid_call_path("test-proxy"), params: "{}", headers: { "Content-Type" => "application/json", "X-PAYMENT" => payment_header }
 
     assert_response :unprocessable_entity
     assert_equal "bad url", response.parsed_body["error"]

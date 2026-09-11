@@ -13,8 +13,8 @@
       <h1 class="text-4xl md:text-[40px] font-semibold tracking-[-0.03em] leading-[1.15]"><%= @service.name %></h1>
       <p class="text-lg text-muted"><%= @service.description %></p>
       <p class="font-mono text-sm text-muted mt-1">POST <%= @service.endpoint_url %></p>
-      <% unless @service.live? %>
-        <p class="text-sm text-muted"><%= render(Ui::PillComponent.new) { "Coming soon" } %> Listed for discovery; the endpoint answers 503 until it goes live, so nothing is charged.</p>
+      <% if @service.on_request? %>
+        <p class="text-sm text-muted"><%= render(Ui::PillComponent.new) { "On request" } %> A person does this work. Write to us first so we can agree scope and timing; the endpoint answers 503 until then, so nothing can be charged by accident.</p>
       <% end %>
     </div>
     <div class="flex gap-2.5" data-controller="clipboard" data-clipboard-text-value="<%= @service.endpoint_url %>">
@@ -30,32 +30,53 @@
       <div id="call" class="flex flex-col gap-3.5 scroll-mt-24">
         <h2 class="text-[22px] font-semibold tracking-tight">Call it</h2>
         <%= render Docs::CodeSnippetComponent.new(snippets: {
+          "MCP" => <<~SH.strip,
+            # once, on the machine your agent runs on
+            npx bottrunk-mcp wallet && npx bottrunk-mcp wallet optin
+            claude mcp add bottrunk -- npx -y bottrunk-mcp
+
+            # then ask your agent for it — the tool is `#{@service.tool_name}`
+          SH
           "curl" => <<~SH.strip,
             # Ask. You get a 402 with the payment requirements.
             curl #{@service.endpoint_url} \\
-              -d '{"url": "https://example.com/pricing"}'
+              -H "Content-Type: application/json" \\
+              -d '#{@service.example_body.to_json}'
 
             # Pay and retry. Any x402 client does this for you.
             curl #{@service.endpoint_url} \\
-              -H "X-PAYMENT: <signed USDC transfer>" \\
-              -d '{"url": "https://example.com/pricing"}'
+              -H "PAYMENT-SIGNATURE: <signed USDC transfer>" \\
+              -H "Content-Type: application/json" \\
+              -d '#{@service.example_body.to_json}'
           SH
           "Python" => <<~PY.strip,
             from x402.clients import requests as x402_requests
 
-            session = x402_requests.x402_http_adapter(account)
-            r = session.post(
-                "#{@service.endpoint_url}",
-                json={"url": "https://example.com/pricing"},
-            )
-            print(r.json()["markdown"])
+            session = x402_requests.x402_http_adapter(account)   # your agent's Algorand account
+            r = session.post("#{@service.endpoint_url}", json=#{@service.example_body.to_json.gsub('true', 'True').gsub('false', 'False')})
+            print(r.json())
+            print(r.headers["PAYMENT-RESPONSE"])                  # settlement receipt
           PY
-          "MCP" => <<~JSON.strip
-            { "mcpServers": { "bottrunk": { "url": "https://mcp.bottrunk.com" } } }
-            # then call the tool `#{@service.slug.tr("-", "_")}` from your agent
-          JSON
+          "TypeScript" => <<~TS.strip
+            import { wrapFetchWithPayment } from "@x402-avm/fetch";
+
+            const r = await fetchWithPay("#{@service.endpoint_url}", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(#{@service.example_body.to_json}),
+            });
+            console.log(await r.json());
+          TS
         }) %>
       </div>
+
+      <% if @service.human_fulfilled? %>
+        <div class="flex flex-col gap-3.5">
+          <h2 class="text-[22px] font-semibold tracking-tight">Who does the work</h2>
+          <p class="text-muted">A person in Honduras, not a script. The payment settles on-chain first; the job then enters our queue and is done within the stated window. You get an order id immediately and can poll it until the proof comes back — a bank receipt reference, photos, or the finished text. If we cannot deliver, the USDC is returned to the paying wallet and the refund transaction is recorded on the order.</p>
+        </div>
+      <% end %>
+
       <div id="input" class="flex flex-col gap-3.5 scroll-mt-24">
         <h2 class="text-[22px] font-semibold tracking-tight">Input</h2>
         <%= render Docs::SchemaTableComponent.new(fields: @service.inputs) %>
@@ -67,13 +88,13 @@
     </section>
 
     <aside class="flex flex-col gap-10 lg:pt-1.5">
-      <%= render Catalog::PayPanelComponent.new(service: @service) %>
+      <%= render Catalog::PayPanelComponent.new(service: @service, metrics: @metrics, variants: @variants) %>
       <hr class="hairline">
-      <%= render Gateway::CallTimelineComponent.new(stamp: "sample", steps: [
-        { title: "402 Payment Required", meta: "#{@service.price_atomic} µUSDC requested" },
-        { title: "Payment verified", meta: "X-PAYMENT · #{@service.facilitator}" },
-        { title: "Upstream responded", meta: "812 ms · 200 OK" },
-        { title: "Settled on-chain", meta: "txn 4KQ2…M9 · seller 90%" }
+      <%= render Gateway::CallTimelineComponent.new(stamp: @metrics.any? ? "last #{@metrics.calls} #{'call'.pluralize(@metrics.calls)}" : "how a call runs", steps: [
+        { title: "402 Payment Required", meta: "#{number_with_delimiter(@service.price_atomic)} µUSDC requested" },
+        { title: "Payment verified", meta: "PAYMENT-SIGNATURE · #{@service.facilitator}" },
+        { title: "Work done", meta: @metrics.any? ? "p50 #{@metrics.latency}" : (@service.human_fulfilled? ? "by a person, within the stated window" : "in process, no upstream hop") },
+        { title: "Settled on-chain", meta: "receipt returned · seller 85%" }
       ]) %>
     </aside>
   </div>

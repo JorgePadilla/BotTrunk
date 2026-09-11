@@ -11,6 +11,11 @@ module Catalog
                            locals: { service: Catalog::Service.find("verify-business-hn") })
     end
 
+    def family
+      tiers = Catalog::Service.find("deposit-bac-1000").variants
+      render(Catalog::ServiceCardComponent.new(service: tiers.first, variants: tiers))
+    end
+
     def grid
       render_with_template(locals: { services: Catalog::Service.all })
     end

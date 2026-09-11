@@ -1,11 +1,29 @@
 <div class="flex flex-col gap-5">
-  <%= render Catalog::PriceComponent.new(amount: service.usd_price, size: :lg,
-        suffix: "USDC per call · p50 #{service.latency} · #{service.success_rate} success") %>
+  <%= render Catalog::PriceComponent.new(amount: service.usd_price, size: :lg, suffix: price_suffix) %>
+
   <dl class="flex flex-col gap-2.5 text-sm">
     <% facts.each do |label, value| %>
-      <div class="flex justify-between gap-4"><dt class="text-muted"><%= label %></dt><dd><%= value %></dd></div>
+      <div class="flex justify-between gap-4"><dt class="text-muted"><%= label %></dt><dd class="text-right"><%= value %></dd></div>
     <% end %>
   </dl>
-  <%= render(Ui::ButtonComponent.new(variant: :primary, class: "w-full", icon: "zap", href: "/docs#connect")) { "Pay from your agent" } %>
-  <p class="text-xs text-muted text-center">Any x402 client · settles on Algorand in ~4 s</p>
+
+  <% if family? %>
+    <div class="flex flex-col gap-1.5 border-t hairline pt-4">
+      <p class="text-[13px] text-muted">Other amounts</p>
+      <% variants.each do |variant| %>
+        <%= link_to helpers.service_path(variant), class: "flex justify-between gap-4 text-sm py-1 #{variant.slug == service.slug ? 'font-medium' : 'text-muted hover:text-base-content'}" do %>
+          <span>L<%= helpers.number_with_delimiter(variant.price_hnl) %></span>
+          <span class="font-mono"><%= helpers.number_to_currency(variant.usd_price, precision: 2) %></span>
+        <% end %>
+      <% end %>
+    </div>
+  <% end %>
+
+  <% if service.on_request? %>
+    <%= render(Ui::ButtonComponent.new(variant: :primary, class: "w-full", icon: "mail", href: request_link)) { "Request access" } %>
+    <p class="text-xs text-muted text-center">A person does this work — we agree scope and timing by email, then it is a normal paid call.</p>
+  <% else %>
+    <%= render(Ui::ButtonComponent.new(variant: :primary, class: "w-full", icon: "zap", href: "/docs#connect")) { "Pay from your agent" } %>
+    <p class="text-xs text-muted text-center">Any x402 client · settles on Algorand in ~4 s</p>
+  <% end %>
 </div>

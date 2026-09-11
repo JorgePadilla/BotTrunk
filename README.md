@@ -37,15 +37,16 @@ Only the settle touches the chain. If the service fails, settle is never called 
 
 | Service | Price | Status |
 |---|---|---|
+| **Pay someone in Honduras** — `deposit-bac-1000` … `-10000`: lempiras into any BAC Credomatic account, transferred by a person within 24 h, receipt reference returned | day's BCH rate + 5 % (≈ $42 for L1,000) | **live** |
 | `scrape-markdown` — any public page as clean, LLM-ready markdown | 0.09 USDC | **live** |
-| `deposit-bac-1000` … `deposit-bac-10000` — pay someone in Honduras: lempiras into their BAC account within 24 h (human-fulfilled) | day's rate + 5 % (≈ $42 for L1,000) | **live** |
-| `pdf-extract` — PDF + JSON schema → fields | 0.02 USDC | coming soon |
-| `screenshot` — full-page PNG of a URL | 0.01 USDC | coming soon |
-| `send-whatsapp` — reach a phone number your agent can't | 0.05 USDC | coming soon |
-| `verify-business-hn` — a local visits, photographs, checks the registry (human-fulfilled) | 5 USDC | coming soon |
-| `translate-es-en` — human-reviewed, Central American context | 0.50 USDC | coming soon |
+| `page-metadata` — title, description, OpenGraph, favicon, feeds | 0.02 USDC | **live** |
+| `extract-links` — every link, absolute, de-duplicated, internal vs external | 0.02 USDC | **live** |
+| `url-health` — status, redirect chain, timings, TLS issuer and expiry | 0.02 USDC | **live** |
+| `domain-dns` — A/AAAA/MX/NS/TXT/CNAME plus mail provider, SPF and DMARC hints | 0.03 USDC | **live** |
+| `verify-business-hn` — a local visits the address, photographs it, checks the registry | 25 USDC | on request |
+| `translate-es-en` — human translation and review, up to 1,000 words | 15 USDC | on request |
 
-Coming-soon services are listed for discovery but their endpoints answer 503, so nothing can be charged by accident. The gateway doesn't care whether the fulfiller behind an endpoint is code or a person — that's how human-fulfilled services enter without new architecture.
+Every price is what the 402 asks for; the deposit tiers reprice hourly from the Banco Central de Honduras reference rate. Services marked *on request* are real work done by people — write to hello@bottrunk.com first; their endpoints answer 503 until then, so nothing can be charged by accident. Latency and success rates on the site are measured from settled calls, never estimated: a service with no traffic says so.
 
 **Selling:** register any HTTP API with a price and BotTrunk hosts it behind the paywall; you collect USDC per call, we keep 15%. Early access at [bottrunk.com/sell](https://bottrunk.com/sell).
 

@@ -4,8 +4,24 @@ class CatalogControllerTest < ActionDispatch::IntegrationTest
   test "index lists the catalog" do
     get root_url
     assert_response :success
-    assert_select "h1", text: "Services your agent can pay for."
+    assert_select "h1", text: "Your agent can pay a person."
     assert_select "a[href='/s/scrape-markdown']"
+    assert_select "a[href='/s/deposit-bac-1000']", text: /Pay someone in Honduras/
+    assert_select "a[href='/s/deposit-bac-10000']", count: 0, message: "the deposit tiers collapse into one card"
+  end
+
+  test "index shows measured numbers only when there are settled calls" do
+    get root_url
+    assert_select "p", text: /Live on Algorand MainNet/, count: 0 # the band is a div
+    assert_match "Live on Algorand MainNet", response.body
+    assert_no_match(/paid calls settled/, response.body)
+
+    Call.create!(service_slug: "scrape-markdown", pay_to: "G", network: "n", asset: "a", amount: 90_000, commission: 13_500,
+                 seller_amount: 76_500, upstream_status: 200, upstream_latency_ms: 812, status: "settled")
+    get root_url
+    assert_match "paid calls settled", response.body
+    assert_match "$0.09", response.body
+    assert_select "span", text: "per call · p50 812 ms · 100% success"
   end
 
   test "page views are recorded with the referrer host, service pages with their slug" do
@@ -20,18 +36,18 @@ class CatalogControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "index filters by category" do
-    get root_url(category: "Messaging")
+    get root_url(category: "Payments")
     assert_response :success
-    assert_select "a[href='/s/send-whatsapp']"
+    assert_select "a[href='/s/deposit-bac-1000']"
     assert_select "a[href='/s/scrape-markdown']", count: 0
   end
 
   test "index searches by words in name, summary or category" do
-    get root_url(q: "whatsapp")
+    get root_url(q: "lempiras")
     assert_response :success
-    assert_select "a[href='/s/send-whatsapp']"
+    assert_select "a[href='/s/deposit-bac-1000']"
     assert_select "a[href='/s/scrape-markdown']", count: 0
-    assert_select "input[name=q][value=whatsapp]"
+    assert_select "input[name=q][value=lempiras]"
   end
 
   test "index shows an empty state when nothing matches" do
@@ -40,6 +56,23 @@ class CatalogControllerTest < ActionDispatch::IntegrationTest
     assert_select "a[href^='/s/']", count: 0
     assert_select "p", text: "Nothing here yet."
     assert_select "a[href='/sell']"
+  end
+
+  test "a deposit page lists the other amounts and prices them live" do
+    get service_url("deposit-bac-2500")
+    assert_response :success
+    assert_select "h1", text: "Deposit L2,500 to a BAC account"
+    assert_select "a[href='/s/deposit-bac-10000']", text: /L10,000/
+    assert_match "Other amounts", response.body
+    assert_select "dd", text: "L2,500 at today's rate"
+  end
+
+  test "an on-request service asks for an email instead of a payment" do
+    get service_url("verify-business-hn")
+    assert_response :success
+    assert_select "a[href^='mailto:hello@bottrunk.com']", text: "Request access"
+    assert_select "a[href='/docs#connect']", text: "Pay from your agent", count: 0
+    assert_match "On request", response.body
   end
 
   test "show renders a service" do

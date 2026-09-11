@@ -3,7 +3,7 @@
 module Catalog
   class PriceComponentPreview < ViewComponent::Preview
     def default
-      render Catalog::PriceComponent.new(amount: 0.005, suffix: "per call · 0.8 s")
+      render Catalog::PriceComponent.new(amount: 0.09, suffix: "per call · p50 812 ms · 100% success")
     end
 
     def large

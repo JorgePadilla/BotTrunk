@@ -116,6 +116,14 @@ Wallet: `npx bottrunk-mcp wallet` generates a 25-word account into `~/.bottrunk/
 
 Gateway side: `Catalog::Service#status` (`live` | `coming_soon`) is exposed by `/api/v1/catalog`; `POST /s/:slug` answers **503** for anything not live, before the 402, so placeholder services can be listed without ever charging anyone.
 
+## 6b. The catalog
+
+`Catalog::Service` is still an in-memory list (`app/models/catalog/service.rb`). Each entry carries a `status` — **live** (priced, callable, in the Bazaar) or **on_request** (real work we do, arranged by email; `POST /s/:slug` answers 503 so nothing can be charged) — and optionally a `family` (`deposit-bac`), which collapses the four deposit tiers into one catalog card while staying four separate Bazaar resources. `Catalog::Service.extra` is a test-only hook for services the public catalog does not have (a proxied one, a not-live one).
+
+BotTrunk's own services are `Fulfillers::*`, all subclasses of `Fulfillers::Base`, which owns the SSRF guard (a host resolving to private space is refused before any request), the Faraday client, and the Result shapes: a 4xx is `Result.success` with that status (answered, never settled), a genuine upstream failure is `Result.failure`. Today: `ScrapeMarkdown`, `PageMetadata`, `ExtractLinks`, `UrlHealth`, `DomainDns` (all code, no dependencies beyond Nokogiri and stdlib Resolv/OpenSSL) and `DepositBac` (human-fulfilled, §7).
+
+`Catalog::Metrics` reads the `calls` ledger — count, median upstream latency (`percentile_cont`), success rate, volume, last call — cached 60 s, and `combined` merges a family's rows. Nothing on the site claims a latency or success rate that was not measured; a service with no calls shows none. The catalog page also shows totals when there is real traffic.
+
 ## 7. Human-fulfilled orders (lempira deposits)
 
 `deposit-bac-*` are catalog entries with `price_hnl` instead of `price_usdc`: `Catalog::Service#price_atomic` derives the USDC price from `Pricing::LempiraDeposit` (reference rate from `Rates::UsdHnl`, minus a spread, plus a fee — all env-tunable). The fulfiller `Fulfillers::DepositBac` runs in the normal paid loop *before* settlement: it validates the input, enforces the per-account daily limit and opens a `DepositOrder` in `awaiting_payment`, answering 202 with an order token. `Gateway::HandlePaidCall` then settles and moves the order to `pending` (linked to the `Call`), or cancels it if settlement fails; **a 4xx from any service is passed through and never settled**. A person clears the queue at `/admin/orders` (deliver with the bank receipt reference, or refund with the USDC refund txn); agents poll `GET /orders/:token`. Runbook and the regulatory note: `docs/deposits-hn.md`.
