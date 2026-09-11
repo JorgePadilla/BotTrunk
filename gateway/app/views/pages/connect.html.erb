@@ -60,6 +60,7 @@
     <section class="flex flex-col gap-3.5">
       <h2 class="text-[22px] font-semibold tracking-tight">Something else?</h2>
       <p class="text-muted">Anything that speaks MCP over stdio works: the command is always <span class="font-mono">npx -y bottrunk-mcp</span>. And nothing forces you to use MCP at all — the endpoints are plain HTTP with an x402 paywall, so curl, Python or TypeScript work the same way.</p>
+      <p class="text-sm text-muted">ChatGPT and Claude on the web are the exception: their connectors talk to <em>remote</em> MCP servers over HTTP, and this one runs on your machine so it can hold the wallet. A hosted endpoint is next — <%= link_to "tell us if you need it", "mailto:hello@bottrunk.com?subject=Remote%20MCP", class: "underline underline-offset-4 hover:text-base-content" %>.</p>
       <div class="mt-2"><%= render(Ui::ButtonComponent.new(href: "/docs", icon: "arrow-right")) { "Read the protocol docs" } %></div>
     </section>
     <section class="flex flex-col gap-3.5">
