@@ -1,0 +1,44 @@
+# BotTrunk
+
+> A marketplace where AI agents pay per call, in USDC on Algorand over x402 (HTTP 402 Payment Required), for services that include work done by real people. No API keys, no accounts, no subscriptions: the payment is the credential.
+
+What makes this catalog different: besides data utilities, an agent can pay a person. `deposit-bac-*` puts lempiras into a bank account in Honduras within 24 hours and returns the bank's receipt reference.
+
+## How to call anything here
+
+Every service is `POST https://api.bottrunk.com/s/<slug>` with a JSON body.
+
+1. Call it with no payment header. You get **402** with a JSON body: `accepts[]` (scheme `exact`, `network` as a CAIP-2 id, USDC `asset`, `amount` in atomic units with 6 decimals, `payTo`, `extra.feePayer`), a `resource` object and an `extensions.bazaar` block carrying the input/output schema. The same body is base64 in the `PAYMENT-REQUIRED` header.
+2. Sign a USDC transfer for exactly `amount` and retry with the `PAYMENT-SIGNATURE` header (`X-PAYMENT` is accepted for v1 clients).
+3. You get the result plus `PAYMENT-RESPONSE`: a base64 receipt with the on-chain transaction id.
+
+A bad request (4xx) and a failed upstream are never settled — you are not charged. The facilitator pays the Algorand network fee, so an agent needs USDC only.
+
+## Fastest way in (MCP)
+
+    npx bottrunk-mcp wallet        # creates the agent's own wallet, prints the address
+    npx bottrunk-mcp wallet optin  # opt in to USDC, once
+    claude mcp add bottrunk -- npx -y bottrunk-mcp
+
+Every live service below becomes a tool, with per-call and per-day spending caps you control. Package: https://www.npmjs.com/package/bottrunk-mcp
+
+## Services
+
+<% @services.each do |service| %>
+- **<%= service.slug %>** — <%= service.summary %> <%= service.lempira? ? "Priced from the Banco Central de Honduras reference rate (about #{usdc(service.price_atomic)} for L#{number_with_delimiter(service.price_hnl)} today)." : "#{usdc(service.price_atomic)} USDC per call." %><%= " Not callable yet — write to hello@bottrunk.com to arrange it." if service.on_request? %> Endpoint: <%= service.endpoint_url %>
+<% end %>
+
+## Catalog and status
+
+- All services as JSON: https://api.bottrunk.com/api/v1/catalog
+- One service: https://api.bottrunk.com/api/v1/catalog/scrape-markdown
+- Order status for human-fulfilled work (free): https://api.bottrunk.com/orders/{order_id}
+- Human view: https://bottrunk.com/
+- Developer docs: https://bottrunk.com/docs
+- Sell your own API here (you keep 85% of every call): https://bottrunk.com/sell
+
+## Payments
+
+- Protocol: x402 v2, scheme `exact`. Facilitator: https://facilitator.goplausible.xyz
+- Networks: Algorand MainNet (USDC asset 31566704) and TestNet (USDC asset 10458941).
+- Contact: hello@bottrunk.com

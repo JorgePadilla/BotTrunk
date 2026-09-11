@@ -13,6 +13,20 @@ class PagesControllerTest < ActionDispatch::IntegrationTest
     assert_includes response.body, "/api/v1/catalog"
   end
 
+  test "llms.txt is rendered from the catalog so prices cannot drift" do
+    get "/llms.txt"
+    assert_response :success
+    assert_equal "text/plain", response.media_type
+    assert_match "scrape-markdown", response.body
+    assert_match "$0.09 USDC per call", response.body
+    assert_match "$25.00 USDC per call", response.body
+    assert_match "npx bottrunk-mcp", response.body
+    assert_match "deposit-bac-1000", response.body
+    assert_match "Banco Central de Honduras reference rate", response.body
+    assert_match "write to hello@bottrunk.com", response.body
+    assert_no_match(/pdf-extract/, response.body)
+  end
+
   test "docs still renders when no payTo is configured" do
     original = Rails.configuration.x402.pay_to
     Rails.configuration.x402.pay_to = nil

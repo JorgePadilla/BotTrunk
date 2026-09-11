@@ -18,6 +18,14 @@ class PagesController < ApplicationController
   def sign_in
   end
 
+  # /llms.txt — the agent-readable summary of this site. Rendered from the
+  # catalog so it can never drift from what the endpoints actually charge
+  # (the Bazaar enriches its listing from this file).
+  def llms
+    @services = Catalog::Service.all.partition(&:live?).flatten
+    render plain: render_to_string(template: "pages/llms", formats: [ :text ], layout: false), content_type: "text/plain"
+  end
+
   private
 
   # The docs render a real 402 body; when no payTo is configured yet (CI,

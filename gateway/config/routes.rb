@@ -24,6 +24,7 @@ Rails.application.routes.draw do
   get "sell", to: "pages#sell"
   post "sell", to: "seller_inquiries#create", as: :seller_inquiries
   get "sign_in", to: "pages#sign_in"
+  get "llms.txt", to: "pages#llms", as: :llms, format: false
 
   # Operator dashboard (HTTP basic auth, see Admin::BaseController)
   namespace :admin do
