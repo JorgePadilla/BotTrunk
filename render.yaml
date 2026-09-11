@@ -29,7 +29,9 @@ services:
         value: "1.50"          # lempiras per dollar below the reference rate (deposit-bac-*)
       - key: DEPOSIT_FEE_BPS
         value: "500"           # 5 % fee on top of the spread
-      # HNL_PER_USD (optional): pin the USD→HNL rate by hand when the feed looks wrong
+      - key: BCH_API_KEY
+        sync: false            # Banco Central de Honduras Web API key (free): hourly reference rate
+      # BCH_TCR_INDICATOR_ID (optional, default 97) · HNL_PER_USD (optional): pin the rate by hand
       - key: DATABASE_URL
         fromDatabase:
           name: bottrunk-db

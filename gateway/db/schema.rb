@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_11_060000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_11_070000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -71,6 +71,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_11_060000) do
     t.string "visitor"
     t.index ["created_at"], name: "index_events_on_created_at"
     t.index ["name", "created_at"], name: "index_events_on_name_and_created_at"
+  end
+
+  create_table "exchange_rates", force: :cascade do |t|
+    t.date "as_of", null: false
+    t.datetime "fetched_at", null: false
+    t.string "pair", default: "USD/HNL", null: false
+    t.decimal "rate", precision: 10, scale: 4, null: false
+    t.string "source", null: false
+    t.index ["pair", "fetched_at"], name: "index_exchange_rates_on_pair_and_fetched_at"
   end
 
   create_table "seller_inquiries", force: :cascade do |t|

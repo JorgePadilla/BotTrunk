@@ -8,6 +8,7 @@
       <p class="text-[13px] text-muted">Generated <%= r.generated_at.utc.strftime("%Y-%m-%d %H:%M UTC") %></p>
       <h1 class="text-4xl font-semibold tracking-[-0.03em]">What is happening</h1>
       <p class="text-muted">Visits and probes from <span class="font-mono">events</span>, money from <span class="font-mono">calls</span>. Nothing here is a cookie or a third party.</p>
+      <p class="text-[13px] text-muted">USD/HNL for deposits: <span class="font-mono text-base-content">L<%= @rate.rate.to_s("F") %></span> · source <%= @rate.source %> · as of <%= @rate.as_of %> · refreshed <%= @rate.fetched_at&.utc&.strftime("%H:%M UTC") %> · buyers get L<%= Pricing::LempiraDeposit.new(amount_hnl: 1).effective_rate.to_s("F") %> per dollar after the spread</p>
     </div>
     <nav class="flex gap-2" aria-label="Range">
       <% [ 7, 30, 90 ].each do |d| %>

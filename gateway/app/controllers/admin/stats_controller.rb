@@ -8,6 +8,7 @@ module Admin
       @days = 30 if params[:days].blank?
       @report = Stats::Overview.new(days: @days).call[:report]
       @queue_count = DepositOrder.queue.count
+      @rate = Rates::UsdHnl.info
     end
   end
 end

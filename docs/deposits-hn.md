@@ -6,9 +6,11 @@ The first human-fulfilled, high-ticket service: an agent pays USDC, a person dep
 
 `USDC = amount_hnl ÷ (reference_rate − spread) × (1 + fee)` — rounded up to the µUSDC.
 
-- **Reference rate:** `Rates::UsdHnl` — `HNL_PER_USD` env if set (manual pin), otherwise the daily feed at open.er-api.com (cached 12 h; it tracks the Banco Central de Honduras reference), otherwise a hard fallback of 26.00 so pricing never fails. Check it against https://www.bch.hn once a week.
+- **Reference rate:** `Rates::UsdHnl`, refreshed at most once an hour, on demand, and stored in `exchange_rates`. Order: `HNL_PER_USD` (manual pin, wins outright) → the **Banco Central de Honduras Web API** (`Rates::FetchBch`; set `BCH_API_KEY` — free account at https://bchapi-am.developer.azure-api.net, subscribe to "Banco Central de Honduras - Web API", copy the primary key; indicator `BCH_TCR_INDICATOR_ID`, default 97 = Tipo de Cambio de Referencia; `bin/rails rates:bch_indicators` lists candidates) → the open.er-api.com feed → the newest stored rate (≤ 7 days) → a hard 26.00 fallback. `bin/rails rates:show` prints what pricing uses right now; `/admin/stats` shows it too.
 - **Spread:** `HNL_RATE_SPREAD`, default **L1.50** per dollar below the reference — that is the exchange margin the buyer gives up.
 - **Fee:** `DEPOSIT_FEE_BPS`, default **500** (5 %).
+
+"Hourly" here means the next request after an hour triggers the refresh (there is no background worker yet); a settle takes the rate of the 402 the agent paid, which is at most an hour old.
 
 Example at a 26.20 reference: L1,000 → 1000 ÷ 24.70 × 1.05 = **42.510122 USDC**. The catalog, the 402 and the Bazaar all show the day's number; it changes when the rate does.
 
