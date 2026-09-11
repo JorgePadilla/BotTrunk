@@ -31,6 +31,7 @@ Rails.application.routes.draw do
     get "orders", to: "orders#index"
     post "orders/:token/deliver", to: "orders#deliver", as: :deliver_order
     post "orders/:token/refund", to: "orders#refund", as: :refund_order
+    post "rates/refresh", to: "rates#refresh", as: :refresh_rates
   end
 
   # Public status of a human-fulfilled order (free, no bank details)

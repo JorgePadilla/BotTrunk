@@ -8,7 +8,8 @@
       <p class="text-[13px] text-muted">Generated <%= r.generated_at.utc.strftime("%Y-%m-%d %H:%M UTC") %></p>
       <h1 class="text-4xl font-semibold tracking-[-0.03em]">What is happening</h1>
       <p class="text-muted">Visits and probes from <span class="font-mono">events</span>, money from <span class="font-mono">calls</span>. Nothing here is a cookie or a third party.</p>
-      <p class="text-[13px] text-muted">USD/HNL for deposits: <span class="font-mono text-base-content">L<%= @rate.rate.to_s("F") %></span> · source <%= @rate.source %> · as of <%= @rate.as_of %> · refreshed <%= @rate.fetched_at&.utc&.strftime("%H:%M UTC") %> · buyers get L<%= Pricing::LempiraDeposit.new(amount_hnl: 1).effective_rate.to_s("F") %> per dollar after the spread</p>
+      <% if flash[:notice] %><p class="text-sm text-success"><%= flash[:notice] %></p><% end %>
+      <% if flash[:alert] %><p class="text-sm text-error"><%= flash[:alert] %></p><% end %>
     </div>
     <nav class="flex gap-2" aria-label="Range">
       <% [ 7, 30, 90 ].each do |d| %>
@@ -16,6 +17,42 @@
       <% end %>
     </nav>
   </header>
+
+  <% pricing = Pricing::LempiraDeposit.new(amount_hnl: 1, rate: @rate.rate) %>
+  <section id="rates" class="flex flex-col gap-6 scroll-mt-24">
+    <div class="flex items-end justify-between gap-6 flex-wrap">
+      <div class="flex flex-col gap-1">
+        <h2 class="text-[22px] font-semibold tracking-tight">Lempira rate</h2>
+        <p class="text-[13px] text-muted">Source <span class="font-mono"><%= @rate.source %></span> · as of <%= @rate.as_of %> · refreshed <%= @rate.fetched_at ? @rate.fetched_at.utc.strftime("%Y-%m-%d %H:%M UTC") : "—" %> · checked again at most once an hour</p>
+      </div>
+      <%= form_with url: admin_refresh_rates_path, method: :post do |f| %>
+        <%= f.button "Refresh now", class: "btn btn-sm btn-outline" %>
+      <% end %>
+    </div>
+    <%= render Dashboard::StatRowComponent.new(stats: [
+      { label: "reference rate (BCH)", value: "L#{@rate.rate.to_s("F")}", hint: "per USD" },
+      { label: "buyer gets", value: "L#{pricing.effective_rate.to_s("F")}", hint: "after L#{Pricing::LempiraDeposit.spread.to_s("F")} spread" },
+      { label: "fee", value: "#{pricing.fee_bps / 100.0}%", hint: "on top" },
+      { label: "L1,000 costs", value: "#{usdc(Pricing::LempiraDeposit.new(amount_hnl: 1_000, rate: @rate.rate).price_atomic, decimals: 2)}", hint: "USDC, right now" }
+    ]) %>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
+      <div class="flex flex-col gap-3">
+        <h3 class="text-[13px] uppercase tracking-wide text-muted">Tier prices right now</h3>
+        <%= render Dashboard::TableComponent.new(
+          columns: [ "Service", "Lempiras", "USDC price", "Status" ], numeric: [ 1, 2 ],
+          rows: @tiers.map { |t| [ link_to(t.slug, service_path(t.slug), class: "link link-hover font-mono"), "L#{number_with_delimiter(t.price_hnl)}", usdc(t.price_atomic, decimals: 2), t.status.tr("_", " ") ] }
+        ) %>
+      </div>
+      <div class="flex flex-col gap-3">
+        <h3 class="text-[13px] uppercase tracking-wide text-muted">Last refreshes</h3>
+        <%= render Dashboard::TableComponent.new(
+          columns: [ "Fetched (UTC)", "Source", "As of", "L per USD" ], numeric: [ 3 ],
+          rows: @rate_history.map { |x| [ x.fetched_at.utc.strftime("%m-%d %H:%M"), x.source, x.as_of, "L#{x.rate.to_s("F")}" ] },
+          empty: "No rate stored yet — the first request after deploy fetches one, or press Refresh now."
+        ) %>
+      </div>
+    </div>
+  </section>
 
   <section class="flex flex-col gap-8">
     <% r.windows.each do |w| %>

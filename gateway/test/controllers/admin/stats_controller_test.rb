@@ -37,6 +37,28 @@ module Admin
       assert_select "svg[role=img]", 3
     end
 
+    test "shows the lempira rate, tier prices and history, and can refresh it" do
+      ExchangeRate.create!(source: "bch", rate: 26.1834, as_of: Date.new(2026, 9, 11), fetched_at: Time.current)
+      get admin_stats_url, headers: basic("admin", "s3cret")
+      assert_response :success
+      assert_select "h2", text: "Lempira rate"
+      assert_select "dd", text: "L26.20"      # the pinned test rate
+      assert_select "dd", text: "L24.70"      # after the L1.50 spread
+      assert_select "dd", text: "$42.51"
+      assert_select "td", text: "deposit-bac-10000"
+      assert_select "td", text: "$425.10"
+      assert_select "td", text: "L26.1834"
+      assert_select "form[action='#{admin_refresh_rates_path}']"
+
+      Rates::UsdHnl.stub_rate = nil
+      stub_request(:get, Rates::UsdHnl::FEED).to_return(status: 200, body: { rates: { HNL: 26.40 } }.to_json, headers: { "Content-Type" => "application/json" })
+      post admin_refresh_rates_url, headers: basic("admin", "s3cret")
+      assert_redirected_to admin_stats_path(anchor: "rates")
+      assert_equal BigDecimal("26.40"), ExchangeRate.newest_first.first.rate
+    ensure
+      Rates::UsdHnl.stub_rate = "26.20"
+    end
+
     test "days is clamped to 7..90" do
       get admin_stats_url(days: 1000), headers: basic("admin", "s3cret")
       assert_response :success

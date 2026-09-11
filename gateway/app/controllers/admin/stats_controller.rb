@@ -9,6 +9,8 @@ module Admin
       @report = Stats::Overview.new(days: @days).call[:report]
       @queue_count = DepositOrder.queue.count
       @rate = Rates::UsdHnl.info
+      @rate_history = ExchangeRate.usd_hnl.newest_first.limit(24).to_a
+      @tiers = Catalog::Service.all.select(&:lempira?)
     end
   end
 end
