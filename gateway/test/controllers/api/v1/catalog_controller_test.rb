@@ -16,6 +16,9 @@ module Api
         assert_equal "https://api.bottrunk.com/s/scrape-markdown", scrape["endpoint"]
         assert_equal "url", scrape["inputs"][0]["name"]
         assert_equal "live", scrape["status"]
+        # Clients need this to check a wallet is ready before signing.
+        assert_equal Payments::Networks.algorand(:testnet)[:caip2], scrape["network"]["id"]
+        assert_equal "10458941", scrape["network"]["asset"]
         topics = scrape["behaviour"].map { |b| b["topic"] }
         assert_includes topics, "A selector that matches nothing"
         assert_includes topics, "Private addresses"

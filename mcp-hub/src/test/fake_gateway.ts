@@ -29,6 +29,7 @@ export function catalogBody(priceAtomic: string) {
         endpoint: "REPLACED",
         method: "POST",
         status: "live",
+        network: { id: TESTNET, asset: "10458941", name: "Algorand TestNet" },
         price: { amount: priceAtomic, asset: "USDC", decimals: 6 },
         inputs: [
           { name: "url", type: "string", description: "Public http(s) URL to fetch.", example: "https://example.com" },
@@ -46,6 +47,7 @@ export function catalogBody(priceAtomic: string) {
         endpoint: "REPLACED",
         method: "POST",
         status: "coming_soon",
+        network: { id: TESTNET, asset: "10458941", name: "Algorand TestNet" },
         price: { amount: "20000", asset: "USDC", decimals: 6 },
         inputs: [{ name: "url", type: "string", description: "PDF URL." }],
         outputs: [{ name: "data", type: "object", description: "Fields." }],

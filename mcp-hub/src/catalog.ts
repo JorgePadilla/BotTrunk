@@ -20,6 +20,8 @@ export interface CatalogService {
   /** "live" = callable now; anything else is listed but not exposed as a tool. */
   status?: string;
   price: { amount: string; asset: string; decimals: number };
+  /** Added Sept 2026; absent on older gateways, in which case MAINNET is assumed. */
+  network?: { id: string; asset: string; name: string };
   inputs: CatalogField[];
   outputs: CatalogField[];
 }

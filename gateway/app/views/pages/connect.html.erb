@@ -54,13 +54,18 @@
     </div>
     <div class="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_320px] gap-8 items-start">
       <%= render Docs::CodeSnippetComponent.new(snippets: { "Terminal" => <<~SH.strip })
-        npx bottrunk-mcp wallet        # creates the wallet, prints its address
-        # send that address a little USDC on Algorand, and ~0.2 ALGO once
-        npx bottrunk-mcp wallet optin  # one-time USDC opt-in
+        npx bottrunk-mcp wallet   # creates the wallet, prints the address and what to send
+
+        # then two sends from your own wallet, in this order:
+        #   1. 0.3 ALGO to that address
+        #   2. the USDC you want this agent to be able to spend
+        #
+        # The USDC opt-in in between happens by itself on the first tool call.
       SH
       %>
       <div class="flex flex-col gap-3 text-sm text-muted">
-        <p>Already have an agent wallet? Set <span class="font-mono">BOTTRUNK_MNEMONIC</span> instead and skip the file.</p>
+        <p><span class="font-medium text-base-content">The shortcut:</span> already have a funded Algorand account? Put its 25 words in <span class="font-mono">BOTTRUNK_MNEMONIC</span> and none of the above applies — no file, no ALGO dance, no opt-in. Create and fund it in Defly like any other account.</p>
+        <p><span class="font-medium text-base-content">Why the ALGO.</span> An Algorand account needs 0.1 ALGO to exist and another 0.1 to hold an asset, and only the key holder can opt in — so nobody can do it for the agent, and USDC sent before the opt-in does not arrive, it fails. The 0.3 leaves something over for fees.</p>
         <p>Spending caps travel with the config: <span class="font-mono">BOTTRUNK_MAX_PER_CALL</span> and <span class="font-mono">BOTTRUNK_MAX_PER_DAY</span>, in USDC. The server refuses anything above them before it signs.</p>
         <p><%= link_to "Package and options on npm →", "https://www.npmjs.com/package/bottrunk-mcp", class: "underline underline-offset-4 hover:text-base-content" %></p>
       </div>

@@ -11,7 +11,7 @@ import { inputSchema, liveServices, toolName } from "../catalog.js";
 import { createPayingFetch } from "../pay.js";
 import { buildServer } from "../server.js";
 import { SpendCapError, SpendTracker } from "../spend.js";
-import { createWallet, loadWallet, walletFromMnemonic } from "../wallet.js";
+import { createWallet, ensureReady, loadWallet, walletFromMnemonic } from "../wallet.js";
 import { catalogBody, startFakeGateway, type FakeGateway } from "./fake_gateway.js";
 
 // Quiet the AVM scheme's console.log so test output stays readable.
@@ -234,5 +234,60 @@ describe("MCP server", () => {
     const r = await client.callTool({ name: "bottrunk_scrape_markdown", arguments: { url: "https://example.com" } });
     assert.equal(r.isError, true);
     assert.match((r.content as { text: string }[])[0].text, /npx bottrunk-mcp wallet/);
+  });
+});
+
+describe("readiness", () => {
+  const wallet = walletFromMnemonic(algosdk.secretKeyToMnemonic(algosdk.generateAccount().sk), "env");
+
+  function configFor(home: string): Config {
+    return loadConfig({ BOTTRUNK_HOME: home, BOTTRUNK_MNEMONIC: "unused" });
+  }
+
+  function algodReturning(body: unknown, status = 200): typeof fetch {
+    return (async () => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } })) as unknown as typeof fetch;
+  }
+
+  it("tells a person what to send when the wallet is empty, instead of signing into a wall", async () => {
+    const home = tmpHome();
+    const ready = await ensureReady(configFor(home), wallet, TESTNET, 90_000n, algodReturning({}, 404));
+
+    assert.ok(ready.problem);
+    assert.match(ready.problem, /0\.3 ALGO/);
+    assert.match(ready.problem, new RegExp(wallet.address));
+    assert.equal(ready.optedIn, false);
+    fs.rmSync(home, { recursive: true, force: true });
+  });
+
+  it("asks for USDC once the wallet is opted in but short", async () => {
+    const home = tmpHome();
+    const ready = await ensureReady(
+      configFor(home),
+      wallet,
+      TESTNET,
+      90_000n,
+      algodReturning({ amount: 400_000, assets: [{ "asset-id": 10458941, amount: 1_000 }] }),
+    );
+
+    assert.ok(ready.problem);
+    assert.match(ready.problem, /0\.001000 USDC and this call costs 0\.090000/);
+    assert.equal(ready.optedIn, true);
+    fs.rmSync(home, { recursive: true, force: true });
+  });
+
+  it("is satisfied when the wallet can cover the call", async () => {
+    const home = tmpHome();
+    const ready = await ensureReady(
+      configFor(home),
+      wallet,
+      TESTNET,
+      90_000n,
+      algodReturning({ amount: 400_000, assets: [{ "asset-id": 10458941, amount: 1_500_000 }] }),
+    );
+
+    assert.equal(ready.problem, null);
+    assert.equal(ready.optedIn, true);
+    assert.equal(ready.usdc, 1.5);
+    fs.rmSync(home, { recursive: true, force: true });
   });
 });

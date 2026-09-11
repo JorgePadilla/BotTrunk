@@ -14,7 +14,7 @@ Every service is `POST https://api.bottrunk.com/s/<slug>` with a JSON body.
 
 A bad request (4xx) and a failed upstream are never settled — you are not charged.
 
-**What your wallet needs.** Build the transfer as an atomic group naming `extra.feePayer` and the facilitator covers the network fee, so the call costs you USDC only; sign a plain single transfer instead and you pay its ~0.001 ALGO. Either way the paying account must be opted in to USDC asset 31566704, and an Algorand account holding an asset needs about 0.1 ALGO of minimum balance. Budget **~0.2 ALGO once**, then USDC per call. An agent funded with USDC and no ALGO cannot pay at all.
+**What your wallet needs.** Build the transfer as an atomic group naming `extra.feePayer` and the facilitator covers the network fee, so the call costs you USDC only; sign a plain single transfer instead and you pay its ~0.001 ALGO. Either way the paying account must be opted in to USDC asset 31566704, and an Algorand account holding an asset needs about 0.1 ALGO of minimum balance. Send **0.3 ALGO once** (0.1 to exist, 0.1 to hold the asset, the rest for fees), then USDC per call. An agent funded with USDC and no ALGO cannot pay at all, and USDC sent before the opt-in does not arrive — it fails. `bottrunk-mcp` opts in by itself once the ALGO lands.
 
 ## What you get back, and whether it costs you
 
@@ -40,8 +40,8 @@ A bad request (4xx) and a failed upstream are never settled — you are not char
 
 **Local, with a wallet:**
 
-    npx bottrunk-mcp wallet        # creates the agent's own wallet, prints the address
-    npx bottrunk-mcp wallet optin  # opt in to USDC, once
+    npx bottrunk-mcp wallet   # creates the agent's own wallet, prints the address
+    # send it 0.3 ALGO, then the USDC it may spend; the opt-in happens by itself
     claude mcp add bottrunk -- npx -y bottrunk-mcp
 
 Every live service below becomes a paid tool, with per-call and per-day spending caps you control. Package: https://www.npmjs.com/package/bottrunk-mcp

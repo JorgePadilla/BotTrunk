@@ -1,10 +1,10 @@
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { CallToolRequestSchema, ListToolsRequestSchema, type Tool } from "@modelcontextprotocol/sdk/types.js";
-import { atomicToUsdc, type Config } from "./config.js";
+import { atomicToUsdc, MAINNET, type Config } from "./config.js";
 import { fetchCatalog, inputSchema, liveServices, priceLabel, toolDescription, toolName, type CatalogService } from "./catalog.js";
 import type { PaidFetch } from "./pay.js";
 import { SpendCapError, type SpendTracker } from "./spend.js";
-import { balances, type Wallet } from "./wallet.js";
+import { balances, ensureReady, FUND_ALGO_MICRO, type Wallet } from "./wallet.js";
 
 export interface HubDeps {
   config: Config;
@@ -97,7 +97,26 @@ export async function buildServer(deps: HubDeps): Promise<Server> {
         `No wallet configured. Run \`npx bottrunk-mcp wallet\` once to create one (or set BOTTRUNK_MNEMONIC), fund it with USDC on Algorand, then restart this MCP server.`,
       );
     }
-    return callPaid(service, args, deps.paidFetch);
+
+    // Preflight. Signing a payment the wallet cannot make fails on-chain with
+    // a message nobody can act on; this fails here with one that says exactly
+    // what is missing — and opts in to USDC on the way past if the ALGO has
+    // landed, which is the step that used to have to happen by hand between
+    // two transfers, in the right order.
+    const ready = await ensureReady(
+      deps.config,
+      deps.wallet,
+      service.network?.id ?? MAINNET,
+      BigInt(service.price.amount),
+      fetchImpl,
+    );
+    if (ready.problem) return error(ready.problem);
+
+    const result = await callPaid(service, args, deps.paidFetch);
+    if (ready.optedInNow) {
+      result.content.push({ type: "text" as const, text: `\n(This wallet opted in to USDC on the way — txn ${ready.optedInNow}.)` });
+    }
+    return result;
   });
 
   return server;
@@ -151,6 +170,17 @@ async function renderWallet(deps: HubDeps, fetchImpl: typeof fetch): Promise<str
     return `No wallet configured. Run \`npx bottrunk-mcp wallet\` to create one, or set BOTTRUNK_MNEMONIC.\n${caps}`;
   }
   const lines = [`Address: ${wallet.address} (from ${wallet.source === "env" ? "BOTTRUNK_MNEMONIC" : config.walletFile})`];
+
+  // Asking whether the wallet is ready is also what makes it ready: if the
+  // ALGO has landed, this opts in to USDC before reporting.
+  let optedInNow: string | undefined;
+  try {
+    const ready = await ensureReady(config, wallet, MAINNET, 0n, fetchImpl);
+    optedInNow = ready.optedInNow;
+  } catch {
+    // Balances below will report whatever the network is willing to say.
+  }
+
   try {
     for (const b of await balances(config, wallet.address, fetchImpl)) {
       lines.push(`${b.network}: ${b.algo} ALGO · ${b.usdc === null ? "USDC not opted in" : `${b.usdc} USDC`}`);
@@ -159,8 +189,12 @@ async function renderWallet(deps: HubDeps, fetchImpl: typeof fetch): Promise<str
     lines.push(`Balances unavailable: ${(e as Error).message}`);
   }
   lines.push(caps);
+  if (optedInNow) lines.push(`Just opted in to USDC — txn ${optedInNow}. USDC sent to this address will arrive from now on.`);
   lines.push(
-    "To fund: send USDC (Algorand network) to the address above. The wallet must hold ~0.2 ALGO and be opted in to USDC (`npx bottrunk-mcp wallet optin`) before the first payment.",
+    `To fund, two sends in this order — an agent cannot fund itself, and USDC sent before the opt-in does not arrive:\n` +
+      `  1. ${(FUND_ALGO_MICRO / 1e6).toFixed(1)} ALGO to ${wallet.address} (0.1 to exist, 0.1 to hold USDC, the rest for fees)\n` +
+      `  2. the USDC you want this agent to be able to spend, to the same address\n` +
+      `The USDC opt-in in between happens by itself the next time a tool here is called.`,
   );
   return lines.join("\n");
 }

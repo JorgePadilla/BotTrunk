@@ -5,7 +5,7 @@ import { atomicToUsdc, loadConfig, MAINNET, TESTNET } from "./config.js";
 import { createPayingFetch } from "./pay.js";
 import { buildServer } from "./server.js";
 import { SpendTracker } from "./spend.js";
-import { balances, createWallet, loadWallet, optInToUsdc, readMnemonic } from "./wallet.js";
+import { balances, createWallet, FUND_ALGO_MICRO, loadWallet, optInToUsdc, readMnemonic } from "./wallet.js";
 
 const { version } = createRequire(import.meta.url)("../package.json") as { version: string };
 
@@ -55,12 +55,26 @@ async function main(argv: string[]): Promise<void> {
       process.stdout.write(`Opted in to USDC on ${process.env.ALGORAND_NETWORK ?? "mainnet"} · txn ${txid}\n`);
     }
     process.stdout.write(`Address: ${wallet.address}\n`);
-    for (const b of await balances(config, wallet.address)) {
-      process.stdout.write(`${b.network.padEnd(8)} ${b.algo} ALGO · ${b.usdc === null ? "USDC not opted in" : `${b.usdc} USDC`}\n`);
+    try {
+      for (const b of await balances(config, wallet.address)) {
+        process.stdout.write(`${b.network.padEnd(8)} ${b.algo} ALGO · ${b.usdc === null ? "USDC not opted in" : `${b.usdc} USDC`}\n`);
+      }
+    } catch (e) {
+      // The address above is the useful part; balances are a nicety, and a
+      // network problem should not hide the thing you came here to copy.
+      process.stdout.write(`Balances unavailable: ${(e as Error).message}\n`);
     }
     process.stdout.write(
-      `\nCaps: ${atomicToUsdc(config.maxPerCallAtomic)} USDC/call · ${atomicToUsdc(config.maxPerDayAtomic)} USDC/day\n` +
-        `Fund it: send USDC on the Algorand network to the address above (and ~0.2 ALGO once, for the USDC opt-in).\n`,
+      `\nCaps: ${atomicToUsdc(config.maxPerCallAtomic)} USDC/call · ${atomicToUsdc(config.maxPerDayAtomic)} USDC/day\n\n` +
+        `Fund it — two sends, in this order. An agent cannot fund itself, and USDC sent\n` +
+        `before the opt-in does not arrive, it fails.\n\n` +
+        `  1. ${(FUND_ALGO_MICRO / 1e6).toFixed(1)} ALGO to ${wallet.address}\n` +
+        `     (0.1 for the account to exist, 0.1 to hold USDC, the rest for fees)\n` +
+        `  2. the USDC you want this agent to be able to spend, to the same address\n\n` +
+        `The USDC opt-in in between happens by itself the next time a tool runs —\n` +
+        `\`npx bottrunk-mcp wallet optin\` still works if you would rather do it now.\n\n` +
+        `Already have a funded Algorand account? Skip all of this: put its 25 words in\n` +
+        `BOTTRUNK_MNEMONIC and the agent uses that account directly.\n`,
     );
     return;
   }

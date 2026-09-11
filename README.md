@@ -10,8 +10,9 @@ Give Claude, Cursor or any MCP agent a wallet and a catalog of things it can buy
 
 ```sh
 npx bottrunk-mcp wallet          # creates ~/.bottrunk/wallet.json, prints the address
-# send it a little USDC on Algorand (and ~0.2 ALGO once), then:
-npx bottrunk-mcp wallet optin
+# then two sends to that address: 0.3 ALGO first, then the USDC it may spend.
+# The USDC opt-in in between happens by itself on the first tool call.
+# Already run an Algorand account? Set BOTTRUNK_MNEMONIC instead and skip all of it.
 
 claude mcp add bottrunk -- npx -y bottrunk-mcp     # Claude Code
 # Claude Desktop / Cursor: { "mcpServers": { "bottrunk": { "command": "npx", "args": ["-y", "bottrunk-mcp"] } } }
