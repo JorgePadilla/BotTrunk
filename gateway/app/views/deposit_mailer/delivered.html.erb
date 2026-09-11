@@ -1,0 +1,20 @@
+<p style="margin:0 0 16px 0;font-size:17px;font-weight:600;">The money is in the account.</p>
+
+<p style="margin:0 0 20px 0;">
+  <%= hnl(@order.amount_hnl) %> was transferred to <strong><%= @order.beneficiary_name %></strong>
+  at <%= @order.bank %>. Keep the reference below — it's what the bank will ask for
+  if anyone needs to trace the transfer.
+</p>
+
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 22px 0;">
+  <%= receipt_row "Receipt reference", @order.receipt_reference, mono: true %>
+  <%= receipt_row "Sent", l(@order.delivered_at, format: :long) if @order.delivered_at %>
+  <%= receipt_row "Amount", hnl(@order.amount_hnl) %>
+  <%= receipt_row "To", "#{@order.beneficiary_name} · #{@order.bank} #{masked_account(@order.account_number)}" %>
+  <%= receipt_row "Order", @order.token, mono: true %>
+  <%= receipt_row "Note", @order.notes %>
+</table>
+
+<p style="margin:0;color:#666666;font-size:13px;">
+  Anything wrong with this transfer? Reply to this email within seven days and we'll sort it out.
+</p>

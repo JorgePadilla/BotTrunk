@@ -41,6 +41,9 @@ Fulfillers::Base.resolver = X402Helpers::FakeResolver
 module ActiveSupport
   class TestCase
     include X402Helpers
+    include ActiveJob::TestHelper
+    include ActionMailer::TestHelper
+    include MailHelpers
 
     # Run tests in parallel with specified workers
     parallelize(workers: :number_of_processors)

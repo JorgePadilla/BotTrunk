@@ -68,7 +68,10 @@ module Gateway
     # Human-fulfilled services open an order before settlement (so a bad request
     # is refused for free). Once the USDC has settled the order joins the queue.
     def open_order(order, call_row)
-      order&.update!(status: "pending", call: call_row)
+      return if order.nil?
+
+      order.update!(status: "pending", call: call_row)
+      Notifications::AnnounceOrder.new(order: order).call
     rescue StandardError => e
       Rails.logger.error("orders: could not open #{order.token} after settlement: #{e.class}: #{e.message}")
     end

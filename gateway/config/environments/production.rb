@@ -49,8 +49,12 @@ Rails.application.configure do
   # Replace the default in-process memory cache store with a durable alternative.
   # config.cache_store = :mem_cache_store
 
-  # Replace the default in-process and non-durable queuing backend for Active Job.
-  # config.active_job.queue_adapter = :resque
+  # Active Job runs in the web process. The only background work is email, it
+  # is best-effort by design (see Notifications::Deliver), and a settled
+  # payment is never waiting on it. Adding a worker service and a durable
+  # queue is the right move when something has to survive a restart — a payout
+  # run, a retrying webhook — not for a receipt.
+  config.active_job.queue_adapter = :async
 
   # Set host to be used by links generated in mailer templates.
   config.action_mailer.default_url_options = {

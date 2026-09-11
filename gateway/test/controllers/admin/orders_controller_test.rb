@@ -53,6 +53,24 @@ module Admin
       assert_equal "REFUNDTXN", o.refund_transaction_id
     end
 
+    test "delivering emails the buyer and says so in the flash" do
+      o = order(contact_email: "buyer@example.com")
+
+      assert_enqueued_emails 1 do
+        post admin_deliver_order_url(o.token), params: { receipt_reference: "BAC-1001" }, headers: auth
+      end
+      assert_equal "Order #{o.token} marked delivered. Emailed buyer@example.com.", flash[:notice]
+    end
+
+    test "an order with no contact email sends nothing and promises nothing" do
+      o = order
+
+      assert_no_enqueued_emails do
+        post admin_refund_order_url(o.token), params: { refund_transaction_id: "REFUNDTXN" }, headers: auth
+      end
+      assert_equal "Order #{o.token} marked refunded.", flash[:notice]
+    end
+
     test "unknown order status is 404" do
       get order_url("nope")
       assert_response :not_found

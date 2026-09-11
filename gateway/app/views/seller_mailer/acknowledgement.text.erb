@@ -1,0 +1,13 @@
+Thanks — we have your listing request.
+
+You asked to list <%= @inquiry.service_name %> at <%= usdc(@inquiry.price_atomic) %> USDC per call.
+A person reads every one of these; expect a reply within a couple of days.
+
+What happens if we list you: your endpoint sits behind our x402 paywall, agents
+pay per call in USDC on Algorand, and you keep 85% of every call —
+<%= usdc((@inquiry.price_atomic * 0.85).round) %> at the price you named. No monthly fee, no minimum, and
+nothing to integrate beyond the API you already have.
+
+How the paywall works: https://bottrunk.com/docs
+
+Wrong price, wrong URL, or second thoughts? Reply and we'll change it.

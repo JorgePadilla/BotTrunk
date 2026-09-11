@@ -1,0 +1,26 @@
+<p style="margin:0 0 16px 0;font-size:17px;font-weight:600;">We have your payment.</p>
+
+<p style="margin:0 0 20px 0;">
+  <%= hnl(@order.amount_hnl) %> is on its way to <strong><%= @order.beneficiary_name %></strong>
+  at <%= @order.bank %>. We make the transfer by hand, and it lands <strong>within 24 hours</strong>.
+  You'll get another email the moment it's done, with the bank's receipt reference.
+</p>
+
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 22px 0;">
+  <%= receipt_row "Order", @order.token, mono: true %>
+  <%= receipt_row "Amount", hnl(@order.amount_hnl) %>
+  <%= receipt_row "To", "#{@order.beneficiary_name} · #{@order.bank} #{masked_account(@order.account_number)}" %>
+  <%= receipt_row "Concept", @order.concept %>
+  <%= receipt_row "You paid", "#{usdc(@order.price_atomic)} USDC", mono: true %>
+  <%= receipt_row "Rate used", "L#{@order.rate_hnl_per_usd.to_s("F")} per USD" %>
+  <% if @order.call&.transaction_id %>
+    <%= receipt_row "Payment", link_to(@order.call.transaction_id.truncate(24), explorer_url(@order.call.transaction_id), style: "color:#171717"), mono: true %>
+  <% end %>
+</table>
+
+<p style="margin:0 0 22px 0;"><%= mail_button "Track this order", order_url(@order) %></p>
+
+<p style="margin:0;color:#666666;font-size:13px;">
+  Your agent can poll the same thing as JSON at <span style="font-family:ui-monospace,Menlo,monospace"><%= order_url(@order) %></span> — no key needed.
+  If we can't complete the transfer, we refund the USDC to the wallet that paid.
+</p>

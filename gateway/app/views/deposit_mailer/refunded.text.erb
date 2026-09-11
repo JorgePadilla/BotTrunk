@@ -1,0 +1,20 @@
+We couldn't complete this deposit, so we sent the money back.
+
+The USDC went back to the wallet that paid — the full amount, including our
+fee. Nothing was kept.
+
+Refunded:    <%= usdc(@order.price_atomic) %> USDC
+<% if @order.refund_transaction_id.present? -%>
+Transaction: <%= explorer_url(@order.refund_transaction_id) %>
+<% end -%>
+<% if @order.refunded_at -%>
+Sent back:   <%= l(@order.refunded_at, format: :long) %>
+<% end -%>
+Was for:     L<%= number_with_delimiter(@order.amount_hnl) %> to <%= @order.beneficiary_name %>
+Order:       <%= @order.token %>
+<% if @order.notes.present? -%>
+Reason:      <%= @order.notes %>
+<% end -%>
+
+If the account details were the problem, correct them and call the service
+again — the price is recalculated at that moment's rate.

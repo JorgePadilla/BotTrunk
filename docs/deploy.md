@@ -16,6 +16,7 @@ One Docker web service + one Postgres, described in `render.yaml` at the repo ro
 - Render → service → Settings → Custom Domains → add `api.bottrunk.com` and `bottrunk.com` (+ `www`). Render shows the CNAME target and issues TLS automatically.
 - DNS (Namecheap, or Cloudflare if we move the zone there — free, recommended so the apex `bottrunk.com` can CNAME-flatten):
   - `api` → CNAME → `<service>.onrender.com`
+  - `mcp` → CNAME → `<service>.onrender.com` (the hosted MCP endpoint; custom domain #3, so Render bills $0.25/mo for it)
   - `www` → CNAME → `<service>.onrender.com`
   - apex `@` → Render gives an A record / ALIAS instructions in the same screen.
 - `config.hosts` in `production.rb` lists exactly these hosts (plus `*.onrender.com`); add any new domain there first or Rails answers 403.
@@ -36,8 +37,21 @@ One Docker web service + one Postgres, described in `render.yaml` at the repo ro
 
 `git push` to `main` → Render builds and deploys (`autoDeploy: true`). Migrations run on boot. Roll back from the Render dashboard (Deploys → previous → Rollback) if needed.
 
+## Email (Resend)
+
+Delivery is plain SMTP, so the provider is four environment variables and nothing in the Gemfile. Without `SMTP_ADDRESS` the app logs a warning and sends nothing — that is the safe default, not a bug.
+
+1. Create the account at resend.com and add the domain `bottrunk.com`. Resend shows three DNS records: a TXT (DKIM, host `resend._domainkey`), an MX and a TXT for the `send` subdomain (SPF for the bounce domain).
+2. Add all three at Namecheap → Domain List → bottrunk.com → Advanced DNS, exactly as shown. **Do not touch the existing `@` TXT record** (`v=spf1 include:spf.efwd.registrar-servers.com ~all`) — that is the email *forwarding* for hello@bottrunk.com and it is unrelated to sending. Resend's SPF goes on the `send` subdomain, so the two never collide.
+3. Back in Resend, press Verify. It usually passes within a minute on Namecheap.
+4. Create an API key (sending permission only) and paste it into Render as `SMTP_PASSWORD` on **both** `bottrunk-gateway` and `bottrunk-digest`. Set `ADMIN_EMAIL` on both as well — that is where deposit alerts and the digest go. Everything else (`SMTP_ADDRESS`, `SMTP_PORT`, `SMTP_USER_NAME`, `MAIL_FROM`, `MAIL_REPLY_TO`) is already in `render.yaml`.
+5. Check it: `bin/rails mail:preview` sends one of each email to `ADMIN_EMAIL`, rendered from the newest real records. Nothing is written.
+
+`bottrunk-digest` is a Render cron job on the same image, running `bin/rails mail:digest` at `0 13 * * *` — 07:00 in Honduras, which is UTC-6 all year. It is billed per second of runtime, so a ten-second job a day costs pennies. Free tier at Resend is 3,000 emails a month, 100 a day; at current volume that is years of headroom, and the ceiling to watch is the *daily* one if a scraper ever starts opening deposits in a loop.
+
+Deliverability notes: the from address is `no-reply@bottrunk.com` and replies go to `hello@bottrunk.com`, which Namecheap forwards to a real inbox — so a customer hitting Reply reaches a person. Bounces and complaints show in the Resend dashboard; nothing in the app reads them yet.
+
 ## Not yet configured (Phase 1+)
 
-- Solid Queue / Solid Cache / Solid Cable: gems are installed but no schemas exist; `database.yml` production is a single primary and `cable.yml` uses `async`. Add them when async settlement lands (`SettlePaymentJob`).
-- Email (`SMTP_*` env) — seller notifications later.
+- Solid Queue / Solid Cache / Solid Cable: gems are installed but no schemas exist; `database.yml` production is a single primary and `cable.yml` uses `async`. Active Job runs on the `:async` adapter, which is fine for email; add Solid Queue and a worker when async settlement lands (`SettlePaymentJob`) or when a lost job would cost money.
 - Error tracking (Sentry/Honeybadger) — worth adding before real traffic.

@@ -1,0 +1,18 @@
+The money is in the account.
+
+L<%= number_with_delimiter(@order.amount_hnl) %> was transferred to <%= @order.beneficiary_name %> at <%= @order.bank %>.
+Keep the reference below — it's what the bank will ask for if anyone needs to
+trace the transfer.
+
+Receipt reference: <%= @order.receipt_reference %>
+<% if @order.delivered_at -%>
+Sent:              <%= l(@order.delivered_at, format: :long) %>
+<% end -%>
+Amount:            L<%= number_with_delimiter(@order.amount_hnl) %>
+To:                <%= @order.beneficiary_name %> · <%= @order.bank %> <%= masked_account(@order.account_number) %>
+Order:             <%= @order.token %>
+<% if @order.notes.present? -%>
+Note:              <%= @order.notes %>
+<% end -%>
+
+Anything wrong with this transfer? Reply within seven days and we'll sort it out.

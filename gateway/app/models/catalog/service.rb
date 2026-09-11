@@ -106,7 +106,7 @@ module Catalog
           Field.new("beneficiary_name", "string", "Account holder's name as the bank has it.", "María Pérez"),
           Field.new("account_number", "string", "BAC Credomatic account number (digits only).", "123456789"),
           Field.new("concept", "string", "Optional transfer concept, up to 60 characters.", "Pago factura 1043"),
-          Field.new("contact_email", "string", "Optional: where to send the receipt.", "ops@example.com")
+          Field.new("contact_email", "string", "Optional: emailed a receipt now and the bank reference when the transfer lands.", "ops@example.com")
         ],
         outputs: [
           Field.new("order_id", "string", "Token to poll at /orders/{order_id}.", "8kPz3n…"),

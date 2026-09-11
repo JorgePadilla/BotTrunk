@@ -1,0 +1,28 @@
+<% if @report[:queue].any? -%>
+<%= pluralize(@report[:queue].size, "deposit") %> waiting — L<%= number_with_delimiter(@report[:owed_hnl]) %> to move.
+
+<% @report[:queue].each do |order| -%>
+  L<%= number_with_delimiter(order.amount_hnl) %> · <%= order.beneficiary_name %> · <%= time_ago_in_words(order.created_at) %> old
+<% end -%>
+
+Clear the queue: <%= admin_orders_url %>
+<% else -%>
+Queue is empty.
+<% end -%>
+
+LAST 24 HOURS
+Paid calls:  <%= @report[:calls] %>
+Volume:      <%= usdc(@report[:volume]) %> USDC
+Our share:   <%= usdc(@report[:commission]) %> USDC
+<% if @report[:delivered].any? -%>
+Delivered:   <%= @report[:delivered].map { |o| "L#{number_with_delimiter(o.amount_hnl)} to #{o.beneficiary_name}" }.join(", ") %>
+<% end -%>
+<% if @report[:refunded].any? -%>
+Refunded:    <%= @report[:refunded].map { |o| "L#{number_with_delimiter(o.amount_hnl)} to #{o.beneficiary_name}" }.join(", ") %>
+<% end -%>
+<% if @report[:inquiries].any? -%>
+Inquiries:   <%= @report[:inquiries].map(&:service_name).join(", ") %>
+<% end -%>
+
+Full dashboard: <%= admin_stats_url %>
+Generated <%= l(@report[:generated_at], format: :long) %>

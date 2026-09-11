@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light">
+    <title><%= message.subject %></title>
+  </head>
+  <body style="margin:0;padding:0;background:#fafafa;-webkit-font-smoothing:antialiased;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#fafafa;">
+      <tr>
+        <td align="center" style="padding:32px 16px;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+                 style="max-width:560px;background:#ffffff;border:1px solid #e5e5e5;border-radius:10px;
+                        font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
+            <tr>
+              <td style="padding:24px 28px 0 28px;">
+                <a href="https://bottrunk.com" style="color:#171717;text-decoration:none;font-size:15px;font-weight:700;letter-spacing:-0.01em;">BotTrunk</a>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:20px 28px 28px 28px;color:#171717;font-size:15px;line-height:1.6;">
+                <%= yield %>
+              </td>
+            </tr>
+          </table>
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+                 style="max-width:560px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
+            <tr>
+              <td style="padding:16px 28px;color:#666666;font-size:12px;line-height:1.6;">
+                BotTrunk — a pay-per-call marketplace for AI agents.
+                Questions? Reply to this email, it reaches a person.
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

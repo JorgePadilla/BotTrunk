@@ -1,0 +1,14 @@
+<p style="margin:0 0 16px 0;font-size:17px;font-weight:600;">Someone wants to sell on BotTrunk.</p>
+
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 22px 0;">
+  <%= receipt_row "Service", @inquiry.service_name %>
+  <%= receipt_row "Endpoint", @inquiry.upstream_url, mono: true %>
+  <%= receipt_row "Wants", "#{usdc(@inquiry.price_atomic)} USDC per call", mono: true %>
+  <%= receipt_row "They keep", "#{usdc((@inquiry.price_atomic * 0.85).round)} · we keep #{usdc((@inquiry.price_atomic * 0.15).round)}", mono: true %>
+  <%= receipt_row "From", @inquiry.email %>
+  <%= receipt_row "Notes", simple_format(@inquiry.notes, {}, sanitize: true) if @inquiry.notes.present? %>
+</table>
+
+<p style="margin:0;color:#666666;font-size:13px;">
+  They've had an acknowledgement already. Replying to <%= mail_to @inquiry.email, @inquiry.email, style: "color:#171717" %> is the next move.
+</p>

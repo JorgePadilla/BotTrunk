@@ -31,6 +31,9 @@ Orders whose payment never settled show under "Never paid" and cost nobody anyth
 - **Promise:** 24 hours. If you will be away, set the tiers to `coming_soon` in `Catalog::Service` (they answer 503 and cannot be bought) rather than missing the window.
 - **Records:** every order keeps amount, rate, fee, payer address (via `calls`), receipt reference and timestamps. Account numbers are encrypted at rest (Active Record Encryption, deterministic so the daily limit can be counted). Production needs the keys in credentials: `bin/rails db:encryption:init` once, paste into `credentials.yml.enc`, redeploy.
 - **Limits are deliberate:** L10,000 per order and 3 orders per account per day keep any single day's exposure small while this is one person with one bank app.
+- **You are told, twice:** an email lands at `ADMIN_EMAIL` the moment a deposit settles (amount, beneficiary, masked account, link to the queue), and a digest at 07:00 lists anything still waiting with its age. If both are quiet and the queue is not empty, email is broken — check `SMTP_ADDRESS` and the Resend dashboard before assuming there is no work.
+- **The buyer is told, if they left an address:** a receipt when the payment settles, and the bank reference when you mark it delivered, or the refund transaction if you refund. `contact_email` is optional, so an order without one is normal — the flash message after you press Deliver says whether anyone was emailed.
+- **Account numbers are never emailed in full.** The alert shows the last four; the full number is in the queue, behind the admin password.
 
 ## Regulatory note (not legal advice)
 

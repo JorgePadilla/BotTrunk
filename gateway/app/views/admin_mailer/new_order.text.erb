@@ -1,0 +1,18 @@
+A deposit is waiting: L<%= number_with_delimiter(@order.amount_hnl) %> to <%= @order.beneficiary_name %>.
+
+Paid and settled. The clock on the 24-hour promise started <%= l(@order.created_at, format: :long) %>.
+
+Amount:       L<%= number_with_delimiter(@order.amount_hnl) %>
+Beneficiary:  <%= @order.beneficiary_name %>
+Account:      <%= @order.bank %> <%= masked_account(@order.account_number) %>
+<% if @order.concept.present? -%>
+Concept:      <%= @order.concept %>
+<% end -%>
+We received:  <%= usdc(@order.price_atomic) %> USDC at L<%= @order.rate_hnl_per_usd.to_s("F") %>/$
+Order:        <%= @order.token %>
+<% if @order.contact_email.present? -%>
+Contact:      <%= @order.contact_email %>
+<% end -%>
+
+Open the queue: <%= admin_orders_url %>
+The full account number is in the queue, not in this email.

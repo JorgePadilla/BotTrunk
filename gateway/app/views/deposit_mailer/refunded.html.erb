@@ -1,0 +1,21 @@
+<p style="margin:0 0 16px 0;font-size:17px;font-weight:600;">We couldn't complete this deposit, so we sent the money back.</p>
+
+<p style="margin:0 0 20px 0;">
+  The USDC went back to the wallet that paid — the full amount, including our fee.
+  Nothing was kept.
+</p>
+
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 22px 0;">
+  <%= receipt_row "Refunded", "#{usdc(@order.price_atomic)} USDC", mono: true %>
+  <% if @order.refund_transaction_id.present? %>
+    <%= receipt_row "Transaction", link_to(@order.refund_transaction_id.truncate(24), explorer_url(@order.refund_transaction_id), style: "color:#171717"), mono: true %>
+  <% end %>
+  <%= receipt_row "Sent back", l(@order.refunded_at, format: :long) if @order.refunded_at %>
+  <%= receipt_row "Was for", "#{hnl(@order.amount_hnl)} to #{@order.beneficiary_name}" %>
+  <%= receipt_row "Order", @order.token, mono: true %>
+  <%= receipt_row "Reason", @order.notes %>
+</table>
+
+<p style="margin:0;color:#666666;font-size:13px;">
+  If the account details were the problem, correct them and call the service again — the price is recalculated at that moment's rate.
+</p>

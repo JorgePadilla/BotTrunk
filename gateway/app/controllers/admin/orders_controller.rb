@@ -12,7 +12,8 @@ module Admin
     def deliver
       order = DepositOrder.find_by!(token: params[:token])
       order.deliver!(receipt_reference: params[:receipt_reference], notes: params[:notes])
-      redirect_to admin_orders_path, notice: "Order #{order.token} marked delivered."
+      Notifications::AnnounceOrderUpdate.new(order: order).call
+      redirect_to admin_orders_path, notice: "Order #{order.token} marked delivered.#{notified(order)}"
     rescue ActiveRecord::RecordInvalid => e
       redirect_to admin_orders_path, alert: e.message
     end
@@ -20,9 +21,15 @@ module Admin
     def refund
       order = DepositOrder.find_by!(token: params[:token])
       order.refund!(transaction_id: params[:refund_transaction_id], notes: params[:notes])
-      redirect_to admin_orders_path, notice: "Order #{order.token} marked refunded."
+      Notifications::AnnounceOrderUpdate.new(order: order).call
+      redirect_to admin_orders_path, notice: "Order #{order.token} marked refunded.#{notified(order)}"
     rescue ActiveRecord::RecordInvalid => e
       redirect_to admin_orders_path, alert: e.message
     end
+
+    private
+
+    # Say so in the flash, so nobody has to guess whether the buyer was told.
+    def notified(order) = order.contact_email.present? ? " Emailed #{order.contact_email}." : ""
   end
 end

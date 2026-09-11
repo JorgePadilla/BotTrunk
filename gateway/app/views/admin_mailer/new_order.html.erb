@@ -1,0 +1,22 @@
+<p style="margin:0 0 16px 0;font-size:17px;font-weight:600;">A deposit is waiting: <%= hnl(@order.amount_hnl) %> to <%= @order.beneficiary_name %>.</p>
+
+<p style="margin:0 0 20px 0;">
+  Paid and settled. The clock on the 24-hour promise started
+  <%= l(@order.created_at, format: :long) %>.
+</p>
+
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 22px 0;">
+  <%= receipt_row "Amount", hnl(@order.amount_hnl) %>
+  <%= receipt_row "Beneficiary", @order.beneficiary_name %>
+  <%= receipt_row "Account", "#{@order.bank} #{masked_account(@order.account_number)}" %>
+  <%= receipt_row "Concept", @order.concept %>
+  <%= receipt_row "We received", "#{usdc(@order.price_atomic)} USDC at L#{@order.rate_hnl_per_usd.to_s("F")}/$", mono: true %>
+  <%= receipt_row "Order", @order.token, mono: true %>
+  <%= receipt_row "Contact", @order.contact_email %>
+</table>
+
+<p style="margin:0 0 22px 0;"><%= mail_button "Open the queue", admin_orders_url %></p>
+
+<p style="margin:0;color:#666666;font-size:13px;">
+  The full account number is in the queue, not in this email.
+</p>

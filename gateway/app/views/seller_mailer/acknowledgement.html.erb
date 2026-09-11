@@ -1,0 +1,20 @@
+<p style="margin:0 0 16px 0;font-size:17px;font-weight:600;">Thanks — we have your listing request.</p>
+
+<p style="margin:0 0 20px 0;">
+  You asked to list <strong><%= @inquiry.service_name %></strong> at
+  <%= usdc(@inquiry.price_atomic) %> USDC per call. A person reads every one of these;
+  expect a reply within a couple of days.
+</p>
+
+<p style="margin:0 0 20px 0;">
+  What happens if we list you: your endpoint sits behind our x402 paywall, agents pay
+  per call in USDC on Algorand, and you keep <strong>85%</strong> of every call —
+  <%= usdc((@inquiry.price_atomic * 0.85).round) %> at the price you named. No monthly fee,
+  no minimum, and nothing to integrate beyond the API you already have.
+</p>
+
+<p style="margin:0 0 22px 0;"><%= mail_button "See how the paywall works", "https://bottrunk.com/docs" %></p>
+
+<p style="margin:0;color:#666666;font-size:13px;">
+  Wrong price, wrong URL, or second thoughts? Reply to this email and we'll change it.
+</p>

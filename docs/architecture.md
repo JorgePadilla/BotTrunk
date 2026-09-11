@@ -103,6 +103,9 @@ app/
     upstream/    client.rb
     ledger/      record_transaction.rb
     payouts/     create_payout.rb
+    notifications/ deliver.rb announce_order.rb announce_order_update.rb announce_inquiry.rb daily_digest.rb
+    mcp/         tools.rb dispatch.rb              (the hosted MCP endpoint, §6c)
+  mailers/       application_mailer.rb deposit_mailer.rb admin_mailer.rb seller_mailer.rb   (§8b)
   jobs/          settle_payment_job.rb payout_job.rb health_check_endpoint_job.rb
 ```
 
@@ -144,9 +147,31 @@ First-party and cookieless. `Analytics::Track` writes one `events` row per page 
 
 `GET /admin/stats` (HTTP basic auth, password from `ADMIN_PASSWORD` or credentials `admin.password`; no password means no access) renders `Stats::Overview`: rolling windows (24 h / 7 d / 30 d / all time) of views, visitors, probes, rejected payments, settled calls, unique payers, volume and commission; per-day bars; per-service rows; top referrers, pages and API clients; the last 20 settled calls (linked to allo.info) and probes. Components live in `app/components/dashboard/` (`StatRowComponent`, `DailyBarsComponent` — inline SVG, no chart library — and `TableComponent`).
 
+## 8b. Transactional email
+
+Plain Action Mailer over SMTP — no gem, no vendor SDK, so changing provider is four environment variables. Today that is Resend (`smtp.resend.com`, user `resend`, password = API key). **Without `SMTP_ADDRESS` the app logs a warning and delivers nothing**, which is what a fresh deploy or a forked repo should do.
+
+Four recipients, three mailers:
+
+| Mailer | When | To |
+|---|---|---|
+| `DepositMailer#received` | a deposit settles and joins the queue | the buyer, if `contact_email` was supplied |
+| `DepositMailer#delivered` / `#refunded` | someone clears it at `/admin/orders` | the buyer |
+| `AdminMailer#new_order` | a deposit settles | `ADMIN_EMAIL` |
+| `AdminMailer#new_inquiry` + `SellerMailer#acknowledgement` | a `/sell` form is submitted | `ADMIN_EMAIL`, and the seller |
+| `AdminMailer#digest` | 07:00 Honduras, by the `bottrunk-digest` cron | `ADMIN_EMAIL` |
+
+`contact_email` is optional on purpose: an agent with a wallet has no inbox, and the order token plus `GET /orders/:token` is the authoritative receipt. A mailer with no recipient builds a `NullMail` and nothing is queued. Likewise every `AdminMailer` returns early when `ADMIN_EMAIL` is unset — these never guess an address.
+
+**Bank account numbers are masked to the last four in every email.** They are encrypted at rest, mail is not a private channel, and the full number lives behind the admin password where the transfer is actually made.
+
+`Notifications::Deliver` is the only thing that calls `deliver_later`, and it swallows everything: a settled payment is irreversible on-chain long before we try to tell anyone about it, so a mail server having a bad afternoon must never become an error for the payer. `Notifications::AnnounceOrder`, `AnnounceOrderUpdate`, `AnnounceInquiry` and `DailyDigest` decide *who* hears about *what*; the call sites (`Gateway::HandlePaidCall`, `Admin::OrdersController`, `Sellers::CreateInquiry`) name one service and move on.
+
+Active Job runs in the web process (`:async`). Mail is best-effort and low-volume; a worker service and a durable queue are for work that must survive a restart, which a receipt is not. Every email has an HTML and a text part, table-based and inline-styled — `app/views/layouts/mailer.*`. Previews for all of them, with no database writes: `/rails/mailers` in development, or `bin/rails mail:preview` to send one of each to `ADMIN_EMAIL` from real records.
+
 ## 9. Cross-cutting
 
-- **Jobs:** Solid Queue. Anything that talks to the facilitator after the response is sent, payouts, health checks.
+- **Jobs:** Active Job on the `:async` adapter today (email only, §8b). Solid Queue and a worker service when something has to survive a restart: payouts, retrying facilitator calls, health checks.
 - **Rate limiting:** rack-attack in front of the paywall; unpaid 402 probes are cheap but not free.
 - **Observability:** Rails structured logging with `request_id`, `call_id`, `tx_id` tags; the `calls` table is the audit log; `events` + `/admin/stats` for traffic (§7).
 - **Security:** secrets in Rails credentials; wallet mnemonics never on the server (the gateway only *receives*); CSP on; `allow_browser versions: :modern`.

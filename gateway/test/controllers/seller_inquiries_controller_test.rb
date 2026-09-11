@@ -17,6 +17,22 @@ class SellerInquiriesControllerTest < ActionDispatch::IntegrationTest
     assert_nil inquiry.notes
   end
 
+  test "a valid inquiry reaches us and acknowledges the seller" do
+    with_admin_email do
+      assert_enqueued_emails 2 do
+        post seller_inquiries_url, params: { seller_inquiry: VALID }
+      end
+    end
+  end
+
+  test "a rejected form emails nobody" do
+    with_admin_email do
+      assert_no_enqueued_emails do
+        post seller_inquiries_url, params: { seller_inquiry: VALID.merge(email: "nope") }
+      end
+    end
+  end
+
   test "invalid inquiry re-renders the form with errors and keeps the typed price" do
     assert_no_difference("SellerInquiry.count") do
       post seller_inquiries_url, params: { seller_inquiry: VALID.merge(email: "nope", upstream_url: "ftp://x", price_usdc: "abc") }

@@ -1,0 +1,22 @@
+We have your payment.
+
+L<%= number_with_delimiter(@order.amount_hnl) %> is on its way to <%= @order.beneficiary_name %> at <%= @order.bank %>.
+We make the transfer by hand, and it lands within 24 hours. You'll get another
+email the moment it's done, with the bank's receipt reference.
+
+Order:      <%= @order.token %>
+Amount:     L<%= number_with_delimiter(@order.amount_hnl) %>
+To:         <%= @order.beneficiary_name %> · <%= @order.bank %> <%= masked_account(@order.account_number) %>
+<% if @order.concept.present? -%>
+Concept:    <%= @order.concept %>
+<% end -%>
+You paid:   <%= usdc(@order.price_atomic) %> USDC
+Rate used:  L<%= @order.rate_hnl_per_usd.to_s("F") %> per USD
+<% if @order.call&.transaction_id -%>
+Payment:    <%= explorer_url(@order.call.transaction_id) %>
+<% end -%>
+
+Track it: <%= order_url(@order) %>
+Your agent can poll the same URL as JSON — no key needed.
+
+If we can't complete the transfer, we refund the USDC to the wallet that paid.

@@ -1,0 +1,36 @@
+<p style="margin:0 0 20px 0;font-size:17px;font-weight:600;">
+  <% if @report[:queue].any? %>
+    <%= pluralize(@report[:queue].size, "deposit") %> waiting — <%= hnl(@report[:owed_hnl]) %> to move.
+  <% else %>
+    Queue is empty.
+  <% end %>
+</p>
+
+<% if @report[:queue].any? %>
+  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin:0 0 8px 0;border-collapse:collapse;">
+    <% @report[:queue].each do |order| %>
+      <tr>
+        <td style="padding:8px 12px 8px 0;border-top:1px solid #e5e5e5;font-size:14px;white-space:nowrap;"><strong><%= hnl(order.amount_hnl) %></strong></td>
+        <td style="padding:8px 12px 8px 0;border-top:1px solid #e5e5e5;font-size:14px;"><%= order.beneficiary_name %></td>
+        <td style="padding:8px 0;border-top:1px solid #e5e5e5;font-size:13px;color:#666666;white-space:nowrap;"><%= time_ago_in_words(order.created_at) %> old</td>
+      </tr>
+    <% end %>
+  </table>
+  <p style="margin:14px 0 22px 0;"><%= mail_button "Clear the queue", admin_orders_url %></p>
+<% end %>
+
+<p style="margin:0 0 10px 0;font-size:13px;color:#666666;text-transform:uppercase;letter-spacing:0.06em;">Last 24 hours</p>
+
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 22px 0;">
+  <%= receipt_row "Paid calls", @report[:calls].to_s %>
+  <%= receipt_row "Volume", "#{usdc(@report[:volume])} USDC", mono: true %>
+  <%= receipt_row "Our share", "#{usdc(@report[:commission])} USDC", mono: true %>
+  <%= receipt_row "Delivered", @report[:delivered].map { |o| "#{hnl(o.amount_hnl)} to #{o.beneficiary_name}" }.join(", ") %>
+  <%= receipt_row "Refunded", @report[:refunded].map { |o| "#{hnl(o.amount_hnl)} to #{o.beneficiary_name}" }.join(", ") %>
+  <%= receipt_row "Seller inquiries", @report[:inquiries].map(&:service_name).join(", ") %>
+</table>
+
+<p style="margin:0;color:#666666;font-size:13px;">
+  <%= link_to "Full dashboard", admin_stats_url, style: "color:#171717" %> ·
+  generated <%= l(@report[:generated_at], format: :long) %>
+</p>

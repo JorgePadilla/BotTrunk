@@ -1,0 +1,14 @@
+Someone wants to sell on BotTrunk.
+
+Service:    <%= @inquiry.service_name %>
+Endpoint:   <%= @inquiry.upstream_url %>
+Wants:      <%= usdc(@inquiry.price_atomic) %> USDC per call
+They keep:  <%= usdc((@inquiry.price_atomic * 0.85).round) %> · we keep <%= usdc((@inquiry.price_atomic * 0.15).round) %>
+From:       <%= @inquiry.email %>
+<% if @inquiry.notes.present? -%>
+
+Notes:
+<%= @inquiry.notes %>
+<% end -%>
+
+They've had an acknowledgement already. Reply to <%= @inquiry.email %>.

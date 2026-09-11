@@ -16,6 +16,7 @@ module Sellers
       inquiry = SellerInquiry.new(email: @email, service_name: @service_name, upstream_url: @upstream_url,
                                   price_atomic: to_atomic(@price_usdc), notes: @notes, price_usdc: @price_usdc)
       if inquiry.save
+        Notifications::AnnounceInquiry.new(inquiry: inquiry).call
         Result.success(inquiry: inquiry)
       else
         Result.failure(inquiry.errors.full_messages.to_sentence, code: :invalid, data: { inquiry: inquiry })

@@ -44,6 +44,65 @@ services:
         value: mainnet         # gateway wallet opted in to USDC 31566704 on Sept 11, 2026
       - key: APP_HOST
         value: bottrunk.com
+      # ---- Transactional email (Resend SMTP). Without SMTP_ADDRESS the app
+      # ---- logs a warning and sends nothing, which is the safe default.
+      - key: SMTP_ADDRESS
+        value: smtp.resend.com
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_DOMAIN
+        value: bottrunk.com
+      - key: SMTP_USER_NAME
+        value: resend
+      - key: SMTP_PASSWORD
+        sync: false            # Resend API key (re_...) — paste in the dashboard, never in git
+      - key: MAIL_FROM
+        value: BotTrunk <no-reply@bottrunk.com>
+      - key: MAIL_REPLY_TO
+        value: hello@bottrunk.com
+      - key: ADMIN_EMAIL
+        sync: false            # where deposit alerts and the daily digest go
+
+  # One run a day at 07:00 in Honduras (UTC-6): the operations digest.
+  # Billed per second of runtime, so a ten-second job costs pennies a year.
+  - type: cron
+    name: bottrunk-digest
+    runtime: docker
+    rootDir: gateway
+    dockerfilePath: ./Dockerfile
+    dockerCommand: ./bin/rails mail:digest
+    schedule: "0 13 * * *"
+    plan: starter
+    region: ohio
+    envVars:
+      - key: RAILS_ENV
+        value: production
+      - key: RAILS_LOG_LEVEL
+        value: info
+      - key: RAILS_MASTER_KEY
+        sync: false            # same value as the web service
+      - key: DATABASE_URL
+        fromDatabase:
+          name: bottrunk-db
+          property: connectionString
+      - key: APP_HOST
+        value: bottrunk.com
+      - key: SMTP_ADDRESS
+        value: smtp.resend.com
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_DOMAIN
+        value: bottrunk.com
+      - key: SMTP_USER_NAME
+        value: resend
+      - key: SMTP_PASSWORD
+        sync: false            # same Resend API key
+      - key: MAIL_FROM
+        value: BotTrunk <no-reply@bottrunk.com>
+      - key: MAIL_REPLY_TO
+        value: hello@bottrunk.com
+      - key: ADMIN_EMAIL
+        sync: false
 
 databases:
   - name: bottrunk-db
