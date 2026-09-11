@@ -1,0 +1,19 @@
+<p style="margin:0 0 16px 0;font-size:17px;font-weight:600;">We're not going to list <%= @inquiry.service_name %>.</p>
+
+<p style="margin:0 0 20px 0;">
+  <% if @inquiry.review_notes.present? %>
+    <%= @inquiry.review_notes %>
+  <% else %>
+    It isn't a fit for the catalog as it stands today. That's a judgement call about the
+    catalog, not about your work.
+  <% end %>
+</p>
+
+<p style="margin:0 0 20px 0;">
+  If something changes — a different price, a different endpoint, a use case you think we've
+  misread — reply to this email and we'll look again. Nothing about this decision is permanent.
+</p>
+
+<p style="margin:0;color:#666666;font-size:13px;">
+  You submitted <span style="font-family:ui-monospace,Menlo,monospace"><%= @inquiry.upstream_url %></span> at <%= usdc(@inquiry.price_atomic) %> USDC per call. Nothing was listed and nothing was charged.
+</p>

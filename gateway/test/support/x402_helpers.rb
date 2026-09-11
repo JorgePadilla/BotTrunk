@@ -1,15 +1,28 @@
 # frozen_string_literal: true
 
+require "ipaddr"
+
 module X402Helpers
   # Stand-in for Resolv: hosts named *.internal or "localhost" resolve to
   # private space, everything else to a public address.
   module FakeResolver
     def self.getaddresses(host)
+      # A literal IP resolves to itself, as it does in reality — otherwise a
+      # fake that answers "public" for http://127.0.0.1/ hides the case the
+      # SSRF guard exists for.
+      return [ host ] if literal_ip?(host)
       return [ "127.0.0.1" ] if host == "localhost"
       return [ "10.0.0.5" ] if host.end_with?(".internal")
       return [] if host == "nxdomain.test"
 
       [ "93.184.216.34" ]
+    end
+
+    def self.literal_ip?(host)
+      IPAddr.new(host)
+      true
+    rescue IPAddr::InvalidAddressError
+      false
     end
   end
 

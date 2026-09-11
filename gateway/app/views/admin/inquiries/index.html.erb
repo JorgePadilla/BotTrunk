@@ -1,0 +1,87 @@
+<% content_for :title, "Sellers — BotTrunk admin" %>
+
+<div class="flex flex-col gap-14 py-12 md:py-16">
+  <header class="flex flex-col gap-3">
+    <%= render Dashboard::AdminNavComponent.new(active: "Sellers", inquiries: @pending.size) %>
+    <h1 class="text-4xl font-semibold tracking-[-0.03em]">Sellers asking to list</h1>
+    <p class="text-muted">Nothing here is live. A seller's endpoint enters the catalog only after someone approves it, and the seller is emailed either way — silence is the one answer they should never get.</p>
+    <% if flash[:notice] %><p class="text-sm text-success"><%= flash[:notice] %></p><% end %>
+    <% if flash[:alert] %><p class="text-sm text-error"><%= flash[:alert] %></p><% end %>
+  </header>
+
+  <section class="flex flex-col gap-5">
+    <h2 class="text-[22px] font-semibold tracking-tight">To review · <%= @pending.size %></h2>
+    <% if @pending.empty? %>
+      <p class="text-sm text-muted">Nothing waiting.</p>
+    <% end %>
+
+    <% @pending.each do |inquiry| %>
+      <%= render Ui::CardComponent.new(class: "flex flex-col gap-5") do %>
+        <div class="flex flex-col gap-2 min-w-0">
+          <div class="flex items-baseline gap-3 flex-wrap">
+            <span class="text-2xl font-medium"><%= inquiry.service_name %></span>
+            <span class="font-mono text-muted"><%= usdc(inquiry.price_atomic) %> per call</span>
+          </div>
+          <dl class="grid grid-cols-[auto_1fr] gap-x-6 gap-y-1 text-sm">
+            <dt class="text-muted">Endpoint</dt>
+            <dd class="font-mono break-all"><%= link_to inquiry.upstream_url, inquiry.upstream_url, class: "link link-hover", target: "_blank", rel: "noopener nofollow noreferrer" %></dd>
+            <dt class="text-muted">From</dt><dd><%= mail_to inquiry.email, inquiry.email, class: "link link-hover" %></dd>
+            <dt class="text-muted">Split</dt>
+            <dd class="font-mono">they keep <%= usdc((inquiry.price_atomic * 0.85).round) %> · we keep <%= usdc((inquiry.price_atomic * 0.15).round) %></dd>
+            <dt class="text-muted">Asked</dt><dd><%= inquiry.created_at.utc.strftime("%Y-%m-%d %H:%M UTC") %> · <%= time_ago_in_words(inquiry.created_at) %> ago</dd>
+          </dl>
+          <% if inquiry.notes.present? %>
+            <p class="text-sm text-muted border-l-2 border-base-300 pl-3 mt-1 whitespace-pre-line"><%= inquiry.notes %></p>
+          <% end %>
+        </div>
+
+        <div class="flex flex-col md:flex-row gap-3 md:items-end border-t hairline pt-5">
+          <%= form_with url: admin_approve_inquiry_path(inquiry), class: "flex flex-col sm:flex-row gap-3 sm:items-end grow" do |f| %>
+            <label class="flex flex-col gap-1.5 grow">
+              <span class="text-[13px] text-muted">Note to the seller (optional, sent verbatim)</span>
+              <%= f.text_field :review_notes, class: "input w-full", placeholder: "We'd take this at 0.02 — tell us if that works." %>
+            </label>
+            <%= f.submit "Approve", class: "btn btn-primary" %>
+          <% end %>
+          <%= form_with url: admin_reject_inquiry_path(inquiry), class: "flex gap-3 items-end", data: { turbo_confirm: "Reject #{inquiry.service_name}? The seller is emailed." } do |f| %>
+            <%= f.hidden_field :review_notes, value: "" %>
+            <%= f.submit "Reject", class: "btn btn-ghost text-muted" %>
+          <% end %>
+        </div>
+      <% end %>
+    <% end %>
+  </section>
+
+  <section class="flex flex-col gap-5">
+    <h2 class="text-[22px] font-semibold tracking-tight">Decided</h2>
+    <% if @reviewed.empty? %>
+      <p class="text-sm text-muted">Nothing decided yet.</p>
+    <% else %>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead><tr class="border-b hairline text-left text-muted">
+            <th class="py-2 pr-4 font-medium">Service</th>
+            <th class="py-2 pr-4 font-medium">Price</th>
+            <th class="py-2 pr-4 font-medium">From</th>
+            <th class="py-2 pr-4 font-medium">Decision</th>
+            <th class="py-2 font-medium">Note</th>
+          </tr></thead>
+          <tbody>
+            <% @reviewed.each do |inquiry| %>
+              <tr class="border-b hairline align-top">
+                <td class="py-3 pr-4"><%= inquiry.service_name %></td>
+                <td class="py-3 pr-4 font-mono"><%= usdc(inquiry.price_atomic) %></td>
+                <td class="py-3 pr-4 text-muted"><%= inquiry.email %></td>
+                <td class="py-3 pr-4">
+                  <%= render(Ui::PillComponent.new(tone: inquiry.status == "approved" ? :success : :neutral)) { inquiry.status.titleize } %>
+                  <span class="text-muted text-xs block mt-1"><%= inquiry.reviewed_at&.utc&.strftime("%Y-%m-%d") %></span>
+                </td>
+                <td class="py-3 text-muted"><%= inquiry.review_notes.presence || "—" %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    <% end %>
+  </section>
+</div>

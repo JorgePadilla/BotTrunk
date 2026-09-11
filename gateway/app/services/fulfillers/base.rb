@@ -17,8 +17,14 @@ module Fulfillers
     TIMEOUT = 20
     USER_AGENT = "BotTrunk/0.1 (+https://bottrunk.com/docs)"
 
-    # DNS resolver used for the SSRF check; tests swap it for a fake.
-    cattr_accessor :resolver, default: Resolv
+    # DNS resolver used for the SSRF check; tests swap it for a fake. The
+    # check itself lives in Security::PublicUrl, because the seller form needs
+    # the same answer about URLs we will fetch later.
+    def self.resolver = Security::PublicUrl.resolver
+
+    def self.resolver=(value)
+      Security::PublicUrl.resolver = value
+    end
 
     def initialize(input:, connection: nil)
       @input = input.is_a?(Hash) ? input : {}
@@ -45,28 +51,13 @@ module Fulfillers
     # Parses and validates a public http(s) URL from `input[key]`.
     # Returns the URI, or nil after yielding the failure to the caller.
     def public_uri(key = "url")
-      raw = input[key].to_s.strip
-      uri = begin
-        URI.parse(raw)
-      rescue URI::InvalidURIError
-        nil
-      end
-      return yield bad_request("#{key} must be a public http(s) URL") unless uri.is_a?(URI::HTTP) && uri.host.present?
-      return yield bad_request("#{key} resolves to a private address") unless public_host?(uri.host)
+      uri, problem = Security::PublicUrl.parse(input[key], strict_dns: true)
+      return uri if problem.nil?
+      return yield bad_request("#{key} must be a public http(s) URL") if problem == :not_http
 
-      uri
-    end
-
-    def public_host?(host)
-      addresses = self.class.resolver.getaddresses(host)
-      return false if addresses.empty?
-
-      addresses.all? do |a|
-        ip = IPAddr.new(a)
-        !(ip.private? || ip.loopback? || ip.link_local? || ip == IPAddr.new("0.0.0.0"))
-      end
-    rescue IPAddr::InvalidAddressError, Resolv::ResolvError
-      false
+      # A host that does not resolve gets the same answer as one that resolves
+      # into private space: we could not prove it is safe to fetch.
+      yield bad_request("#{key} resolves to a private address")
     end
 
     def json(payload, status: 200) = Result.success(status: status, content_type: "application/json", body: payload.to_json)

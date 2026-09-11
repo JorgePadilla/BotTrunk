@@ -1,0 +1,17 @@
+You're in. <%= @inquiry.service_name %> is approved.
+
+We'll be in touch to agree the endpoint details and get it behind the paywall.
+Nothing goes live — and nothing can be charged — until you've confirmed it's ready.
+
+Service:    <%= @inquiry.service_name %>
+Endpoint:   <%= @inquiry.upstream_url %>
+Price:      <%= usdc(@inquiry.price_atomic) %> USDC per call
+You keep:   <%= usdc((@inquiry.price_atomic * 0.85).round) %> of each settled call
+<% if @inquiry.review_notes.present? -%>
+Note:       <%= @inquiry.review_notes %>
+<% end -%>
+
+How the paywall works: https://bottrunk.com/docs
+
+Changed your mind about the price, or the URL moved? Reply — it is easier to
+change now than later.

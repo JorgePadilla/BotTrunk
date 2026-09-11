@@ -1,0 +1,20 @@
+<p style="margin:0 0 16px 0;font-size:17px;font-weight:600;">You're in. <%= @inquiry.service_name %> is approved.</p>
+
+<p style="margin:0 0 20px 0;">
+  We'll be in touch to agree the endpoint details and get it behind the paywall.
+  Nothing goes live — and nothing can be charged — until you've confirmed it's ready.
+</p>
+
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 22px 0;">
+  <%= receipt_row "Service", @inquiry.service_name %>
+  <%= receipt_row "Endpoint", @inquiry.upstream_url, mono: true %>
+  <%= receipt_row "Price", "#{usdc(@inquiry.price_atomic)} USDC per call", mono: true %>
+  <%= receipt_row "You keep", "#{usdc((@inquiry.price_atomic * 0.85).round)} of each settled call", mono: true %>
+  <%= receipt_row "Note", @inquiry.review_notes %>
+</table>
+
+<p style="margin:0 0 22px 0;"><%= mail_button "How the paywall works", "https://bottrunk.com/docs" %></p>
+
+<p style="margin:0;color:#666666;font-size:13px;">
+  Changed your mind about the price, or the URL moved? Reply to this email — it is easier to change now than later.
+</p>

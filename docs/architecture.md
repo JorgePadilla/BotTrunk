@@ -103,7 +103,8 @@ app/
     upstream/    client.rb
     ledger/      record_transaction.rb
     payouts/     create_payout.rb
-    notifications/ deliver.rb announce_order.rb announce_order_update.rb announce_inquiry.rb daily_digest.rb
+    notifications/ deliver.rb announce_order.rb announce_order_update.rb announce_inquiry.rb announce_review.rb daily_digest.rb
+    security/    public_url.rb                   (the SSRF guard, shared by fulfillers and the seller form)
     mcp/         tools.rb dispatch.rb              (the hosted MCP endpoint, §6c)
   mailers/       application_mailer.rb deposit_mailer.rb admin_mailer.rb seller_mailer.rb   (§8b)
   jobs/          settle_payment_job.rb payout_job.rb health_check_endpoint_job.rb
@@ -142,6 +143,14 @@ Each entry can carry `behaviour:` — the decisions a service makes on a payer's
 `Catalog::Metrics` reads the `calls` ledger — count, median upstream latency (`percentile_cont`), success rate, volume, last call — cached 60 s, and `combined` merges a family's rows. Nothing on the site claims a latency or success rate that was not measured; a service with no calls shows none, and below `MIN_FOR_RATE` (20) calls the panel reports "none failed yet" or "1 of 4 failed" instead of a percentage — "100% success" over five calls reads as a guarantee and is worth nothing. The published p50 measures **fulfilment only**; settlement adds roughly four seconds, so the panel and the docs say so rather than letting an agent budget a 38 ms timeout for a four-second call. The catalog page also shows totals when there is real traffic.
 
 `/connect` is the setup page for twelve agent clients (Claude Code and Desktop, Cursor, VS Code, Cline, Windsurf, Zed, OpenClaw, Hermes Agent, Goose, the OpenAI Agents SDK, LangChain). The list lives in `app/models/docs/mcp_client.rb`: every snippet is copied from that client's own documentation and carries a `docs_url` to it, so when a client changes its config format the fix is one entry.
+
+## 6d. Seller inquiries and approval
+
+`/sell` records a `SellerInquiry` and nothing else: **no endpoint enters the catalog by being submitted.** An inquiry is `pending` until a person approves or rejects it at `/admin/inquiries`, and either decision emails the seller — silence is the one answer a seller should never get. `status`, `reviewed_at` and `review_notes` exist because before them the decision lived only in a mailbox.
+
+Two validations are security, not tidiness. `upstream_url` is checked against `Security::PublicUrl` — an upstream is a URL we will one day make requests to on an agent's behalf, so a private address accepted at registration is an SSRF that arrives on a delay; a host that does not resolve *yet* is allowed, because sellers register endpoints before they point DNS at them. And `price_atomic` has a ceiling (1,000,000 USDC), because anything above it is a typo or a probe and both deserve the same answer.
+
+`Security::PublicUrl` is the single place that decides whether a URL is safe to fetch; `Fulfillers::Base` delegates to it (and forwards its `resolver` test seam), so the guard on the paid path and the guard on the seller form cannot drift apart.
 
 ## 7. Human-fulfilled orders (lempira deposits)
 

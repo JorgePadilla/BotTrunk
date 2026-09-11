@@ -8,4 +8,18 @@ class SellerMailer < ApplicationMailer
 
     mail(to: @inquiry.email, subject: "We got your BotTrunk listing request")
   end
+
+  def approved
+    @inquiry = params[:inquiry]
+
+    mail(to: @inquiry.email, subject: "#{@inquiry.service_name} is approved for BotTrunk")
+  end
+
+  # Sent because the alternative is silence, which is what every other
+  # marketplace does and what everyone complains about.
+  def rejected
+    @inquiry = params[:inquiry]
+
+    mail(to: @inquiry.email, subject: "About #{@inquiry.service_name} on BotTrunk")
+  end
 end

@@ -25,6 +25,20 @@ class SellerInquiriesControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
+  test "a submission is a request, not a listing" do
+    post seller_inquiries_url, params: { seller_inquiry: VALID }
+
+    assert SellerInquiry.last.pending?, "nothing a seller submits may list itself"
+  end
+
+  test "an upstream URL inside our own network is refused at the form" do
+    assert_no_difference("SellerInquiry.count") do
+      post seller_inquiries_url, params: { seller_inquiry: VALID.merge(upstream_url: "http://localhost:3000/admin") }
+    end
+    assert_response :unprocessable_entity
+    assert_select "p.text-error", text: /public address/
+  end
+
   test "a rejected form emails nobody" do
     with_admin_email do
       assert_no_enqueued_emails do
