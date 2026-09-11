@@ -18,7 +18,8 @@ class Catalog::ServiceCardComponentTest < ViewComponent::TestCase
     metrics = Catalog::Metrics::Row.new(slug: "scrape-markdown", calls: 12, p50_ms: 812.0, success_rate: 1.0, volume: 1_080_000, last_at: Time.current)
     render_inline(Catalog::ServiceCardComponent.new(service: Catalog::Service.find("scrape-markdown"), metrics: metrics))
 
-    assert_text "per call · p50 812 ms · 100% success"
+    assert_text "per call · p50 812 ms"
+    assert_no_text "success"
   end
 
   test "a family renders as one card labelled with the range" do

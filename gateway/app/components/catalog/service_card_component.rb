@@ -30,7 +30,9 @@ module Catalog
     def price_suffix
       return amount_range if family?
 
-      [ "per call", metrics&.performance ].compact.join(" · ")
+      # Latency only on a card — the success rate and the sample size are on
+      # the service page, and three facts wrap onto two lines here.
+      [ "per call", ("p50 #{metrics.latency}" if metrics&.any? && metrics.latency) ].compact.join(" · ")
     end
 
     private

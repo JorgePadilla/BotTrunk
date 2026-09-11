@@ -21,7 +21,7 @@ class CatalogControllerTest < ActionDispatch::IntegrationTest
     get root_url
     assert_match "paid calls settled", response.body
     assert_match "$0.09", response.body
-    assert_select "span", text: "per call · p50 812 ms · 100% success"
+    assert_select "span", text: "per call · p50 812 ms"
   end
 
   test "page views are recorded with the referrer host, service pages with their slug" do
