@@ -31,8 +31,27 @@ Rails.application.configure do
   # Store uploaded files on the local file system (see config/storage.yml for options).
   config.active_storage.service = :local
 
-  # Don't care if the mailer can't send.
-  config.action_mailer.raise_delivery_errors = false
+  # Nothing is sent from a laptop by default: emails go to the log and to
+  # http://localhost:3000/rails/mailers. Put SMTP_ADDRESS and the rest in
+  # gateway/.env.local (loaded by config/initializers/env_local.rb) to really
+  # send — that is how `bin/rails mail:preview` reaches a live inbox before
+  # anything is deployed.
+  if ENV["SMTP_ADDRESS"].present?
+    config.action_mailer.delivery_method = :smtp
+    config.action_mailer.raise_delivery_errors = true
+    config.action_mailer.smtp_settings = {
+      address:              ENV.fetch("SMTP_ADDRESS"),
+      port:                 ENV.fetch("SMTP_PORT", 587).to_i,
+      domain:               ENV.fetch("SMTP_DOMAIN", "bottrunk.com"),
+      user_name:            ENV["SMTP_USER_NAME"],
+      password:             ENV["SMTP_PASSWORD"],
+      authentication:       :plain,
+      enable_starttls_auto: true
+    }
+  else
+    config.action_mailer.delivery_method = :test
+    config.action_mailer.raise_delivery_errors = false
+  end
 
   # Make template changes take effect immediately.
   config.action_mailer.perform_caching = false

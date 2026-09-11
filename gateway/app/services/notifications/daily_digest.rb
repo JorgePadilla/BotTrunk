@@ -18,16 +18,14 @@ module Notifications
     end
 
     def call
-      report = build
-      Deliver.call(AdminMailer.with(report: report.to_h).digest)
-      Result.success(report: report)
+      current = report
+      Deliver.call(AdminMailer.with(report: current.to_h).digest)
+      Result.success(report: current)
     end
 
-    private
-
-    def since = @now - WINDOW
-
-    def build
+    # The same numbers without sending anything — for `bin/rails mail:preview`
+    # and for anywhere else that wants to look at the day without mailing it.
+    def report
       queue = DepositOrder.queue.to_a
       calls = Call.since(since)
       Report.new(
@@ -43,6 +41,10 @@ module Notifications
         inquiries: SellerInquiry.where(created_at: since..).order(:created_at).to_a
       )
     end
+
+    private
+
+    def since = @now - WINDOW
 
     # "19 hours", "2 days" — enough to feel late, without a timestamp to decode.
     def age(time)
