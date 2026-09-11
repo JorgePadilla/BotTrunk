@@ -25,7 +25,7 @@ Every live service below becomes a tool, with per-call and per-day spending caps
 ## Services
 
 <% @services.each do |service| %>
-- **<%= service.slug %>** — <%= service.summary %> <%= service.lempira? ? "Priced from the Banco Central de Honduras reference rate (about #{usdc(service.price_atomic)} for L#{number_with_delimiter(service.price_hnl)} today)." : "#{usdc(service.price_atomic)} USDC per call." %><%= " Not callable yet — write to hello@bottrunk.com to arrange it." if service.on_request? %> Endpoint: <%= service.endpoint_url %>
+- **<%= service.slug %>** — <%= service.summary %> <%= service.lempira? ? "Priced from the Banco Central de Honduras reference rate (about #{usdc(service.price_atomic, decimals: 2)} for L#{number_with_delimiter(service.price_hnl)} today)." : "#{usdc(service.price_atomic)} USDC per call." %><%= " Not callable yet — write to hello@bottrunk.com to arrange it." if service.on_request? %> Endpoint: <%= service.endpoint_url %>
 <% end %>
 
 ## Catalog and status
