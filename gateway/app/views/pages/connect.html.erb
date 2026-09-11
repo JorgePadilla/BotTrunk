@@ -11,17 +11,25 @@
   <section class="flex flex-col gap-6">
     <div class="flex flex-col gap-2 max-w-2xl">
       <h2 class="text-[26px] font-semibold tracking-tight">Remote: nothing to install</h2>
-      <p class="text-muted">One URL, <span class="font-mono">https://mcp.bottrunk.com/mcp</span>, speaking MCP over Streamable HTTP. Any client that takes a remote server can add it — including ChatGPT and Claude on the web, which cannot run a local command.</p>
+      <p class="text-muted">One URL, <span class="font-mono">https://mcp.bottrunk.com/mcp</span>, speaking MCP over Streamable HTTP. Any client that takes a remote server can add it — including ChatGPT and Claude on the web, which run in the cloud and cannot start a local command at all.</p>
     </div>
     <div class="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_320px] gap-8 items-start">
       <%= render Docs::CodeSnippetComponent.new(snippets: {
         "Claude Code" => "claude mcp add --transport http bottrunk https://mcp.bottrunk.com/mcp",
-        "Cursor / Claude Desktop" => <<~JSON.strip,
+        "Cursor" => <<~JSON.strip,
+          // ~/.cursor/mcp.json
           { "mcpServers": { "bottrunk": { "url": "https://mcp.bottrunk.com/mcp" } } }
         JSON
-        "VS Code" => <<~JSON.strip
+        "VS Code" => <<~JSON.strip,
+          // .vscode/mcp.json
           { "servers": { "bottrunk": { "type": "http", "url": "https://mcp.bottrunk.com/mcp" } } }
         JSON
+        "Claude / ChatGPT (web)" => <<~TEXT.strip
+          Claude:  Settings → Connectors → Add custom connector
+          ChatGPT: Settings → Connectors → enable developer mode → Add custom connector
+
+          Paste https://mcp.bottrunk.com/mcp — there is nothing to authorize.
+        TEXT
       })
       %>
       <div class="flex flex-col gap-3 text-sm text-muted">
@@ -91,7 +99,7 @@
     <section class="flex flex-col gap-3.5">
       <h2 class="text-[22px] font-semibold tracking-tight">Something else?</h2>
       <p class="text-muted">Anything that speaks MCP over stdio works: the command is always <span class="font-mono">npx -y bottrunk-mcp</span>. And nothing forces you to use MCP at all — the endpoints are plain HTTP with an x402 paywall, so curl, Python or TypeScript work the same way.</p>
-      <p class="text-sm text-muted">Running somewhere that can't spawn a local command — ChatGPT, Claude on the web, a hosted agent platform? Use <span class="font-mono">https://mcp.bottrunk.com/mcp</span> for discovery and let the agent pay the endpoint directly with its own wallet.</p>
+      <p class="text-sm text-muted">Running somewhere that can't spawn a local command — ChatGPT, Claude on the web, a hosted agent platform? Add <span class="font-mono">https://mcp.bottrunk.com/mcp</span> as a custom connector for discovery, and let the agent pay the endpoint directly with its own wallet.</p>
       <div class="mt-2"><%= render(Ui::ButtonComponent.new(href: "/docs", icon: "arrow-right")) { "Read the protocol docs" } %></div>
     </section>
     <section class="flex flex-col gap-3.5">
