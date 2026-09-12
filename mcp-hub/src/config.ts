@@ -14,10 +14,10 @@ export interface Config {
   walletFile: string;
   /** 25-word Algorand mnemonic, if the user brings their own wallet. */
   mnemonic?: string;
-  /** Hard ceiling for a single call, in µUSDC. */
-  maxPerCallAtomic: bigint;
-  /** Hard ceiling for one UTC day, in µUSDC. */
-  maxPerDayAtomic: bigint;
+  /** Hard ceiling for a single call, in µUSDC. `null` means the user turned it off. */
+  maxPerCallAtomic: bigint | null;
+  /** Hard ceiling for one UTC day, in µUSDC. `null` means the user turned it off. */
+  maxPerDayAtomic: bigint | null;
   /** Where the daily spend ledger is kept. */
   spendFile: string;
   /** Algod endpoints per CAIP-2 network id. */
@@ -43,6 +43,25 @@ const DEFAULTS = {
   maxPerDay: "10000",
 };
 
+/** Spellings that mean "I do not want this cap". */
+const NO_CAP = /^(none|unlimited|off|no)$/i;
+
+/**
+ * A cap from the environment: an amount, or null when the user turned it off.
+ *
+ * `0` is refused rather than guessed at. It reads as "no limit" to about half
+ * of people and "refuse everything" to the other half, and both of them would
+ * be surprised by the other's answer.
+ */
+export function parseCap(value: string, name: string): bigint | null {
+  const raw = value.trim();
+  if (NO_CAP.test(raw)) return null;
+  if (/^0(\.0+)?$/.test(raw)) {
+    throw new Error(`${name}=0 would refuse every call. Set an amount, or "none" if you want no limit at all.`);
+  }
+  return usdcToAtomic(raw);
+}
+
 /** Parses a decimal USDC amount ("0.05", "1000") into µUSDC. Throws on garbage. */
 export function usdcToAtomic(value: string): bigint {
   const m = /^(\d+)(?:\.(\d{1,6}))?$/.exec(value.trim());
@@ -50,6 +69,11 @@ export function usdcToAtomic(value: string): bigint {
   const whole = BigInt(m[1]);
   const frac = BigInt((m[2] ?? "").padEnd(6, "0"));
   return whole * 1_000_000n + frac;
+}
+
+/** A cap for humans: an amount, or "no limit" when it is off. */
+export function capLabel(cap: bigint | null): string {
+  return cap === null ? "no limit" : `${atomicToUsdc(cap)} USDC`;
 }
 
 /** Formats µUSDC for humans: 5000n → "0.005". */
@@ -65,8 +89,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     apiBase: (env.BOTTRUNK_API ?? DEFAULTS.apiBase).replace(/\/+$/, ""),
     walletFile: env.BOTTRUNK_WALLET_FILE ?? path.join(home, "wallet.json"),
     mnemonic: env.BOTTRUNK_MNEMONIC?.trim() || undefined,
-    maxPerCallAtomic: usdcToAtomic(env.BOTTRUNK_MAX_PER_CALL ?? DEFAULTS.maxPerCall),
-    maxPerDayAtomic: usdcToAtomic(env.BOTTRUNK_MAX_PER_DAY ?? DEFAULTS.maxPerDay),
+    maxPerCallAtomic: parseCap(env.BOTTRUNK_MAX_PER_CALL ?? DEFAULTS.maxPerCall, "BOTTRUNK_MAX_PER_CALL"),
+    maxPerDayAtomic: parseCap(env.BOTTRUNK_MAX_PER_DAY ?? DEFAULTS.maxPerDay, "BOTTRUNK_MAX_PER_DAY"),
     spendFile: path.join(home, "spend.json"),
     algod: {
       [MAINNET]: env.BOTTRUNK_ALGOD_MAINNET ?? "https://mainnet-api.algonode.cloud",

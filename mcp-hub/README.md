@@ -108,8 +108,8 @@ Services marked `coming_soon` in the catalog are listed but not exposed as tools
 |---|---|---|
 | `BOTTRUNK_MNEMONIC` | — | Use an existing 25-word Algorand mnemonic instead of the wallet file. |
 | `BOTTRUNK_WALLET_FILE` | `~/.bottrunk/wallet.json` | Where `wallet` writes/reads the generated key. |
-| `BOTTRUNK_MAX_PER_CALL` | `1000` | Refuse any single call above this many USDC. |
-| `BOTTRUNK_MAX_PER_DAY` | `10000` | Refuse once today's total (UTC) would pass this many USDC. |
+| `BOTTRUNK_MAX_PER_CALL` | `1000` | Refuse any single call above this many USDC. `none` turns it off. |
+| `BOTTRUNK_MAX_PER_DAY` | `10000` | Refuse once today's total (UTC) would pass this many USDC. `none` turns it off. |
 | `BOTTRUNK_API` | `https://api.bottrunk.com` | Gateway base URL (catalog + paid endpoints). |
 | `ALGORAND_NETWORK` | `mainnet` | Network for `wallet optin` and `wallet fund`; paid calls follow whatever the 402 says. |
 | `BOTTRUNK_OPERATOR` | — | Default `--from` address for `wallet fund`. |

@@ -53,15 +53,19 @@ export class SpendTracker {
 
   /** Throws SpendCapError when paying `amount` would break either cap. */
   assertAllowed(amount: bigint): void {
-    if (amount > this.config.maxPerCallAtomic) {
+    const perCall = this.config.maxPerCallAtomic;
+    const perDay = this.config.maxPerDayAtomic;
+    if (perCall !== null && amount > perCall) {
       throw new SpendCapError(
-        `This call costs ${atomicToUsdc(amount)} USDC, above the per-call cap of ${atomicToUsdc(this.config.maxPerCallAtomic)} USDC. Raise BOTTRUNK_MAX_PER_CALL to allow it.`,
+        `This call costs ${atomicToUsdc(amount)} USDC, above the per-call cap of ${atomicToUsdc(perCall)} USDC. Raise BOTTRUNK_MAX_PER_CALL to allow it, or set it to "none" for no cap at all.`,
       );
     }
+    if (perDay === null) return;
+
     const spent = this.spentToday();
-    if (spent + amount > this.config.maxPerDayAtomic) {
+    if (spent + amount > perDay) {
       throw new SpendCapError(
-        `Paying ${atomicToUsdc(amount)} USDC would exceed today's cap of ${atomicToUsdc(this.config.maxPerDayAtomic)} USDC (already spent ${atomicToUsdc(spent)}). Raise BOTTRUNK_MAX_PER_DAY or wait for tomorrow (UTC).`,
+        `Paying ${atomicToUsdc(amount)} USDC would exceed today's cap of ${atomicToUsdc(perDay)} USDC (already spent ${atomicToUsdc(spent)}). Raise BOTTRUNK_MAX_PER_DAY or wait for tomorrow (UTC).`,
       );
     }
   }

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { createRequire } from "node:module";
-import { atomicToUsdc, loadConfig, MAINNET, TESTNET, usdcToAtomic } from "./config.js";
+import { atomicToUsdc, capLabel, loadConfig, MAINNET, TESTNET, usdcToAtomic } from "./config.js";
 import { createPayingFetch } from "./pay.js";
 import { buildServer } from "./server.js";
 import { SpendTracker } from "./spend.js";
@@ -31,8 +31,8 @@ Usage:
 Environment:
   BOTTRUNK_MNEMONIC        use an existing 25-word Algorand mnemonic instead of the wallet file
   BOTTRUNK_WALLET_FILE     where the generated wallet lives (default ~/.bottrunk/wallet.json)
-  BOTTRUNK_MAX_PER_CALL    per-call cap in USDC (default 1000)
-  BOTTRUNK_MAX_PER_DAY     per-day cap in USDC (default 10000)
+  BOTTRUNK_MAX_PER_CALL    per-call cap in USDC (default 1000; "none" for no cap)
+  BOTTRUNK_MAX_PER_DAY     per-day cap in USDC (default 10000; "none" for no cap)
   BOTTRUNK_API             gateway base URL (default https://api.bottrunk.com)
   ALGORAND_NETWORK         mainnet | testnet, for \`wallet optin\` and \`wallet fund\` (default mainnet)
   BOTTRUNK_OPERATOR        default --from address for \`wallet fund\`
@@ -144,7 +144,7 @@ async function main(argv: string[]): Promise<void> {
       process.stdout.write(`Balances unavailable: ${(e as Error).message}\n`);
     }
     process.stdout.write(
-      `\nCaps: ${atomicToUsdc(config.maxPerCallAtomic)} USDC/call · ${atomicToUsdc(config.maxPerDayAtomic)} USDC/day\n\n` +
+      `\nCaps: ${capLabel(config.maxPerCallAtomic)} per call · ${capLabel(config.maxPerDayAtomic)} per day\n\n` +
         `Fund it — two sends, in this order. An agent cannot fund itself, and USDC sent\n` +
         `before the opt-in does not arrive, it fails.\n\n` +
         `  1. ${(FUND_ALGO_MICRO / 1e6).toFixed(1)} ALGO to ${wallet.address}\n` +

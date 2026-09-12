@@ -238,6 +238,34 @@ describe("MCP server", () => {
   });
 });
 
+describe("spending caps that can be turned off", () => {
+  it('accepts "none" and stops enforcing that cap', () => {
+    const off = loadConfig({ BOTTRUNK_HOME: tmpHome(), BOTTRUNK_MAX_PER_CALL: "none", BOTTRUNK_MAX_PER_DAY: "none" });
+
+    assert.equal(off.maxPerCallAtomic, null);
+    assert.equal(off.maxPerDayAtomic, null);
+    assert.doesNotThrow(() => new SpendTracker(off).assertAllowed(usdcToAtomic("999999")));
+  });
+
+  it("turning one off leaves the other enforcing", () => {
+    const config = loadConfig({ BOTTRUNK_HOME: tmpHome(), BOTTRUNK_MAX_PER_CALL: "none", BOTTRUNK_MAX_PER_DAY: "5" });
+    const spend = new SpendTracker(config);
+
+    assert.doesNotThrow(() => spend.assertAllowed(usdcToAtomic("4")), "no per-call cap to break");
+    assert.throws(() => spend.assertAllowed(usdcToAtomic("6")), SpendCapError, "the daily cap still holds");
+  });
+
+  it("refuses 0 rather than guessing which of the two things it means", () => {
+    assert.throws(() => loadConfig({ BOTTRUNK_HOME: tmpHome(), BOTTRUNK_MAX_PER_CALL: "0" }), /refuse every call/);
+  });
+
+  it("still defaults to a cap, because the catalog goes to hundreds of dollars a call", () => {
+    const config = loadConfig({ BOTTRUNK_HOME: tmpHome() });
+
+    assert.equal(config.maxPerCallAtomic, usdcToAtomic("1000"));
+  });
+});
+
 describe("readiness", () => {
   const wallet = walletFromMnemonic(algosdk.secretKeyToMnemonic(algosdk.generateAccount().sk), "env");
 

@@ -1,6 +1,6 @@
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { CallToolRequestSchema, ListToolsRequestSchema, type Tool } from "@modelcontextprotocol/sdk/types.js";
-import { atomicToUsdc, MAINNET, type Config } from "./config.js";
+import { atomicToUsdc, capLabel, MAINNET, type Config } from "./config.js";
 import { fetchCatalog, inputSchema, liveServices, priceLabel, toolDescription, toolName, type CatalogService } from "./catalog.js";
 import type { PaidFetch } from "./pay.js";
 import { SpendCapError, type SpendTracker } from "./spend.js";
@@ -165,7 +165,7 @@ function renderCatalog(catalog: CatalogService[], query?: string, category?: str
 
 async function renderWallet(deps: HubDeps, fetchImpl: typeof fetch): Promise<string> {
   const { config, wallet, spend } = deps;
-  const caps = `Caps: ${atomicToUsdc(config.maxPerCallAtomic)} USDC per call, ${atomicToUsdc(config.maxPerDayAtomic)} USDC per day. Spent today: ${atomicToUsdc(spend.spentToday())} USDC.`;
+  const caps = `Caps: ${capLabel(config.maxPerCallAtomic)} per call, ${capLabel(config.maxPerDayAtomic)} per day. Spent today: ${atomicToUsdc(spend.spentToday())} USDC.`;
   if (!wallet) {
     return `No wallet configured. Run \`npx bottrunk-mcp wallet\` to create one, or set BOTTRUNK_MNEMONIC.\n${caps}`;
   }
