@@ -1,0 +1,16 @@
+<%= @first_from_payer ? "A wallet paid you for the first time." : "A paid call settled." %>
+
+Service:    <%= @call.service_slug %>
+Paid:       <%= usdc(@call.amount) %> USDC
+You keep:   <%= usdc(@call.commission) %> · seller <%= usdc(@call.seller_amount) %>
+Payer:      <%= @call.payer_address.presence || "not reported" %>
+<% if @call.transaction_id.present? -%>
+Txn:        <%= explorer_url(@call.transaction_id) %>
+<% end -%>
+<% if @call.upstream_latency_ms.present? -%>
+Upstream:   <%= @call.upstream_status %> in <%= @call.upstream_latency_ms %> ms
+<% end -%>
+<% if @first_from_payer -%>
+
+This address has never paid before. If it isn't one of yours, it's a customer.
+<% end -%>

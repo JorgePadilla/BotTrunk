@@ -26,6 +26,7 @@ namespace :mail do
     order.contact_email = to
     inquiry = SellerInquiry.order(created_at: :desc).first || MailPreviewTask.sample_inquiry
     inquiry.email = to
+    call = Call.order(created_at: :desc).first || MailPreviewTask.sample_call
 
     MailPreviewTask.with_admin(to) do
       DepositMailer.with(order: order).received.deliver_now
@@ -35,9 +36,10 @@ namespace :mail do
       AdminMailer.with(inquiry: inquiry).new_inquiry.deliver_now
       SellerMailer.with(inquiry: inquiry).acknowledgement.deliver_now
       AdminMailer.with(report: Notifications::DailyDigest.new.report.to_h).digest.deliver_now
+      AdminMailer.with(call: call, first_from_payer: true).call_settled.deliver_now
     end
 
-    puts "[mail:preview] seven emails sent to #{to} over #{method} from #{ActionMailer::Base.default[:from]}"
+    puts "[mail:preview] eight emails sent to #{to} over #{method} from #{ActionMailer::Base.default[:from]}"
     puts "[mail:preview] nothing was written: #{order.persisted? ? 'the order shown is real but unchanged' : 'no orders exist yet, so a sample was used'}"
   end
 end
@@ -71,6 +73,15 @@ module MailPreviewTask
   def sample_inquiry
     SellerInquiry.new(service_name: "Honduran court records lookup", upstream_url: "https://api.example.com/v1/records",
                       price_atomic: 250_000, notes: "Sample inquiry — nothing was saved.", created_at: Time.current)
+  end
+
+  def sample_call
+    Call.new(service_slug: "extract-links", pay_to: "UTWS33TM7IT7NINJSFWS5KVGL73G4ERJMYDKHF7KE4WDXHYO4L7V2PNMRE",
+             network: "algorand:wGHE2Pwdvd7S12BL5FaOP20EGYesN73ktiC1qzkkit8=", asset: "31566704",
+             amount: 20_000, commission: 3_000, seller_amount: 17_000,
+             payer_address: "LQAWG3WUMKWTFGEFCCOET6JGPRKD2JFYPIJ6HPIRYAC6QDUJSBDVMCKPFQ",
+             transaction_id: "FCWUMYHZINLKODF6YTKPBDRHXITZTOZYCOC7KRXHXXH6MYA5KMKQ",
+             upstream_status: 200, upstream_latency_ms: 412, status: "settled", created_at: Time.current)
   end
 
   def with_admin(address)

@@ -20,6 +20,17 @@ module MailPreviewData
     }.merge(overrides))
   end
 
+  def self.call(**overrides)
+    Call.new({
+      service_slug: "extract-links", pay_to: "UTWS33TM7IT7NINJSFWS5KVGL73G4ERJMYDKHF7KE4WDXHYO4L7V2PNMRE",
+      network: "algorand:wGHE2Pwdvd7S12BL5FaOP20EGYesN73ktiC1qzkkit8=", asset: "31566704",
+      amount: 20_000, commission: 3_000, seller_amount: 17_000,
+      payer_address: "LQAWG3WUMKWTFGEFCCOET6JGPRKD2JFYPIJ6HPIRYAC6QDUJSBDVMCKPFQ",
+      transaction_id: "FCWUMYHZINLKODF6YTKPBDRHXITZTOZYCOC7KRXHXXH6MYA5KMKQ",
+      upstream_status: 200, upstream_latency_ms: 412, status: "settled", created_at: Time.current
+    }.merge(overrides))
+  end
+
   def self.digest(empty: false)
     queue = empty ? [] : [ order(amount_hnl: 2_500, created_at: 19.hours.ago),
                            order(amount_hnl: 1_000, beneficiary_name: "Carlos Fúnez", created_at: 4.hours.ago) ]

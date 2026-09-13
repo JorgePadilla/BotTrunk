@@ -1,0 +1,21 @@
+<p style="margin:0 0 16px 0;font-size:17px;font-weight:600;">
+  <%= @first_from_payer ? "A wallet paid you for the first time." : "A paid call settled." %>
+</p>
+
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 22px 0;">
+  <%= receipt_row "Service", @call.service_slug, mono: true %>
+  <%= receipt_row "Paid", "#{usdc(@call.amount)} USDC", mono: true %>
+  <%= receipt_row "You keep", "#{usdc(@call.commission)} · seller #{usdc(@call.seller_amount)}", mono: true %>
+  <%= receipt_row "Payer", @call.payer_address.presence || "not reported", mono: true %>
+  <%= receipt_row "Upstream", "#{@call.upstream_status} in #{@call.upstream_latency_ms} ms" if @call.upstream_latency_ms.present? %>
+</table>
+
+<% if @call.transaction_id.present? %>
+  <p style="margin:0 0 22px 0;"><%= mail_button "See the transaction", explorer_url(@call.transaction_id) %></p>
+<% end %>
+
+<% if @first_from_payer %>
+  <p style="margin:0;color:#666666;font-size:13px;">
+    This address has never paid before. If it isn't one of yours, it's a customer.
+  </p>
+<% end %>

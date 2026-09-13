@@ -186,6 +186,18 @@ Four recipients, three mailers:
 
 Active Job runs in the web process (`:async`). Mail is best-effort and low-volume; a worker service and a durable queue are for work that must survive a restart, which a receipt is not. Every email has an HTML and a text part, table-based and inline-styled — `app/views/layouts/mailer.*`. Previews for all of them, with no database writes: `/rails/mailers` in development, or `bin/rails mail:preview` to send one of each to `ADMIN_EMAIL` from real records.
 
+A paid call also alerts the operator (`Notifications::AnnounceCall`, hooked
+into `HandlePaidCall` after the ledger write). The subject is the whole
+message, because that is all a phone shows:
+
+    New payer — extract-links, $0.02 from LQAWG3…KPFQ
+    Paid call — scrape-markdown, $0.09 from LQAWG3…KPFQ
+
+"New payer" means this wallet's first ever settled call — the only signal that
+separates a customer from our own testing. A payer the facilitator did not
+report is never called new. The alert never raises into the response: the payer
+already has their answer and the money has already moved.
+
 ## 8c. Agent-readable files (`WellKnownController`)
 
 The facilitator probes our origin for a fixed list of files and links every one

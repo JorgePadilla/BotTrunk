@@ -38,6 +38,7 @@ module Gateway
       receipt = settled[:receipt]
       recorded = record(requirements, receipt, upstream) # never fail a paid, settled call over bookkeeping
       open_order(upstream[:order], recorded[:call])
+      announce_call(recorded[:call])
 
       Result.success(status: upstream[:status], body: upstream[:body], content_type: upstream[:content_type],
                      headers: { Payments::Receipt::HEADER => receipt.to_header }, call: recorded[:call])
@@ -74,6 +75,16 @@ module Gateway
       Notifications::AnnounceOrder.new(order: order).call
     rescue StandardError => e
       Rails.logger.error("orders: could not open #{order.token} after settlement: #{e.class}: #{e.message}")
+    end
+
+    # The payer already has their answer; an alert that raises must not turn a
+    # successful paid call into a 500.
+    def announce_call(call_row)
+      return if call_row.nil?
+
+      Notifications::AnnounceCall.new(call: call_row).call
+    rescue StandardError => e
+      Rails.logger.error("calls: could not announce #{call_row&.transaction_id}: #{e.class}: #{e.message}")
     end
 
     def cancel_order(order)

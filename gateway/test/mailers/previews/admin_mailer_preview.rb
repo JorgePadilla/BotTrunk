@@ -9,6 +9,10 @@ class AdminMailerPreview < ActionMailer::Preview
 
   def new_inquiry = AdminMailer.with(inquiry: MailPreviewData.inquiry).new_inquiry
 
+  def call_settled = AdminMailer.with(call: MailPreviewData.call, first_from_payer: false).call_settled
+
+  def call_settled_new_payer = AdminMailer.with(call: MailPreviewData.call, first_from_payer: true).call_settled
+
   def digest = AdminMailer.with(report: MailPreviewData.digest).digest
 
   def digest_empty = AdminMailer.with(report: MailPreviewData.digest(empty: true)).digest
