@@ -22,7 +22,11 @@ fi
 PY="$(bin/python-env)"
 
 SLUG="${1:-scrape-markdown}"
-BODY="${2:-{\"url\":\"https://example.com\"}}"
+# Not ${2:-{...}}: bash ends the expansion at the default's first `}`, so the
+# closing brace leaks out and every explicit body arrives one `}` too long —
+# invalid JSON, and the gateway answers 400 before it ever quotes a price.
+DEFAULT_BODY='{"url":"https://example.com"}'
+BODY="${2:-$DEFAULT_BODY}"
 BASE="${BOTTRUNK_URL:-http://localhost:5000}"
 
 exec "$PY" script/x402_client.py "$BASE/s/$SLUG" "$BODY"
