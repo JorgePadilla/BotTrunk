@@ -24,11 +24,26 @@ module Notifications
 
     def self.call(mail) = new(mail: mail).call
 
+    # For a process that exits: a rake task, a cron run. `deliver_later` there
+    # hands the job to an in-process thread pool that dies with the process,
+    # and the queue is gone before it runs — the digest cron enqueued its mail
+    # at 09:01:24, exited at 09:01:26, and Render called that a success. When
+    # there is no long-lived process to come back for the job, send it here.
+    def self.now(mail) = new(mail: mail).call_now
+
     def call
       @mail.deliver_later
       Result.success(sent: true)
     rescue StandardError => e
       Rails.logger.error("mail: could not enqueue #{@mail.class.name}: #{e.class}: #{e.message}")
+      Result.failure(e.message, code: :mail_error)
+    end
+
+    def call_now
+      @mail.deliver_now
+      Result.success(sent: true)
+    rescue StandardError => e
+      Rails.logger.error("mail: could not send #{@mail.class.name}: #{e.class}: #{e.message}")
       Result.failure(e.message, code: :mail_error)
     end
   end

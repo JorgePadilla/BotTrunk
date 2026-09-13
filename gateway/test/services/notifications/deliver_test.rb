@@ -31,5 +31,26 @@ module Notifications
       assert result.failure?
       assert_equal :mail_error, result.code
     end
+
+    # `.now` is for a process that is about to exit — a rake task, a cron run —
+    # where an enqueued job has nobody left to run it.
+    test "now sends immediately instead of queueing" do
+      with_admin_email do
+        assert_no_enqueued_emails do
+          assert Deliver.now(AdminMailer.with(order: build_order).new_order).success?
+        end
+      end
+      assert_equal 1, ActionMailer::Base.deliveries.size
+    end
+
+    test "now swallows a send failure the same way" do
+      exploding = Object.new
+      def exploding.deliver_now = raise(Net::SMTPServerBusy, "450 too many")
+
+      result = nil
+      assert_nothing_raised { result = Deliver.now(exploding) }
+      assert result.failure?
+      assert_equal :mail_error, result.code
+    end
   end
 end

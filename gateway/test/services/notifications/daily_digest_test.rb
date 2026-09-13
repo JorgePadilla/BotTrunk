@@ -23,14 +23,33 @@ module Notifications
 
     test "an empty day still produces a report and an email" do
       with_admin_email do
-        assert_enqueued_emails 1 do
-          report = DailyDigest.new.call[:report]
+        report = DailyDigest.new.call[:report]
 
-          assert_empty report.queue
-          assert_equal 0, report.calls
-          assert_nil report.oldest
-        end
+        assert_empty report.queue
+        assert_equal 0, report.calls
+        assert_nil report.oldest
       end
+
+      assert_equal 1, ActionMailer::Base.deliveries.size
+    end
+
+    # The cron container exits seconds after this returns. A queued job would
+    # die with it — which is exactly what happened on Sep 12: enqueued at
+    # 09:01:24, process gone at 09:01:26, no email, exit status 0.
+    test "the digest is sent, not enqueued, because nothing survives to run it" do
+      with_admin_email do
+        assert_no_enqueued_emails { DailyDigest.new.call }
+      end
+
+      assert_equal [ MailHelpers::ADMIN ], ActionMailer::Base.deliveries.flat_map(&:to)
+    end
+
+    test "with no ADMIN_EMAIL the digest still reports and sends nothing" do
+      with_admin_email(nil) do
+        assert_equal 0, DailyDigest.new.call[:report].calls
+      end
+
+      assert_empty ActionMailer::Base.deliveries
     end
   end
 end

@@ -186,6 +186,14 @@ Four recipients, three mailers:
 
 Active Job runs in the web process (`:async`). Mail is best-effort and low-volume; a worker service and a durable queue are for work that must survive a restart, which a receipt is not. Every email has an HTML and a text part, table-based and inline-styled — `app/views/layouts/mailer.*`. Previews for all of them, with no database writes: `/rails/mailers` in development, or `bin/rails mail:preview` to send one of each to `ADMIN_EMAIL` from real records.
 
+`Deliver.call` enqueues (`deliver_later`); `Deliver.now` sends in the calling
+process. The digest uses `.now` on purpose: the cron container exits seconds
+after the task returns, and Active Job's `:async` adapter is an in-process
+thread pool that dies with it. On Sep 12 the digest enqueued at 09:01:24, the
+process was gone at 09:01:26, no email was ever sent, and Render logged the
+run as successful. Anything sent from a rake task or a cron run must use
+`.now`; anything sent from a web request should keep using `.call`.
+
 A paid call also alerts the operator (`Notifications::AnnounceCall`, hooked
 into `HandlePaidCall` after the ledger write). The subject is the whole
 message, because that is all a phone shows:

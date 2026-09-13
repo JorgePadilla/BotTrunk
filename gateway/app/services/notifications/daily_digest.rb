@@ -19,7 +19,9 @@ module Notifications
 
     def call
       current = report
-      Deliver.call(AdminMailer.with(report: current.to_h).digest) if ApplicationMailer.admin_address
+      # Sent now, not later: this runs in a cron container that exits seconds
+      # from here, with nothing left alive to drain a queue.
+      Deliver.now(AdminMailer.with(report: current.to_h).digest) if ApplicationMailer.admin_address
       Result.success(report: current)
     end
 
