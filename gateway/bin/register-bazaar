@@ -1,0 +1,84 @@
+#!/usr/bin/env bash
+# Register the built-in services as Bazaar resources, by buying one of each.
+#
+# The GoPlausible facilitator catalogues a resource when a payment for it
+# *settles* — there is no registration call. So a service that has never been
+# bought does not exist as far as an agent browsing the Bazaar is concerned,
+# however live it is on our side.
+#
+#   BOTTRUNK_URL=https://api.bottrunk.com bin/register-bazaar
+#   bin/register-bazaar --dry-run        # print what it would buy, spend nothing
+#
+# What this covers, and what it cannot:
+#   * the five data services below — every one of them, cheap, safe to re-run
+#   * deposit-bac-* is deliberately NOT here. Buying one is a real order a human
+#     has to settle at the bank within 24 hours, and the cheapest tier is ~$38.
+#     To list the family, buy ONE tier by hand and fulfil it for real:
+#       BOTTRUNK_URL=... bin/pay deposit-bac-1000 '{"beneficiary_name":"…","account_number":"…"}'
+#   * verify-business-hn and translate-es-en are status: on_request. Their
+#     endpoints answer 503, nothing settles, so the Bazaar cannot see them until
+#     they go live. Listing them means making them live, not running this.
+#
+# This is a self-payment: our own payer wallet buying from our own gateway. It
+# registers listings, it is not traction, and the challenge rules exclude it
+# from volume. Run it once per new service and never again.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+
+BASE="${BOTTRUNK_URL:-}"
+if [ -z "$BASE" ]; then
+  echo "Set BOTTRUNK_URL to the live gateway — a local settle catalogues nothing:" >&2
+  echo "  BOTTRUNK_URL=https://api.bottrunk.com bin/register-bazaar" >&2
+  exit 1
+fi
+
+# slug|price in USDC|request body. Targets are our own site: a real call with a
+# real answer, and nobody else's server pays for our listing.
+SERVICES=(
+  'scrape-markdown|0.09|{"url":"https://bottrunk.com/docs"}'
+  'page-metadata|0.02|{"url":"https://bottrunk.com"}'
+  'extract-links|0.02|{"url":"https://bottrunk.com/docs"}'
+  'url-health|0.02|{"url":"https://bottrunk.com"}'
+  'domain-dns|0.03|{"domain":"bottrunk.com"}'
+)
+
+echo "Gateway: $BASE"
+echo
+printf '%-18s %-8s %s\n' "SERVICE" "PRICE" "BODY"
+total=0
+for entry in "${SERVICES[@]}"; do
+  IFS='|' read -r slug price body <<< "$entry"
+  printf '%-18s %-8s %s\n' "$slug" "\$$price" "$body"
+  total=$(awk -v t="$total" -v p="$price" 'BEGIN { printf "%.2f", t + p }')
+done
+echo
+echo "Total: \$$total USDC from the agent wallet, plus a few thousandths of an ALGO in fees."
+
+if [ "${1:-}" = "--dry-run" ]; then
+  echo "(dry run — nothing was bought)"
+  exit 0
+fi
+
+read -r -p "Buy one of each? [y/N] " reply
+case "$reply" in [yY]*) ;; *) echo "Nothing bought."; exit 0 ;; esac
+
+failed=0
+for entry in "${SERVICES[@]}"; do
+  IFS='|' read -r slug price body <<< "$entry"
+  echo
+  echo "── $slug ─────────────────────────────────────────"
+  if BOTTRUNK_URL="$BASE" bin/pay "$slug" "$body"; then
+    echo "✓ $slug settled"
+  else
+    echo "✗ $slug did not settle — it will not be catalogued" >&2
+    failed=$((failed + 1))
+  fi
+  sleep 2
+done
+
+echo
+echo "Done. $((${#SERVICES[@]} - failed)) of ${#SERVICES[@]} settled."
+echo "The facilitator catalogues on settle, so give it a minute, then check:"
+echo "  https://facilitator.goplausible.xyz/discovery/resources"
+echo "  https://facilitator.goplausible.xyz/dashboard/leaderboards"
+exit $(( failed > 0 ? 1 : 0 ))

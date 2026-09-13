@@ -112,8 +112,8 @@ module Catalog
       pretty = hnl.to_s.reverse.scan(/\d{1,3}/).join(",").reverse
       Service.new(
         slug: "deposit-bac-#{hnl}", name: "Deposit L#{pretty} to a BAC account", category: "Payments", provider: "Human-fulfilled",
-        fulfiller: "Fulfillers::DepositBac", price_hnl: hnl, family: "deposit-bac", family_label: "Pay someone in Honduras",
-        family_summary: "Send lempiras to any BAC Credomatic account in Honduras. A person makes the bank transfer within 24 hours and returns the receipt reference.",
+        fulfiller: "Fulfillers::DepositBac", price_hnl: hnl, family: "deposit-bac", family_label: "Pay a person's bank account",
+        family_summary: "Put money in a person's bank account. A human makes the transfer within 24 hours and returns the receipt reference. Live corridor: BAC Credomatic accounts, paid in lempiras.",
         summary: "Send L#{pretty} in lempiras to any BAC Credomatic account. A person makes the transfer within 24 hours and you get the receipt.",
         description: "Send #{pretty} lempiras to any BAC Credomatic account in Honduras. Priced in USDC at the day's Banco Central reference rate with a fixed spread and fee; a person makes the bank transfer within 24 hours and returns the receipt reference. Poll GET /orders/{order_id} for status.",
         network: "Algorand MainNet", asset: "USDC", facilitator: "GoPlausible",

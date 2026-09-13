@@ -1,11 +1,11 @@
-<% content_for :title, "BotTrunk — your agent can pay a person" %>
-<% content_for :description, "A marketplace where AI agents pay per call in USDC over x402 on Algorand — from a page scrape to a bank deposit in Honduras made by a real person. No accounts, no API keys." %>
+<% content_for :title, "BotTrunk — services your agent can buy" %>
+<% content_for :description, "A catalog of services an AI agent can buy on its own: pay per call in USDC over x402 on Algorand. Data utilities and work done by real people. No accounts, no API keys." %>
 <% content_for :nav_active, "Catalog" %>
 
 <div class="flex flex-col gap-14 py-16 md:py-24">
   <div class="flex flex-col gap-4 max-w-2xl">
-    <h1 class="text-4xl md:text-[44px] font-semibold tracking-[-0.03em] leading-[1.1]">Your agent can pay a person.</h1>
-    <p class="text-lg text-muted">Every other x402 catalog sells data. BotTrunk also sells work that happens in the real world — lempiras in someone's bank account in Honduras, with the receipt returned to your agent. Pay per call in USDC. No accounts, no API keys, no subscriptions.</p>
+    <h1 class="text-4xl md:text-[44px] font-semibold tracking-[-0.03em] leading-[1.1]">Services your agent can buy.</h1>
+    <p class="text-lg text-muted">Your agent calls an endpoint, gets a price, pays it in USDC, gets the result. Some of these services are data. Some are a person doing a job in the real world and returning the proof. No accounts, no API keys, no subscriptions.</p>
   </div>
 
   <% if @totals.any? %>
@@ -95,7 +95,7 @@
     </section>
     <section class="flex flex-col gap-3.5">
       <h2 class="text-[22px] font-semibold tracking-tight">Work that needs hands?</h2>
-      <p class="text-muted">Bank deposits, verification visits, translation — real people in Honduras behind an HTTP endpoint, paid per job. Tell us what your agent needs to get done and we will price it.</p>
+      <p class="text-muted">Bank deposits, verification visits, translation, phone calls — real people behind an HTTP endpoint, paid per job. Tell us what your agent needs done and we will price it.</p>
       <div class="mt-2">
         <%= render(Ui::ButtonComponent.new(href: "mailto:hello@bottrunk.com?subject=Human-fulfilled%20service", icon: "mail")) { "Ask for a service" } %>
       </div>
