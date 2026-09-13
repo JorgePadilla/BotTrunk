@@ -27,6 +27,17 @@ Rails.application.routes.draw do
   get "sign_in", to: "pages#sign_in"
   get "llms.txt", to: "pages#llms", as: :llms, format: false
 
+  # Agent-readable files the x402 facilitator probes at our origin, plus the
+  # ones coding agents read from the domain (guide/discovery). `format: false`
+  # keeps ".json" part of the path instead of a Rails format.
+  scope path: ".well-known", format: false do
+    get "x402", to: "well_known#x402", as: :well_known_x402
+    get "agent-card.json", to: "well_known#agent_card", as: :well_known_agent_card
+    get "agent.json", to: "well_known#agent_manifest", as: :well_known_agent_manifest
+    get "mcp.json", to: "well_known#mcp", as: :well_known_mcp
+  end
+  get "agents.md", to: "well_known#agents", as: :agents_md, format: false
+
   # Operator dashboard (HTTP basic auth, see Admin::BaseController)
   namespace :admin do
     get "stats", to: "stats#show"

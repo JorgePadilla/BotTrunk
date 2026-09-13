@@ -1,0 +1,55 @@
+# BotTrunk
+
+Instructions for agents working with this service. Everything below is generated
+from the live catalog; prices here match what the endpoints answer.
+
+## Payment
+
+Every endpoint under `/s/` is x402-paid. There are no accounts and no API keys —
+the payment is the credential.
+
+1. `POST https://api.bottrunk.com/s/<slug>` with a JSON body and no payment header.
+   You get **402** with the requirements in the body and, base64-encoded, in the
+   `PAYMENT-REQUIRED` header.
+2. Sign a USDC transfer for exactly `accepts[0].amount` (atomic, 6 decimals) to
+   `accepts[0].payTo`.
+3. Retry the same request with the `PAYMENT-SIGNATURE` header (`X-PAYMENT` is
+   accepted for v1 clients). The receipt comes back in `PAYMENT-RESPONSE`.
+
+`extra.feePayer` is advertised, so you sign only the payment leg — you never need
+ALGO for fees. Nothing is charged when a call fails.
+
+- Network: Algorand MainNet (`<%= Payments::Networks.algorand(Rails.configuration.x402.network)[:caip2] %>`)
+- Asset: USDC (`<%= Payments::Networks.algorand(Rails.configuration.x402.network)[:usdc_asa] %>`)
+- Settled by: <%= Rails.configuration.x402.facilitator_url %>
+
+## Endpoints
+<% Catalog::Service.all.select(&:live?).each do |service| %>
+- `POST /s/<%= service.slug %>` — <%= service.summary %> <%= format("%.2f", service.usd_price) %> USDC<%= service.lempira? ? " (priced from the day's reference rate, so it moves)" : "" %>.
+<% end %>
+<% on_request = Catalog::Service.all.select(&:on_request?) %>
+<% if on_request.any? %>
+Listed but not callable yet — these answer 503 until arranged by email
+(hello@bottrunk.com):
+<% on_request.each do |service| %>
+- `POST /s/<%= service.slug %>` — <%= service.summary %>
+<% end %>
+<% end %>
+
+## Human-fulfilled work
+
+Some services are done by a person, not a script. Those return an `order_id`
+immediately and a `status` of `pending`; poll `GET /orders/{order_id}` until it
+turns `delivered` and the proof (a bank receipt reference, photos, or finished
+text) is attached. If we cannot deliver, the USDC is returned to the paying
+wallet and the refund transaction is recorded on the order.
+
+## Notes
+
+- Prices are advertised in the 402. Read them there; never assume them.
+- A price index is published at `/.well-known/x402` if you want it before calling.
+- The full schema for each endpoint is in the 402 body under `extensions.bazaar`.
+- There is also a hosted MCP server at `https://mcp.bottrunk.com/mcp`
+  (Streamable HTTP), and `npx bottrunk-mcp` for local agents.
+- Errors: 4xx means nothing was charged. 422 is a bad input, 503 a service that
+  is not callable yet.

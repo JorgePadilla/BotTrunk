@@ -186,6 +186,35 @@ Four recipients, three mailers:
 
 Active Job runs in the web process (`:async`). Mail is best-effort and low-volume; a worker service and a durable queue are for work that must survive a restart, which a receipt is not. Every email has an HTML and a text part, table-based and inline-styled — `app/views/layouts/mailer.*`. Previews for all of them, with no database writes: `/rails/mailers` in development, or `bin/rails mail:preview` to send one of each to `ADMIN_EMAIL` from real records.
 
+## 8c. Agent-readable files (`WellKnownController`)
+
+The facilitator probes our origin for a fixed list of files and links every one
+it finds on the merchant and resource pages. We serve them from the catalog
+rather than from `public/`, so a published price cannot disagree with the 402:
+
+| Path | What it is |
+| --- | --- |
+| `/.well-known/x402` | Price index of every live endpoint |
+| `/.well-known/agent-card.json` | A2A card, one skill per endpoint |
+| `/.well-known/agent.json` | Generic manifest |
+| `/.well-known/mcp.json` | Points at `mcp.bottrunk.com/mcp` (Streamable HTTP, not SSE) |
+| `/llms.txt` | `PagesController#llms` |
+| `/agents.md` | Operating instructions; the facilitator does not index it |
+
+Rules the facilitator enforces: 200, real JSON, never an HTML fallback — an
+HTML body on these paths counts as "file absent". Routes use `format: false`
+so `.json` stays part of the path.
+
+We deliberately do **not** publish `/.well-known/ai-plugin.json`: its schema
+wants an OpenAPI document at `api.url`, and we have none. An empty or invented
+one is worse than the missing file.
+
+Listing and enrichment are separate: the Bazaar record is created by the first
+settled payment and its `accepts` is **not** rewritten by later settles, so a
+price change after the first settle leaves the listing stale (this is what
+happened to `scrape-markdown`, catalogued at $0.005 and still showing it after
+the price went to $0.09). These files are the layer we control.
+
 ## 9. Cross-cutting
 
 - **Jobs:** Active Job on the `:async` adapter today (email only, §8b). Solid Queue and a worker service when something has to survive a restart: payouts, retrying facilitator calls, health checks.
