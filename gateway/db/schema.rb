@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_11_080000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_11_190000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -90,10 +90,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_11_080000) do
     t.string "email", null: false
     t.text "notes"
     t.bigint "price_atomic", null: false
+    t.text "review_notes"
+    t.datetime "reviewed_at"
     t.string "service_name", null: false
+    t.string "status", default: "pending", null: false
     t.datetime "updated_at", null: false
     t.string "upstream_url", null: false
     t.index ["email"], name: "index_seller_inquiries_on_email"
+    t.index ["status", "created_at"], name: "index_seller_inquiries_on_status_and_created_at"
   end
 
   add_foreign_key "deposit_orders", "calls"
