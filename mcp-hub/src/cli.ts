@@ -174,10 +174,26 @@ async function main(argv: string[]): Promise<void> {
     return;
   }
 
-  const wallet = loadWallet(config);
+  // An agent that has to stop mid-conversation, send its human to a terminal
+  // and come back is an agent that does not buy anything. The key is generated
+  // here and written to disk at 0600 — never into the transcript, which is why
+  // this is startup work and not an MCP tool.
+  let wallet = loadWallet(config);
+  if (!wallet) {
+    try {
+      wallet = createWallet(config);
+      console.error(
+        `bottrunk-mcp: created a wallet at ${config.walletFile} (mode 0600) — ${short(wallet.address)}.\n` +
+          `bottrunk-mcp: that file is the only copy of the key. Back it up, and fund the address to enable paid tools.`,
+      );
+    } catch (e) {
+      // A read-only home, a mounted config, a permissions problem: start
+      // anyway. The free tools work and bottrunk_wallet explains the rest.
+      console.error(`bottrunk-mcp: could not create a wallet (${(e as Error).message}) — paid tools stay unavailable.`);
+    }
+  }
   const spend = new SpendTracker(config);
   const paidFetch = wallet ? createPayingFetch(config, wallet, spend) : null;
-  if (!wallet) console.error("bottrunk-mcp: no wallet yet — paid tools will explain how to create one. Run `npx bottrunk-mcp wallet`.");
   const server = await buildServer({ config, wallet, spend, paidFetch, version });
   await server.connect(new StdioServerTransport());
   console.error(`bottrunk-mcp ${version} ready · wallet ${wallet?.address ?? "none"} · api ${config.apiBase}`);

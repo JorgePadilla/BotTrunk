@@ -4,7 +4,7 @@ import { atomicToUsdc, capLabel, MAINNET, type Config } from "./config.js";
 import { fetchCatalog, inputSchema, liveServices, priceLabel, toolDescription, toolName, type CatalogService } from "./catalog.js";
 import type { PaidFetch } from "./pay.js";
 import { SpendCapError, type SpendTracker } from "./spend.js";
-import { balances, ensureReady, FUND_ALGO_MICRO, type Wallet } from "./wallet.js";
+import { balances, ensureReady, FUND_ALGO_MICRO, type Balances, type Wallet } from "./wallet.js";
 
 export interface HubDeps {
   config: Config;
@@ -167,7 +167,10 @@ async function renderWallet(deps: HubDeps, fetchImpl: typeof fetch): Promise<str
   const { config, wallet, spend } = deps;
   const caps = `Caps: ${capLabel(config.maxPerCallAtomic)} per call, ${capLabel(config.maxPerDayAtomic)} per day. Spent today: ${atomicToUsdc(spend.spentToday())} USDC.`;
   if (!wallet) {
-    return `No wallet configured. Run \`npx bottrunk-mcp wallet\` to create one, or set BOTTRUNK_MNEMONIC.\n${caps}`;
+    return (
+      `No wallet. This server normally creates one at startup; it could not, so the paid tools are off.\n` +
+      `Run \`npx bottrunk-mcp wallet\` from a shell that can write to ${config.walletFile}, or set BOTTRUNK_MNEMONIC.\n${caps}`
+    );
   }
   const lines = [`Address: ${wallet.address} (from ${wallet.source === "env" ? "BOTTRUNK_MNEMONIC" : config.walletFile})`];
 
@@ -181,8 +184,10 @@ async function renderWallet(deps: HubDeps, fetchImpl: typeof fetch): Promise<str
     // Balances below will report whatever the network is willing to say.
   }
 
+  let funding: Balances[] = [];
   try {
-    for (const b of await balances(config, wallet.address, fetchImpl)) {
+    funding = await balances(config, wallet.address, fetchImpl);
+    for (const b of funding) {
       lines.push(`${b.network}: ${b.algo} ALGO · ${b.usdc === null ? "USDC not opted in" : `${b.usdc} USDC`}`);
     }
   } catch (e) {
@@ -190,13 +195,45 @@ async function renderWallet(deps: HubDeps, fetchImpl: typeof fetch): Promise<str
   }
   lines.push(caps);
   if (optedInNow) lines.push(`Just opted in to USDC — txn ${optedInNow}. USDC sent to this address will arrive from now on.`);
-  lines.push(
-    `To fund, two sends in this order — an agent cannot fund itself, and USDC sent before the opt-in does not arrive:\n` +
-      `  1. ${(FUND_ALGO_MICRO / 1e6).toFixed(1)} ALGO to ${wallet.address} (0.1 to exist, 0.1 to hold USDC, the rest for fees)\n` +
-      `  2. the USDC you want this agent to be able to spend, to the same address\n` +
-      `The USDC opt-in in between happens by itself the next time a tool here is called.`,
-  );
+
+  // The point of this tool is not the balance, it is what to do next. A wallet
+  // that can already pay should not be handed a wall of funding instructions;
+  // one that cannot should be handed something its human can act on without
+  // reading any documentation.
+  lines.push("", nextStep(wallet.address, funding));
   return lines.join("\n");
+}
+
+/** What the human behind this agent has to do, if anything. */
+function nextStep(address: string, funding: Balances[]): string {
+  const fundCommand =
+    `One approval instead of two sends:\n` +
+    `  npx bottrunk-mcp wallet fund --from <your Algorand address> --usdc <amount>\n` +
+    `builds a single atomic group — fund, opt in, deliver USDC — and checks it against the live chain before anyone signs.`;
+
+  if (funding.length === 0) {
+    return `Could not read any balance, so this cannot say whether the wallet is ready.\n${fundCommand}`;
+  }
+
+  // Ready anywhere counts as ready: a wallet funded on TestNet is mid-test, not
+  // broken, and telling it to go find ALGO would be wrong twice over.
+  const ready = funding.find((b) => b.optedIn && Number(b.usdc ?? "0") > 0);
+  if (ready) {
+    return `Ready to buy: ${ready.usdc} USDC on ${ready.network}. Call a paid tool and it settles from this wallet.`;
+  }
+
+  // Otherwise advise on the network the money is meant to be on.
+  const target = funding.find((b) => b.network.toLowerCase() === "mainnet") ?? funding[0];
+  const needsAlgo = Number(target.algo) * 1e6 < FUND_ALGO_MICRO;
+  const steps: string[] = [`Not ready to buy yet. Send to ${address} on Algorand ${target.network}:`];
+  if (needsAlgo) {
+    steps.push(`  1. ${(FUND_ALGO_MICRO / 1e6).toFixed(1)} ALGO — 0.1 to exist, 0.1 to hold USDC, the rest for fees`);
+    steps.push(`  2. the USDC you want this agent to be able to spend`);
+    steps.push(`In that order. Only the key holder can opt in to USDC, so an agent cannot fund itself, and USDC that arrives before the opt-in is rejected rather than held.`);
+  } else {
+    steps.push(`  the USDC you want this agent to be able to spend (the ALGO is already there)`);
+  }
+  return [ ...steps, "", fundCommand ].join("\n");
 }
 
 function summarize402(body: string): string {

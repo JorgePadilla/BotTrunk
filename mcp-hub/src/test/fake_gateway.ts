@@ -12,6 +12,8 @@ export interface FakeGateway {
   priceAtomic: string;
   /** Flip to make /v2/transactions/simulate answer the way a real node does for a doomed group. */
   simulateFails: boolean;
+  /** What /v2/accounts/:addr reports, so a test can put a wallet at any stage of funding. */
+  account: { amount: number; assets?: { "asset-id": number; amount: number }[] };
 }
 
 const GENESIS_HASH = TESTNET.split(":")[1];
@@ -59,7 +61,10 @@ export function catalogBody(priceAtomic: string) {
 }
 
 export async function startFakeGateway(priceAtomic = "5000"): Promise<FakeGateway> {
-  const state = { simulateFails: false };
+  const state = {
+    simulateFails: false,
+    account: { amount: 2_000_000, assets: [{ "asset-id": 10458941, amount: 1_500_000 }] } as FakeGateway["account"],
+  };
   const payments: FakeGateway["payments"] = [];
   const server = http.createServer(async (req, res) => {
     const url = new URL(req.url ?? "/", "http://x");
@@ -95,7 +100,7 @@ export async function startFakeGateway(priceAtomic = "5000"): Promise<FakeGatewa
       });
     }
     if (url.pathname.startsWith("/v2/accounts/")) {
-      return json(200, { amount: 2_000_000, assets: [{ "asset-id": 10458941, amount: 1_500_000 }] });
+      return json(200, state.account);
     }
 
     // --- gateway ---
@@ -166,6 +171,12 @@ export async function startFakeGateway(priceAtomic = "5000"): Promise<FakeGatewa
     },
     set simulateFails(v: boolean) {
       state.simulateFails = v;
+    },
+    get account() {
+      return state.account;
+    },
+    set account(v: FakeGateway["account"]) {
+      state.account = v;
     },
     close: () => new Promise((resolve) => server.close(() => resolve())),
   };

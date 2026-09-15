@@ -230,6 +230,40 @@ describe("MCP server", () => {
     assert.match(text, /paid 0\.005 USDC · txn FAKETXN/);
   });
 
+  // The wallet tool exists to answer "can I buy yet, and if not what do I do".
+  // A funded wallet that gets handed funding instructions is noise; an empty
+  // one that gets handed only a balance is a dead end.
+  it("tells a funded wallet it is ready, and does not lecture it about funding", async () => {
+    const { client } = await connect(true);
+    const text = ((await client.callTool({ name: "bottrunk_wallet", arguments: {} })).content as { text: string }[])[0].text;
+    assert.match(text, /Ready to buy: 1\.500000 USDC/);
+    assert.doesNotMatch(text, /Not ready to buy/);
+    assert.doesNotMatch(text, /0\.1 to exist/);
+  });
+
+  it("an empty wallet is told the ALGO comes first, and why", async () => {
+    gw.account = { amount: 0 };
+    const { client, wallet } = await connect(true);
+    const text = ((await client.callTool({ name: "bottrunk_wallet", arguments: {} })).content as { text: string }[])[0].text;
+    gw.account = { amount: 2_000_000, assets: [{ "asset-id": 10458941, amount: 1_500_000 }] };
+
+    assert.match(text, /Not ready to buy/);
+    assert.match(text, new RegExp(wallet!.address));
+    assert.match(text, /0\.3 ALGO/);
+    assert.match(text, /rejected rather than held/);       // why the order matters
+    assert.match(text, /wallet fund --from/);               // the one-approval way out
+  });
+
+  it("a wallet that already holds ALGO is only asked for USDC", async () => {
+    gw.account = { amount: 2_000_000 };
+    const { client } = await connect(true);
+    const text = ((await client.callTool({ name: "bottrunk_wallet", arguments: {} })).content as { text: string }[])[0].text;
+    gw.account = { amount: 2_000_000, assets: [{ "asset-id": 10458941, amount: 1_500_000 }] };
+
+    assert.match(text, /the ALGO is already there/);
+    assert.doesNotMatch(text, /0\.1 to exist/);
+  });
+
   it("explains how to create a wallet instead of failing silently", async () => {
     const { client } = await connect(false);
     const r = await client.callTool({ name: "bottrunk_scrape_markdown", arguments: { url: "https://example.com" } });
