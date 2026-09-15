@@ -28,13 +28,28 @@ class WellKnownControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
+  # The suite runs with `treat_all_live = true` so the paid-call tests can drive
+  # services the seed lists as on_request. That makes `live?` true for
+  # everything, which is the opposite of what this test is about — so it asks
+  # the question with the flag off, the way production answers it.
   test "an on_request service is never published as payable" do
-    on_request = Catalog::Service.all.select(&:on_request?)
-    skip "no on_request services in the catalog" if on_request.empty?
+    on_request = nil
+    with_real_statuses do
+      on_request = Catalog::Service.all.select(&:on_request?)
+      skip "no on_request services in the catalog" if on_request.empty?
+      get "/.well-known/x402"
+    end
 
-    get "/.well-known/x402"
     urls = JSON.parse(response.body)["resources"].map { |r| r["url"] }
+    assert_not_empty urls, "the live services should still be published"
     on_request.each { |service| assert_not_includes urls, service.endpoint_url }
+  end
+
+  def with_real_statuses
+    Catalog::Service.treat_all_live = false
+    yield
+  ensure
+    Catalog::Service.treat_all_live = true
   end
 
   test "agent card, manifest and mcp manifest are JSON with a name and description" do

@@ -47,7 +47,7 @@ class PagesControllerTest < ActionDispatch::IntegrationTest
   test "llms.txt states the wallet needs ALGO once, and does not advertise a TestNet we do not serve" do
     get "/llms.txt"
 
-    assert_match "~0.2 ALGO once", response.body
+    assert_match "0.3 ALGO once", response.body
     assert_match "cannot pay at all", response.body
     assert_match "MainNet** only", response.body
     assert_no_match(/10458941/, response.body)

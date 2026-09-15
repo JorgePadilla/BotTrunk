@@ -12,5 +12,5 @@ en:
         seller_inquiry:
           attributes:
             price_atomic:
-              blank: "must be a number like 0.005"
+              blank: "must be a number in USDC, like 0.05"
               greater_than: "must be greater than 0"

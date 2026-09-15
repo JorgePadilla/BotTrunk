@@ -4,9 +4,9 @@ class CatalogControllerTest < ActionDispatch::IntegrationTest
   test "index lists the catalog" do
     get root_url
     assert_response :success
-    assert_select "h1", text: "Your agent can pay a person."
+    assert_select "h1", text: "Services your agent can buy."
     assert_select "a[href='/s/scrape-markdown']"
-    assert_select "a[href='/s/deposit-bac-1000']", text: /Pay someone in Honduras/
+    assert_select "a[href='/s/deposit-bac-1000']", text: /Pay a person's bank account/
     assert_select "a[href='/s/deposit-bac-10000']", count: 0, message: "the deposit tiers collapse into one card"
   end
 

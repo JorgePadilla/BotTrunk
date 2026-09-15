@@ -26,7 +26,7 @@ class Catalog::ServiceCardComponentTest < ViewComponent::TestCase
     tiers = Catalog::Service.find("deposit-bac-1000").variants
     render_inline(Catalog::ServiceCardComponent.new(service: tiers.first, metrics: nil, variants: tiers))
 
-    assert_text "Pay someone in Honduras"
+    assert_text "Pay a person's bank account"
     assert_text "4 amounts · L1,000 – L10,000"
     assert_text "from"
     assert_text "$42.51"

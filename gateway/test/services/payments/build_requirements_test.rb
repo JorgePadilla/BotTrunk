@@ -57,7 +57,7 @@ module Payments
 
     test "prices never go through floats" do
       svc = Catalog::Service.find("verify-business-hn")
-      assert_equal 5_000_000, svc.price_atomic
+      assert_equal 25_000_000, svc.price_atomic
     end
   end
 end

@@ -35,6 +35,13 @@ Catalog::Service.extra = [
 # The paid-call tests drive services that are not live in the seed.
 Catalog::Service.treat_all_live = true
 
+# ActiveSupport::TestCase does not clear this the way ActionMailer::TestCase
+# does, so one case that sends mail silently fails the next case that asserts
+# none was sent. That is exactly what a delivery test found.
+class ActiveSupport::TestCase
+  setup { ActionMailer::Base.deliveries.clear }
+end
+
 # No DNS in tests: every host is "public" except the ones that look private.
 Fulfillers::Base.resolver = X402Helpers::FakeResolver
 

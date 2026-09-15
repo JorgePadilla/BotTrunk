@@ -24,7 +24,7 @@ module Pricing
       assert_equal 2_500, tier.price_hnl
       assert_equal 106_275_304, tier.price_atomic
       assert_equal BigDecimal("106.275304"), tier.usd_price
-      assert_equal 5000, Catalog::Service.find("scrape-markdown").price_atomic
+      assert_equal 90_000, Catalog::Service.find("scrape-markdown").price_atomic
     end
   end
 end

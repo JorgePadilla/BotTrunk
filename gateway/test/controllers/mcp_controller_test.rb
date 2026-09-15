@@ -140,7 +140,7 @@ class McpControllerTest < ActionDispatch::IntegrationTest
     delete "/mcp"
     assert_response :method_not_allowed
 
-    process :preflight, method: "OPTIONS", as: :json
+    process(:options, "/mcp", as: :json)
     assert_response :no_content
     assert_equal "*", response.headers["Access-Control-Allow-Origin"]
   end
