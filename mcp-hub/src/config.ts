@@ -39,7 +39,7 @@ export const NETWORK_NAME: Record<string, string> = {
 
 const DEFAULTS = {
   apiBase: "https://api.bottrunk.com",
-  maxPerCall: "1000",
+  maxPerCall: "10000",
   maxPerDay: "10000",
 };
 

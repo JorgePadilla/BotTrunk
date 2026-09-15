@@ -44,7 +44,7 @@ describe("config", () => {
   it("defaults to the production gateway and the agreed caps", () => {
     const c = loadConfig({});
     assert.equal(c.apiBase, "https://api.bottrunk.com");
-    assert.equal(c.maxPerCallAtomic, usdcToAtomic("1000"));
+    assert.equal(c.maxPerCallAtomic, usdcToAtomic("10000"));
     assert.equal(c.maxPerDayAtomic, usdcToAtomic("10000"));
   });
 });
@@ -218,7 +218,7 @@ describe("MCP server", () => {
     const wText = (w.content as { text: string }[])[0].text;
     assert.match(wText, new RegExp(wallet!.address));
     assert.match(wText, /1\.500000 USDC/);
-    assert.match(wText, /1000 USDC per call/);
+    assert.match(wText, /10000 USDC per call/);
   });
 
   it("pays and returns the service output with a receipt line", async () => {
@@ -296,7 +296,7 @@ describe("spending caps that can be turned off", () => {
   it("still defaults to a cap, because the catalog goes to hundreds of dollars a call", () => {
     const config = loadConfig({ BOTTRUNK_HOME: tmpHome() });
 
-    assert.equal(config.maxPerCallAtomic, usdcToAtomic("1000"));
+    assert.equal(config.maxPerCallAtomic, usdcToAtomic("10000"));
   });
 });
 

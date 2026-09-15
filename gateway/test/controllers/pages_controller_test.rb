@@ -30,6 +30,13 @@ class PagesControllerTest < ActionDispatch::IntegrationTest
     assert_select "span.font-mono", text: "--scope user", message: "backticks in the notes render as code"
   end
 
+  test "connect suggests the per-call cap bottrunk-mcp defaults to" do
+    get connect_url
+    assert_match "&quot;BOTTRUNK_MAX_PER_CALL&quot;: &quot;10000&quot;", response.body
+    assert_match "BOTTRUNK_MAX_PER_CALL: &quot;10000&quot;", response.body   # Hermes
+    assert_no_match(/BOTTRUNK_MAX_PER_CALL(&quot;)?: &quot;0\.50/, response.body)
+  end
+
   test "llms.txt is rendered from the catalog so prices cannot drift" do
     get "/llms.txt"
     assert_response :success

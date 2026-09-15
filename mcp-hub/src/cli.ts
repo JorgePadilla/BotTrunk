@@ -31,7 +31,7 @@ Usage:
 Environment:
   BOTTRUNK_MNEMONIC        use an existing 25-word Algorand mnemonic instead of the wallet file
   BOTTRUNK_WALLET_FILE     where the generated wallet lives (default ~/.bottrunk/wallet.json)
-  BOTTRUNK_MAX_PER_CALL    per-call cap in USDC (default 1000; "none" for no cap)
+  BOTTRUNK_MAX_PER_CALL    per-call cap in USDC (default 10000; "none" for no cap)
   BOTTRUNK_MAX_PER_DAY     per-day cap in USDC (default 10000; "none" for no cap)
   BOTTRUNK_API             gateway base URL (default https://api.bottrunk.com)
   ALGORAND_NETWORK         mainnet | testnet, for \`wallet optin\` and \`wallet fund\` (default mainnet)
