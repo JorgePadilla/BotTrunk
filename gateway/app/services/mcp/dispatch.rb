@@ -24,10 +24,11 @@ module Mcp
     INTERNAL_ERROR = -32_603
 
     INSTRUCTIONS = <<~TEXT.strip
-      BotTrunk is a marketplace where agents buy services per call with USDC over x402 on Algorand — data
-      utilities, and work done by people (a bank deposit in Honduras, delivered within 24 hours with the
-      receipt). These tools are free and read-only: they tell you what exists, what it costs right now and
-      how an order is going. This server cannot spend money for you, because it does not hold your key.
+      BotTrunk is a catalog of services an agent can buy on its own, per call, with USDC over x402 on
+      Algorand. Some are data utilities. Some are a person doing a job in the real world and returning the
+      proof — money placed in someone's bank account, by hand, within 24 hours, with the bank's receipt
+      reference handed back. These tools are free and read-only: they tell you what exists, what it costs
+      right now and how an order is going. This server cannot spend money for you: it does not hold your key.
       To actually buy: call bottrunk_payment_instructions and pay the endpoint's HTTP 402 with your own
       wallet, or run `npx bottrunk-mcp` on the machine you control and the payment is handled for you.
     TEXT

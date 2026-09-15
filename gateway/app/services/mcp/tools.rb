@@ -51,7 +51,7 @@ module Mcp
 
       self.class.text(
         services: services.map { |s| summary_for(s) },
-        note: "Prices are USDC per call. Deposit tiers reprice hourly from the Banco Central de Honduras reference rate. " \
+        note: "Prices are USDC per call. Deposit tiers reprice from the day's Banco Central de Honduras reference rate. " \
               "Call bottrunk_payment_instructions with a slug to learn how to pay for one."
       )
     end
@@ -129,7 +129,7 @@ module Mcp
           buyer_rate: pricing.effective_rate.to_s("F"),
           fee_percent: (pricing.fee_bps / 100.0)
         },
-        delivery: "A person transfers the lempiras to the beneficiary's BAC Credomatic account within 24 hours and returns the bank receipt reference.",
+        delivery: "A person makes the transfer to the beneficiary's BAC Credomatic account in Honduras within 24 hours and returns the bank receipt reference.",
         required_input: { beneficiary_name: "string", account_number: "digits only" },
         note: "The price moves with the reference rate; the 402 at the moment you pay is authoritative."
       )
@@ -171,7 +171,7 @@ module Mcp
     DEFINITIONS = [
       Tool.new(
         name: "bottrunk_catalog", handler: :catalog,
-        description: "List what AI agents can buy on BotTrunk: data services priced in USDC per call, and human-fulfilled work such as depositing lempiras into a bank account in Honduras. Free to call. Returns slug, price, status and endpoint for each service.",
+        description: "Everything an agent can buy on BotTrunk, priced in USDC per call: data utilities, and work a person does in the real world — such as putting money into someone's bank account and returning the receipt. Free to call. Returns slug, price, status and endpoint for each service.",
         schema: {
           type: "object",
           properties: {
@@ -201,7 +201,7 @@ module Mcp
       ),
       Tool.new(
         name: "bottrunk_quote_deposit", handler: :quote_deposit,
-        description: "What it costs in USDC, right now, to send a given amount of lempiras to a bank account in Honduras: today's Banco Central reference rate, the spread, the fee and the final price. Free to call.",
+        description: "What it costs in USDC, right now, to put money in a person's bank account: the day's reference rate, the spread, the fee and the final price. The live corridor is Honduras — lempiras into a BAC Credomatic account, priced from the Banco Central de Honduras rate. Free to call.",
         schema: {
           type: "object",
           properties: { amount_hnl: { type: "integer", description: "Lempiras to deliver: 1000, 2500, 5000 or 10000." } },
@@ -210,7 +210,7 @@ module Mcp
       ),
       Tool.new(
         name: "bottrunk_order_status", handler: :order_status,
-        description: "Status of a human-fulfilled order (a lempira deposit): pending, delivered with the bank receipt reference, or refunded with the transaction id. Free to call.",
+        description: "Status of an order a person has to fulfil, such as a bank deposit: pending, delivered with the bank receipt reference, or refunded with the transaction id. Free to call.",
         schema: {
           type: "object",
           properties: { order_id: { type: "string", description: "The order token returned when the deposit was paid." } },
