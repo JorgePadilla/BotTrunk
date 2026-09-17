@@ -1,0 +1,18 @@
+<p style="margin:0 0 16px 0;font-size:17px;font-weight:600;">
+  <%= @request.for_catalog_gap? ? "Someone wants something we don't sell." : "Someone wants to buy on BotTrunk." %>
+</p>
+
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 22px 0;">
+  <%= receipt_row "Wants", @request.service&.name || "Not in the catalog" %>
+  <%= receipt_row "Listed at", "#{usdc(@request.service.price_atomic)} USDC", mono: true if @request.service %>
+  <%= receipt_row "Their budget", "#{usdc(@request.budget_atomic)} USDC", mono: true if @request.budget_atomic %>
+  <%= receipt_row "From", @request.email %>
+</table>
+
+<p style="margin:0 0 20px 0;color:#171717;font-size:14px;border-left:2px solid #e5e5e5;padding-left:14px;white-space:pre-line;"><%= @request.details %></p>
+
+<p style="margin:0 0 22px 0;"><%= mail_button "Open the queue", "https://bottrunk.com/admin/requests" %></p>
+
+<p style="margin:0;color:#666666;font-size:13px;">
+  They've had an acknowledgement already. Replying to <%= mail_to @request.email, @request.email, style: "color:#171717" %> is the next move.
+</p>

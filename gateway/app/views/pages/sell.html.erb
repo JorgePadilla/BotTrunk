@@ -90,4 +90,79 @@
       <% end %>
     </aside>
   </div>
+
+  <hr class="hairline">
+
+  <section id="request" class="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_400px] gap-12 lg:gap-20 items-start scroll-mt-24">
+    <div class="flex flex-col gap-10">
+      <div class="flex flex-col gap-3.5">
+        <h2 class="text-[22px] font-semibold tracking-tight">Buying, not selling?</h2>
+        <p class="text-muted">Two things bring people here from the other side. Some work we do but arrange by hand first, because the scope has to be agreed before a price means anything. And some work nobody has listed yet — which is the more useful message to send us, because the catalog grows from it.</p>
+      </div>
+
+      <% if @arrangeable.any? %>
+        <div class="flex flex-col gap-3.5">
+          <h3 class="font-semibold tracking-tight">Arranged by hand</h3>
+          <p class="text-sm text-muted">Real work, priced, not yet callable without a conversation. Ask here and it becomes a normal paid endpoint once the scope is agreed.</p>
+          <dl class="flex flex-col text-sm">
+            <% @arrangeable.each do |service| %>
+              <div class="flex justify-between gap-6 py-3 border-b hairline">
+                <dt><%= link_to service.name, service_path(service), class: "link link-hover" %><span class="block text-muted text-[13px] mt-0.5"><%= service.summary %></span></dt>
+                <dd class="font-mono text-right whitespace-nowrap"><%= usdc(service.price_atomic) %></dd>
+              </div>
+            <% end %>
+          </dl>
+        </div>
+      <% end %>
+
+      <div class="flex flex-col gap-3.5">
+        <h3 class="font-semibold tracking-tight">What happens to a request</h3>
+        <p class="text-muted">A person reads it and replies within a couple of days, whether the answer is yes or no. If we can do it, we either quote you directly or list it as an endpoint and send you the slug. If we can't, we say so — and if enough people ask for the same thing, that is how it gets built.</p>
+      </div>
+    </div>
+
+    <aside class="lg:pt-1.5">
+      <%= render(Ui::CardComponent.new(id: "request-form")) do %>
+        <% if @requested %>
+          <div class="flex flex-col gap-3">
+            <span class="size-9 rounded-full bg-base-200 text-success flex items-center justify-center"><%= icon("check") %></span>
+            <h2 class="font-semibold tracking-tight">Got it.</h2>
+            <p class="text-sm text-muted">A confirmation is on its way to your inbox. A person reads every one of these and replies within a couple of days, whether the answer is yes or no.</p>
+          </div>
+        <% else %>
+          <%= form_with model: @request, url: service_requests_path, class: "flex flex-col gap-4" do |f| %>
+            <div class="flex flex-col gap-1">
+              <h2 class="font-semibold tracking-tight">Ask for a service</h2>
+              <p class="text-sm text-muted">Something we list, or something we don't.</p>
+            </div>
+            <% if @request.errors.any? %>
+              <p class="text-sm text-error"><%= @request.errors.full_messages.to_sentence %></p>
+            <% end %>
+            <label class="flex flex-col gap-1.5 text-sm">
+              <span class="font-medium">Email</span>
+              <%= f.email_field :email, class: "input w-full", placeholder: "you@company.com", required: true %>
+            </label>
+            <label class="flex flex-col gap-1.5 text-sm">
+              <span class="font-medium">What you want</span>
+              <%= f.select :service_slug,
+                           Catalog::Service.all.map { |s| [ s.name, s.slug ] },
+                           { include_blank: "Something you don't list yet" },
+                           class: "select w-full" %>
+            </label>
+            <label class="flex flex-col gap-1.5 text-sm">
+              <span class="font-medium">What you need</span>
+              <%= f.text_area :details, class: "textarea w-full", rows: 4, required: true,
+                              placeholder: "What the work is, how often you'd need it, and what a good answer looks like." %>
+            </label>
+            <label class="flex flex-col gap-1.5 text-sm">
+              <span class="font-medium">Budget per call <span class="text-muted font-normal">(optional, USDC)</span></span>
+              <%= f.text_field :budget_usdc, value: @request.budget_usdc, class: "input w-full font-mono", placeholder: "5.00", inputmode: "decimal" %>
+            </label>
+            <%= render(Ui::ButtonComponent.new(variant: :primary, type: "submit", class: "w-full", icon: "arrow-right")) { "Send request" } %>
+            <p class="text-xs text-muted text-center">A person replies either way.</p>
+          <% end %>
+        <% end %>
+      <% end %>
+    </aside>
+  </section>
 </div>

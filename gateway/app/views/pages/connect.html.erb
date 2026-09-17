@@ -123,7 +123,7 @@
     </nav>
   </section>
 
-  <div class="flex flex-col gap-14">
+  <div id="clients" class="flex flex-col gap-14">
     <% Docs::McpClient.all.each do |client| %>
       <section id="<%= client.slug %>" class="flex flex-col gap-3.5 scroll-mt-24">
         <div class="flex items-baseline justify-between gap-4 flex-wrap">

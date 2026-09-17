@@ -1,0 +1,94 @@
+<% content_for :title, "Requests — BotTrunk admin" %>
+
+<div class="flex flex-col gap-14 py-12 md:py-16">
+  <header class="flex flex-col gap-3">
+    <%= render Dashboard::AdminNavComponent.new(active: "Requests", requests: @pending.size) %>
+    <h1 class="text-4xl font-semibold tracking-[-0.03em]">What buyers asked for</h1>
+    <p class="text-muted">The demand side of the same queue. A request naming nothing we sell is the one to read twice: it is a catalog entry someone would have paid for, written by the person who wanted it.</p>
+    <% if flash[:notice] %><p class="text-sm text-success"><%= flash[:notice] %></p><% end %>
+    <% if flash[:alert] %><p class="text-sm text-error"><%= flash[:alert] %></p><% end %>
+  </header>
+
+  <% if @gaps.any? %>
+    <section class="flex flex-col gap-2">
+      <h2 class="text-[22px] font-semibold tracking-tight">Not in the catalog · <%= @gaps.size %></h2>
+      <p class="text-sm text-muted">Asked for by name, sold by nobody. Repeats here are the strongest signal this page produces.</p>
+    </section>
+  <% end %>
+
+  <section class="flex flex-col gap-5">
+    <h2 class="text-[22px] font-semibold tracking-tight">To answer · <%= @pending.size %></h2>
+    <% if @pending.empty? %>
+      <p class="text-sm text-muted">Nothing waiting.</p>
+    <% end %>
+
+    <% @pending.each do |request| %>
+      <%= render Ui::CardComponent.new(class: "flex flex-col gap-5") do %>
+        <div class="flex flex-col gap-2 min-w-0">
+          <div class="flex items-baseline gap-3 flex-wrap">
+            <span class="text-2xl font-medium"><%= request.service&.name || "Something we don't sell" %></span>
+            <% unless request.service %>
+              <%= render(Ui::PillComponent.new(tone: :neutral)) { "Catalog gap" } %>
+            <% end %>
+          </div>
+          <dl class="grid grid-cols-[auto_1fr] gap-x-6 gap-y-1 text-sm">
+            <dt class="text-muted">From</dt><dd><%= mail_to request.email, request.email, class: "link link-hover" %></dd>
+            <% if request.service %>
+              <dt class="text-muted">We list it at</dt><dd class="font-mono"><%= usdc(request.service.price_atomic) %> per call</dd>
+            <% end %>
+            <% if request.budget_atomic %>
+              <dt class="text-muted">Their budget</dt><dd class="font-mono"><%= usdc(request.budget_atomic) %> per call</dd>
+            <% end %>
+            <dt class="text-muted">Asked</dt><dd><%= request.created_at.utc.strftime("%Y-%m-%d %H:%M UTC") %> · <%= time_ago_in_words(request.created_at) %> ago</dd>
+          </dl>
+          <p class="text-sm border-l-2 border-base-300 pl-3 mt-1 whitespace-pre-line"><%= request.details %></p>
+        </div>
+
+        <div class="flex flex-col md:flex-row gap-3 md:items-end border-t hairline pt-5">
+          <%= form_with url: admin_answer_request_path(request), class: "flex flex-col sm:flex-row gap-3 sm:items-end grow" do |f| %>
+            <label class="flex flex-col gap-1.5 grow">
+              <span class="text-[13px] text-muted">What we told them (for the record — this is not emailed)</span>
+              <%= f.text_field :review_notes, class: "input w-full", placeholder: "Quoted 12 USDC, waiting on their sample file." %>
+            </label>
+            <%= f.submit "Answered", class: "btn btn-primary" %>
+          <% end %>
+          <%= form_with url: admin_close_request_path(request), class: "flex gap-3 items-end", data: { turbo_confirm: "Close this request without answering?" } do |f| %>
+            <%= f.hidden_field :review_notes, value: "" %>
+            <%= f.submit "Close", class: "btn btn-ghost text-muted" %>
+          <% end %>
+        </div>
+      <% end %>
+    <% end %>
+  </section>
+
+  <section class="flex flex-col gap-5">
+    <h2 class="text-[22px] font-semibold tracking-tight">Handled</h2>
+    <% if @reviewed.empty? %>
+      <p class="text-sm text-muted">Nothing handled yet.</p>
+    <% else %>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead><tr class="border-b hairline text-left text-muted">
+            <th class="py-2 pr-4 font-medium">Wanted</th>
+            <th class="py-2 pr-4 font-medium">From</th>
+            <th class="py-2 pr-4 font-medium">Outcome</th>
+            <th class="py-2 font-medium">Note</th>
+          </tr></thead>
+          <tbody>
+            <% @reviewed.each do |request| %>
+              <tr class="border-b hairline align-top">
+                <td class="py-3 pr-4"><%= request.service&.name || "Not in the catalog" %></td>
+                <td class="py-3 pr-4 text-muted"><%= request.email %></td>
+                <td class="py-3 pr-4">
+                  <%= render(Ui::PillComponent.new(tone: request.status == "answered" ? :success : :neutral)) { request.status.titleize } %>
+                  <span class="text-muted text-xs block mt-1"><%= request.reviewed_at&.utc&.strftime("%Y-%m-%d") %></span>
+                </td>
+                <td class="py-3 text-muted"><%= request.review_notes.presence || "—" %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    <% end %>
+  </section>
+</div>

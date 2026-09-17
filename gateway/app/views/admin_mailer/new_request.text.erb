@@ -1,0 +1,16 @@
+<%= @request.for_catalog_gap? ? "Someone wants something we don't sell." : "Someone wants to buy on BotTrunk." %>
+
+Wants:        <%= @request.service&.name || "Not in the catalog" %>
+<% if @request.service -%>
+Listed at:    <%= usdc(@request.service.price_atomic) %> USDC
+<% end -%>
+<% if @request.budget_atomic -%>
+Their budget: <%= usdc(@request.budget_atomic) %> USDC
+<% end -%>
+From:         <%= @request.email %>
+
+<%= @request.details %>
+
+Queue: https://bottrunk.com/admin/requests
+
+They've had an acknowledgement already. Reply to <%= @request.email %>.

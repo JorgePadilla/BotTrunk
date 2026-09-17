@@ -24,6 +24,15 @@ class AdminMailer < ApplicationMailer
     mail(to: admin, subject: "Seller inquiry — #{@inquiry.service_name}")
   end
 
+  # A buyer asking for work. The subject says which kind, because a request
+  # for something we do not list is the one that changes what we build next.
+  def new_request
+    @request = params[:request]
+    return if admin.blank?
+
+    mail(to: admin, subject: request_subject)
+  end
+
   # Every settled call. The subject carries the whole story, because that is
   # all a phone notification shows: who paid, for what, how much — and whether
   # this wallet has ever paid us before, which is the only line that means a
@@ -52,6 +61,11 @@ class AdminMailer < ApplicationMailer
     return "BotTrunk daily — nothing waiting" if open.zero?
 
     "BotTrunk daily — #{open} deposit#{'s' if open != 1} waiting#{', oldest ' + @report[:oldest] if @report[:oldest]}"
+  end
+
+  def request_subject
+    who = @request.service ? @request.service.name : "something we don't sell"
+    "Service request — #{who}"
   end
 
   def call_subject

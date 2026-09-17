@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 class SellerInquiriesController < ApplicationController
+  include RendersSellPage
+
   def create
     attrs = { email: nil, service_name: nil, upstream_url: nil, price_usdc: nil, notes: nil }.merge(inquiry_params.to_h.symbolize_keys)
     result = Sellers::CreateInquiry.new(**attrs).call
@@ -8,8 +10,7 @@ class SellerInquiriesController < ApplicationController
     if result.success?
       redirect_to sell_path(submitted: 1)
     else
-      @inquiry = result[:inquiry]
-      @submitted = false
+      sell_page(inquiry: result[:inquiry])
       render "pages/sell", status: :unprocessable_entity
     end
   end

@@ -18,7 +18,7 @@ module Payments
           .with { |req|
             body = JSON.parse(req.body)
             pp = body["paymentPayload"]
-            body["x402Version"] == 2 && body["paymentRequirements"]["payTo"] == TEST_PAY_TO && pp["scheme"] == "exact" &&
+            body["x402Version"] == 2 && body["paymentRequirements"]["payTo"] == TEST_PAY_TO && pp["accepted"]["scheme"] == "exact" &&
               pp["resource"]["url"] == "https://api.bottrunk.test/s/scrape-markdown" &&
               body["paymentRequirements"]["extra"]["tag"] == "x402-global-challenge" &&
               pp["extensions"]["bazaar"]["schema"].is_a?(Hash) &&

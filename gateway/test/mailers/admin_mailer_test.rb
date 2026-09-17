@@ -61,4 +61,29 @@ class AdminMailerTest < ActionMailer::TestCase
       assert_equal "BotTrunk daily — nothing waiting", AdminMailer.with(report: report.to_h).digest.subject
     end
   end
+
+  test "a service request tells us which kind it is before we open it" do
+    with_admin_email do
+      mail = AdminMailer.with(request: build_request(service_slug: nil)).new_request
+
+      assert_equal [ MailHelpers::ADMIN ], mail.to
+      assert_match "something we don't sell", mail.subject
+      assert_match "court filings", mail.html_part.body.to_s
+    end
+  end
+
+  test "a request naming a service says what we already list it at" do
+    with_admin_email do
+      mail = AdminMailer.with(request: build_request(service_slug: "scrape-markdown")).new_request
+
+      assert_match "Scrape URL to Markdown", mail.subject
+      assert_match "$0.09", mail.html_part.body.to_s
+    end
+  end
+
+  test "no ADMIN_EMAIL means no request alert, rather than a guess at a recipient" do
+    with_admin_email(nil) do
+      assert_instance_of ActionMailer::Base::NullMail, AdminMailer.with(request: build_request).new_request.message
+    end
+  end
 end

@@ -2,6 +2,8 @@
 
 # Static-ish marketing and documentation pages. No state, no services.
 class PagesController < ApplicationController
+  include RendersSellPage
+
   after_action :track_page_view
 
   def docs
@@ -11,8 +13,9 @@ class PagesController < ApplicationController
   end
 
   def sell
-    @inquiry = SellerInquiry.new
+    sell_page
     @submitted = params[:submitted].present?
+    @requested = params[:requested].present?
   end
 
   def connect

@@ -3,19 +3,21 @@
 module Dashboard
   # Tiny sub-navigation for the admin pages. `queue:` shows how many deposits wait.
   class AdminNavComponent < ApplicationComponent
-    def initialize(active:, queue: 0, inquiries: nil)
+    def initialize(active:, queue: 0, inquiries: nil, requests: nil)
       @active = active
       @queue = queue
       # nil rather than 0, so a page that does not count them says nothing
       # instead of claiming there are none waiting.
       @inquiries = inquiries
+      @requests = requests
     end
 
     def links
       [
         [ "Stats", "/admin/stats" ],
         [ @queue.positive? ? "Orders · #{@queue} pending" : "Orders", "/admin/orders" ],
-        [ @inquiries.to_i.positive? ? "Sellers · #{@inquiries} to review" : "Sellers", "/admin/inquiries" ]
+        [ @inquiries.to_i.positive? ? "Sellers · #{@inquiries} to review" : "Sellers", "/admin/inquiries" ],
+        [ @requests.to_i.positive? ? "Requests · #{@requests} to answer" : "Requests", "/admin/requests" ]
       ]
     end
 

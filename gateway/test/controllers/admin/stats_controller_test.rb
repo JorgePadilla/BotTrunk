@@ -55,7 +55,7 @@ module Admin
       assert_response :success
       assert_select "h2", text: "Lempira rate"
       assert_select "dd", text: "L26.2"       # the pinned test rate, printed as stored
-      assert_select "dd", text: "L24.70"      # after the L1.50 spread
+      assert_select "dd", text: "L24.7"       # after the L1.50 spread, as to_s("F") prints it
       assert_select "dd", text: "$42.51"
       assert_select "td", text: "deposit-bac-10000"
       assert_select "td", text: "$425.10"

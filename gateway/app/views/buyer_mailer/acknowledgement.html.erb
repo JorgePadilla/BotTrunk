@@ -1,0 +1,27 @@
+<p style="margin:0 0 16px 0;font-size:17px;font-weight:600;">Thanks — we have your request.</p>
+
+<% if @request.service %>
+  <p style="margin:0 0 20px 0;">
+    You asked about <strong><%= @request.service.name %></strong>. A person reads every one of
+    these and replies within a couple of days, whether the answer is yes or no.
+  </p>
+<% else %>
+  <p style="margin:0 0 20px 0;">
+    You asked for something we don't list yet. Those are the useful ones — the catalog grows
+    from them. A person reads every one of these and replies within a couple of days, whether
+    the answer is yes or no.
+  </p>
+<% end %>
+
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 22px 0;">
+  <%= receipt_row "You asked for", @request.service&.name || "Something new" %>
+  <%= receipt_row "Your budget", "#{usdc(@request.budget_atomic)} USDC", mono: true if @request.budget_atomic %>
+</table>
+
+<p style="margin:0 0 20px 0;color:#666666;font-size:14px;border-left:2px solid #e5e5e5;padding-left:14px;white-space:pre-line;"><%= @request.details %></p>
+
+<p style="margin:0 0 22px 0;"><%= mail_button "See what we already sell", "https://bottrunk.com" %></p>
+
+<p style="margin:0;color:#666666;font-size:13px;">
+  Got it wrong, or want to add something? Reply to this email.
+</p>

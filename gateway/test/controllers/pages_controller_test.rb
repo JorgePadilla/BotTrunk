@@ -17,7 +17,9 @@ class PagesControllerTest < ActionDispatch::IntegrationTest
     get connect_url
     assert_response :success
     assert_select "h1", text: "Connect your agent"
-    assert_select "h3", count: Docs::McpClient.all.size
+    # Scoped to the client list on purpose: counting every h3 on the page made
+    # this fail the day /connect grew two subheadings that are not clients.
+    assert_select "#clients h3", count: Docs::McpClient.all.size
     assert_select "section#openclaw h3", text: "OpenClaw"
     assert_select "section#hermes h3", text: "Hermes Agent"
     assert_match "openclaw mcp add bottrunk", response.body
@@ -99,6 +101,28 @@ class PagesControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "form[action='/sell']", count: 0
     assert_select "h2", text: "Got it."
+  end
+
+  test "sell asks the other question too: what are we missing" do
+    get sell_url
+    assert_response :success
+    assert_select "form[action='/service-requests']"
+    assert_select "input[name='service_request[email]']"
+    assert_select "textarea[name='service_request[details]']"
+  end
+
+  test "the request form offers the catalog, and 'something you don't list yet' first" do
+    get sell_url
+
+    assert_select "select[name='service_request[service_slug]'] option[value='']", text: /don't list yet/
+    assert_select "select[name='service_request[service_slug]'] option[value='scrape-markdown']"
+  end
+
+  test "sell confirms a request without pretending the seller form was sent" do
+    get sell_url(requested: 1)
+    assert_response :success
+    assert_select "form[action='/service-requests']", count: 0
+    assert_select "form[action='/sell']", 1, "the seller form must still be there"
   end
 
   test "sign_in explains agents need no account" do

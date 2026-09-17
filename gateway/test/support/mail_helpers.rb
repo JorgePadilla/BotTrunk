@@ -22,6 +22,13 @@ module MailHelpers
     }.merge(overrides))
   end
 
+  def build_request(**overrides)
+    ServiceRequest.create!({
+      email: "buyer@example.com", details: "We need daily court filings from three Honduran courts, as JSON.",
+      budget_atomic: 5_000_000
+    }.merge(overrides))
+  end
+
   def build_inquiry(**overrides)
     SellerInquiry.create!({
       email: "seller@example.com", service_name: "Court records HN", upstream_url: "https://api.example.com/records",

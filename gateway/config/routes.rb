@@ -23,6 +23,7 @@ Rails.application.routes.draw do
   get "docs", to: "pages#docs"
   get "sell", to: "pages#sell"
   post "sell", to: "seller_inquiries#create", as: :seller_inquiries
+  post "service-requests", to: "service_requests#create", as: :service_requests
   get "connect", to: "pages#connect"
   get "sign_in", to: "pages#sign_in"
   get "llms.txt", to: "pages#llms", as: :llms, format: false
@@ -48,6 +49,9 @@ Rails.application.routes.draw do
     get "inquiries", to: "inquiries#index"
     post "inquiries/:id/approve", to: "inquiries#approve", as: :approve_inquiry
     post "inquiries/:id/reject", to: "inquiries#reject", as: :reject_inquiry
+    get "requests", to: "requests#index"
+    post "requests/:id/answer", to: "requests#answer", as: :answer_request
+    post "requests/:id/close", to: "requests#close", as: :close_request
   end
 
   # Hosted MCP endpoint (mcp.bottrunk.com/mcp; also /mcp on the other hosts).

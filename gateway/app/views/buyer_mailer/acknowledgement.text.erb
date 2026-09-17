@@ -1,0 +1,21 @@
+Thanks — we have your request.
+
+<% if @request.service -%>
+You asked about <%= @request.service.name %>. A person reads every one of these
+and replies within a couple of days, whether the answer is yes or no.
+<% else -%>
+You asked for something we don't list yet. Those are the useful ones — the
+catalog grows from them. A person reads every one of these and replies within
+a couple of days, whether the answer is yes or no.
+<% end -%>
+
+You asked for: <%= @request.service&.name || "Something new" %>
+<% if @request.budget_atomic -%>
+Your budget:   <%= usdc(@request.budget_atomic) %> USDC
+<% end -%>
+
+<%= @request.details %>
+
+What we already sell: https://bottrunk.com
+
+Got it wrong, or want to add something? Reply to this email.
