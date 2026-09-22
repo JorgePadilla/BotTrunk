@@ -1,1 +1,11 @@
 .DS_Store
+
+# Video production scratch: raw takes, renders and the finished demo.
+# 259 MB of binaries that git cannot delta-compress and could never be
+# removed from history. The demo lives on YouTube; the link goes in the
+# submission form, not in the repo.
+/video/
+/Claude outputs/
+
+# Per-machine Claude Code settings, not shared.
+/.claude/settings.local.json
