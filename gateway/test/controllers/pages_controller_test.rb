@@ -45,7 +45,7 @@ class PagesControllerTest < ActionDispatch::IntegrationTest
     assert_equal "text/plain", response.media_type
     assert_match "scrape-markdown", response.body
     assert_match "$0.09 USDC per call", response.body
-    assert_match "$25.00 USDC per call", response.body
+    assert_match "$45.00 USDC per call", response.body
     assert_match "npx bottrunk-mcp", response.body
     assert_match "deposit-bac-1000", response.body
     assert_match "Banco Central de Honduras reference rate", response.body

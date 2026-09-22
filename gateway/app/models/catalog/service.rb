@@ -227,7 +227,7 @@ module Catalog
       slug: "verify-business-hn", name: "Verify a Honduran business", category: "Verification", provider: "Human-fulfilled", status: "on_request",
       summary: "A local visits the address, photographs the premises and checks the registry.",
       description: "A verified local visits the address, photographs the premises, confirms the business is operating, and checks the mercantile registry. Proof bundle (photos, coordinates, registry excerpt) returned within 48 hours. Arranged by email first so we can agree scope and city; then it is a normal paid call.",
-      price_usdc: 25.00,
+      price_usdc: 45.00,
       network: "Algorand MainNet", asset: "USDC", facilitator: "GoPlausible",
       inputs: [ Field.new("name", "string", "Business name."), Field.new("address", "string", "Street address, city.") ],
       outputs: [ Field.new("verified", "boolean", "Whether the business exists and operates at the address."), Field.new("proof", "object", "Photos, coordinates and registry excerpt.") ]
@@ -236,7 +236,7 @@ module Catalog
       slug: "translate-es-en", name: "Translate ES ↔ EN (human)", category: "Translation", provider: "Human-fulfilled", status: "on_request",
       summary: "Human-reviewed translation with Central American context, up to 1,000 words.",
       description: "Human translation and review, up to 1,000 words, with Central American idiom and legal terminology handled correctly — the difference between a machine translation and something you can sign. Arranged by email first so we can agree the deadline; then it is a normal paid call.",
-      price_usdc: 15.00,
+      price_usdc: 60.00,
       network: "Algorand MainNet", asset: "USDC", facilitator: "GoPlausible",
       inputs: [ Field.new("text", "string", "Up to 1,000 words."), Field.new("direction", "string", "es-en or en-es.") ],
       outputs: [ Field.new("text", "string", "Translated text."), Field.new("notes", "string", "Translator notes, if any.") ]

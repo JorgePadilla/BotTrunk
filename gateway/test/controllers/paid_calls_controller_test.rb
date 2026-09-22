@@ -105,6 +105,14 @@ class PaidCallsControllerTest < ActionDispatch::IntegrationTest
     assert_response :service_unavailable
     assert_equal "on_request", response.parsed_body["status"]
     assert_equal "coming_soon", Event.last.name
+
+    # The 503 has to be a way in, not a dead end: an agent that lands here
+    # should learn it was not charged and how the service is arranged.
+    body = response.parsed_body
+    assert_equal false, body["charged"]
+    assert_equal "human_fulfilled_arrange_first", body["reason"]
+    assert_match "hello@bottrunk.com", body["how_to_arrange"]
+    assert_match "fulfilled by a person", body["error"]
     assert_empty @adapter.verify_calls
     assert_not_requested upstream
   end

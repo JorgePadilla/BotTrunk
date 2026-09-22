@@ -52,11 +52,25 @@ class PaidCallsController < ApplicationController
     track_event(paid ? "payment_rejected" : "payment_required", service_slug: service.slug, reason: result.error)
   end
 
-  # Listed but not yet callable: say so before anyone signs a payment.
+  # Listed but not yet callable. These are jobs a person does, so we agree the
+  # scope before any money moves. "Not live yet" read like something broken;
+  # an agent hitting this needs the way in, not a dead end. The payment header
+  # is never looked at, so nothing can be charged here.
   def coming_soon(service)
     track_event("coming_soon", service_slug: service.slug)
-    render json: { error: "#{service.name} is not live yet", status: service.status, catalog: "https://bottrunk.com/s/#{service.slug}" },
-           status: :service_unavailable
+    contact = ENV.fetch("MAIL_REPLY_TO", "hello@bottrunk.com")
+    body = {
+      error: "#{service.name} is fulfilled by a person, and is arranged before the first call.",
+      status: service.status,
+      reason: "human_fulfilled_arrange_first",
+      charged: false,
+      how_to_arrange: "Email #{contact} with the scope. Once it is agreed this endpoint answers 402 " \
+                      "and behaves like every other paid call.",
+      contact: contact,
+      catalog: "https://bottrunk.com/s/#{service.slug}"
+    }
+    body[:price_usdc] = format("%.2f", service.price_usdc) if service.price_usdc
+    render json: body, status: :service_unavailable
   end
 
   def cors_headers
