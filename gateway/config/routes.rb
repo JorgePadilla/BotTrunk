@@ -41,6 +41,10 @@ Rails.application.routes.draw do
 
   # Operator dashboard (HTTP basic auth, see Admin::BaseController)
   namespace :admin do
+    # Bare /admin is a convenience entry point: there is no dashboard index,
+    # so send it to the page an operator actually wants. 302, not 301, so a
+    # real index later is not fighting a permanently cached redirect.
+    root to: redirect("/admin/stats", status: 302)
     get "stats", to: "stats#show"
     get "orders", to: "orders#index"
     post "orders/:token/deliver", to: "orders#deliver", as: :deliver_order

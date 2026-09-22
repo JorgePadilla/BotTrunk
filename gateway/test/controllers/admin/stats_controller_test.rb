@@ -7,6 +7,17 @@ module Admin
     setup { ENV["ADMIN_PASSWORD"] = "s3cret" }
     teardown { ENV.delete("ADMIN_PASSWORD") }
 
+    test "bare /admin redirects to the dashboard, which still asks for auth" do
+      get "/admin"
+      assert_response :found
+      assert_redirected_to "/admin/stats"
+
+      # The redirect is a routing-layer endpoint, so it never reaches
+      # Admin::BaseController. Nothing is exposed: the target still challenges.
+      follow_redirect!
+      assert_response :unauthorized
+    end
+
     test "asks for basic auth and refuses a wrong password" do
       get admin_stats_url
       assert_response :unauthorized
