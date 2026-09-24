@@ -143,12 +143,36 @@ module Catalog
         [ "Where it reads from", "Your `selector` if you give one. Otherwise the first of `main`, `article`, `body`." ],
         [ "A selector that matches nothing", "Refused with 422 and not charged, rather than quietly returning the whole page. A malformed selector is refused the same way." ],
         [ "Non-HTML URLs", "A URL that answers with JSON, a PDF or an image is refused with 422. A server that sends no content-type at all is scraped anyway." ],
-        [ "No JavaScript", "The page is fetched, not rendered. A site that builds its content client-side returns almost nothing. `render_js` is accepted and ignored." ]
+        [ "No JavaScript", "The page is fetched, not rendered, so a site that builds its content client-side returns almost nothing. When that happens, `scrape-markdown-js` renders it in a real browser first." ]
       ],
       network: "Algorand MainNet", asset: "USDC", facilitator: "GoPlausible",
       inputs: [
         Field.new("url", "string", "Public http(s) URL to fetch.", "https://example.com/pricing"),
-        Field.new("render_js", "boolean", "Reserved: headless rendering is not available yet; the flag is accepted and ignored."),
+        Field.new("render_js", "boolean", "Deprecated and ignored. Rendering is its own service: `scrape-markdown-js`."),
+        Field.new("selector", "string", "Optional CSS selector to scope the extraction.")
+      ],
+      outputs: [
+        Field.new("markdown", "string", "Body content as GitHub-flavored markdown.", "# Pricing\n\nSimple, honest pricing…"),
+        Field.new("title", "string", "Document title.", "Pricing — Example"),
+        Field.new("word_count", "integer", "Words in markdown, for budgeting tokens.", 412)
+      ]
+    ),
+    Service.new(
+      slug: "scrape-markdown-js", name: "Scrape URL to Markdown (rendered)", category: "Data", provider: "By BotTrunk", fulfiller: "Fulfillers::ScrapeMarkdownJs",
+      summary: "Any page as clean markdown, after its JavaScript has run.",
+      description: "The same clean, LLM-ready markdown as scrape-markdown, except the page is loaded in a real browser first. Use it on anything that builds its content client-side — single-page apps, dashboards, most modern pricing pages — where a plain HTTP fetch returns an empty shell. Optional CSS selector to scope the extraction, and an optional selector to wait for before the page is read.",
+      price_usdc: 0.29,
+      behaviour: [
+        [ "When to pay for this", "Only when plain `scrape-markdown` comes back thin or empty. If the page ships its content in the HTML, that one is a third of the price and returns the same markdown." ],
+        [ "What is stripped", "Identical to `scrape-markdown`: `script`, `style`, `noscript`, `nav`, `footer`, `header`, `aside`, `form`, `iframe`, `svg`, `template` — same pipeline, different source." ],
+        [ "Waiting for content", "`wait_for` takes a CSS selector the browser waits for before the page is read — the difference between catching a dashboard mid-spinner and catching it after the data arrives." ],
+        [ "A selector that matches nothing", "Refused with 422 and not charged, exactly as on `scrape-markdown`." ],
+        [ "If the renderer is unavailable", "The call fails and is never settled, so it costs you nothing." ]
+      ],
+      network: "Algorand MainNet", asset: "USDC", facilitator: "GoPlausible",
+      inputs: [
+        Field.new("url", "string", "Public http(s) URL to render.", "https://example.com/app"),
+        Field.new("wait_for", "string", "Optional CSS selector to wait for before reading the page.", "table.results"),
         Field.new("selector", "string", "Optional CSS selector to scope the extraction.")
       ],
       outputs: [

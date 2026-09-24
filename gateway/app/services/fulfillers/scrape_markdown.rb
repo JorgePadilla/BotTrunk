@@ -11,17 +11,10 @@ module Fulfillers
 
     def call
       uri = public_uri { |failure| return failure }
-      response, failure = fetch(uri)
+      html, failure = load_html(uri)
       return failure if failure
 
-      # Only refuse what is clearly not a page: JSON came back as JSON-shaped
-      # markdown with an empty title, which is not what anyone paid for. A
-      # server that sends no content-type at all still gets the benefit of the
-      # doubt, because plenty of real pages do not send one.
-      type = response.headers["content-type"].to_s
-      return bad_request("url returned #{type.split(';').first}, not an HTML page") if type.present? && !type.match?(HTML_TYPES)
-
-      doc = Nokogiri::HTML(response.body)
+      doc = Nokogiri::HTML(html)
       title = (doc.at("title")&.text || "").squish
       doc.css(STRIP.join(",")).remove
 
@@ -30,6 +23,24 @@ module Fulfillers
     end
 
     private
+
+    # Where the HTML comes from, and the only thing that differs between this
+    # service and the rendered one. Everything after it -- stripping, the
+    # selector, the markdown conversion -- works on an HTML string and does
+    # not care how it arrived. `ScrapeMarkdownJs` overrides just this.
+    def load_html(uri)
+      response, failure = fetch(uri)
+      return [ nil, failure ] if failure
+
+      # Only refuse what is clearly not a page: JSON came back as JSON-shaped
+      # markdown with an empty title, which is not what anyone paid for. A
+      # server that sends no content-type at all still gets the benefit of the
+      # doubt, because plenty of real pages do not send one.
+      type = response.headers["content-type"].to_s
+      return [ nil, bad_request("url returned #{type.split(';').first}, not an HTML page") ] if type.present? && !type.match?(HTML_TYPES)
+
+      [ response.body, nil ]
+    end
 
     # Resolves `selector` against the page, or falls back to the usual content
     # containers when none was given.
