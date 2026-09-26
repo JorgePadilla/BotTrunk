@@ -31,12 +31,16 @@ module Fulfillers
 
       order = WorkOrder.create!(
         service_slug: @service.slug, price_atomic: @service.price_atomic, contact_email: email,
-        brief: values[BRIEF_FIELD] || summary_of(values), params: values.except(BRIEF_FIELD)
+        brief: values[BRIEF_FIELD] || summary_of(values), params: values.except(BRIEF_FIELD).merge(extra_params)
       )
       Result.success(status: 202, content_type: "application/json", body: body_for(order).to_json, order: order)
     end
 
     private
+
+    # Anything a subclass computed and wants frozen into the order — a quote
+    # taken at the moment of sale, say. Empty for a plain job.
+    def extra_params = {}
 
     # Returns [values, failure]. The first missing or malformed field wins, so
     # the buyer gets one clear thing to fix rather than a list.

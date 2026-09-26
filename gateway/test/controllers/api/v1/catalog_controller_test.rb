@@ -31,10 +31,17 @@ module Api
 
       test "the four deposit tiers are priced from the day's rate" do
         get api_v1_catalog_url(category: "Payments")
-        tiers = response.parsed_body["services"]
+        tiers = response.parsed_body["services"].select { |s| s["slug"].start_with?("deposit-bac") }
         assert_equal %w[deposit-bac-1000 deposit-bac-2500 deposit-bac-5000 deposit-bac-10000], tiers.map { |s| s["slug"] }
         assert_equal "42510122", tiers.first["price"]["amount"]
         assert_equal "425101215", tiers.last["price"]["amount"]
+      end
+
+      test "Payments holds the corridors, not only the lempira one" do
+        get api_v1_catalog_url(category: "Payments")
+        slugs = response.parsed_body["services"].map { |s| s["slug"] }
+        assert_includes slugs, "deposit-bac-1000"
+        assert_includes slugs, "btc-500", "bitcoin delivery is a payment corridor too"
       end
 
       test "show returns one service or 404" do

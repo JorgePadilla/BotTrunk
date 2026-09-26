@@ -49,7 +49,8 @@ class McpControllerTest < ActionDispatch::IntegrationTest
     assert_equal "0.090000", payload["services"].find { |s| s["slug"] == "scrape-markdown" }["price_usdc"]
 
     filtered = JSON.parse(rpc("tools/call", { name: "bottrunk_catalog", arguments: { category: "payments" } })["result"]["content"][0]["text"])
-    assert filtered["services"].all? { |s| s["slug"].start_with?("deposit-bac") }
+    assert filtered["services"].any? { |s| s["slug"].start_with?("deposit-bac") }
+    assert filtered["services"].all? { |s| s["slug"].start_with?("deposit-bac", "btc-") }, "Payments is the corridors: lempira and bitcoin"
   end
 
   test "the service tool returns schema, an example body and how to pay" do

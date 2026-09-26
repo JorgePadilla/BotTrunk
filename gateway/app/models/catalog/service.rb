@@ -369,6 +369,37 @@ module Catalog
         Field.new("status_url", "string", "Where to poll.", "https://api.bottrunk.com/orders/8kPz3nQ4vR7mB2xY6wLd")
       ]
     ),
+    *[ 500, 1_000 ].map do |usdc|
+      Service.new(
+        slug: "btc-#{usdc}", name: "Buy #{usdc} USDC of bitcoin", category: "Payments", provider: "Human-fulfilled",
+        fulfiller: "Fulfillers::BtcDelivery", price_usdc: usdc.to_f, status: "on_request",
+        family: "btc", family_label: "Bitcoin to an address",
+        family_summary: "Pay in USDC on Algorand, receive bitcoin at the address you give. The rate and the spread are quoted before you pay, and frozen into the order.",
+        job: { eta: "within 24 hours", capacity: 3, required: {
+          "btc_address" => { min: 26, max: 62, hint: "the address the bitcoin should arrive at" }
+        } },
+        summary: "Pay #{usdc} USDC on Algorand, receive bitcoin at your address within 24 hours.",
+        description: "Send #{usdc} USDC on Algorand and receive bitcoin at the address you name. The quote — spot price, your rate, the spread and exactly how much bitcoin arrives — is returned before you pay and frozen into the order, so the number you agreed to is the number that gets sent. A person completes the transfer and records the bitcoin transaction id against your order.",
+        behaviour: [
+          [ "Arranged first, for now", "This answers 503 until a licensed partner is behind it. Exchanging one asset for another is a regulated activity wherever the buyer is calling from, so nothing can be charged here until the compliance sits with someone authorised to carry it. Write first and we will tell you where that stands." ],
+          [ "The spread is stated, not hidden", "You are charged spot plus #{(Pricing::BtcDelivery.spread_bps / 100.0).round(2)} %. The response shows the spot price, your rate and what the delivered bitcoin is worth at spot, so the cost of using this rather than an exchange is a number you can read before you pay." ],
+          [ "The quote is frozen", "Taken at the moment you order and recorded on it. If bitcoin moves between your payment and the send, the amount you were quoted is still the amount that arrives." ],
+          [ "No fresh price, no quote", "If we cannot get a bitcoin price under half an hour old, the call is refused and nothing is charged. A stale quote is a loss for one of us and we will not guess which." ],
+          [ "The address is yours to get right", "We check the shape of it and a person checks it again before sending, but bitcoin sent to a valid address you mistyped cannot be recalled." ]
+        ],
+        network: "Algorand MainNet", asset: "USDC", facilitator: "GoPlausible",
+        inputs: [
+          Field.new("btc_address", "string", "Where the bitcoin should arrive.", "bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq"),
+          Field.new("contact_email", "string", "Optional: emailed when it is sent.", "buyer@example.com")
+        ],
+        outputs: [
+          Field.new("order_id", "string", "Token to poll at /orders/{order_id}.", "8kPz3nQ4vR7mB2xY6wLd"),
+          Field.new("quote", "object", "Spot, your rate, the spread, and the bitcoin that will arrive."),
+          Field.new("status", "string", "pending until sent, then delivered.", "pending"),
+          Field.new("result", "object", "The bitcoin transaction id, once sent.")
+        ]
+      )
+    end,
     Service.new(
       slug: "prices-hn", name: "What things cost in Honduras", category: "Data", provider: "By BotTrunk",
       fulfiller: "Fulfillers::PricesHn", price_usdc: 0.05, status: "on_request",
