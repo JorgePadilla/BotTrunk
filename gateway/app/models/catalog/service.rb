@@ -10,7 +10,7 @@ module Catalog
   class Service < Data.define(:slug, :name, :summary, :description, :category, :provider, :price_usdc,
                               :network, :asset, :facilitator, :inputs, :outputs, :upstream_url, :fulfiller,
                               :status, :price_hnl, :family, :family_label, :family_summary, :behaviour, :job)
-    CATEGORIES = %w[Payments Data Verification Translation Procurement].freeze
+    CATEGORIES = %w[Payments Data Verification Translation Procurement Software].freeze
 
     # live        — callable now, priced, in the Bazaar
     # on_request  — real work we do, arranged by email first (the endpoint answers 503)
@@ -400,6 +400,136 @@ module Catalog
         ]
       )
     end,
+    Service.new(
+      slug: "app-1000", name: "Android app from a spec", category: "Software", provider: "Human-fulfilled",
+      fulfiller: "Fulfillers::HumanJob", price_usdc: 1000.00,
+      family: "app", family_label: "Describe an app, get it built",
+      family_summary: "Write what the app should do and receive it built: an Android App Bundle, an installable apk and the source. The tiers differ by how much you get to specify and how hard we try to break it before you see it.",
+      job: { eta: "within 7 business days", capacity: 2, required: {
+        "brief" => { min: 200, max: 1_000, hint: "what the app does, who uses it, what each screen shows" },
+        "package_name" => { min: 3, max: 120, hint: "e.g. com.yourcompany.notes" }
+      } },
+      summary: "Describe it in up to 1,000 characters; receive a built Android app in 7 business days.",
+      description: "Write what the app should do — up to 1,000 characters — and receive it built. Built and smoke-tested on one device profile. You get the Android App Bundle that Play requires, an apk you can install on a phone today, and the full source. An agent can write a specification and cannot ship an artifact: no build machine, no signing, no account, nobody accountable if it does not run. That is the gap this closes.",
+      behaviour: [
+        [ "What you get", "An Android App Bundle (.aab) and an installable .apk, the full source and build instructions. Yours outright, no licence back to us." ],
+        [ "Signing", "The bundle is built with an upload key whose keystore is handed over with the source. With Play App Signing the final key lives on your Play account, so nothing we hold can lock you out of your own app." ],
+        [ "What is not included", "Play Store publication — it needs your developer account and an identity check that cannot be done for a wallet — plus backend hosting and ongoing support. Those are separate conversations." ],
+        [ "The length is the scope", "Everything the brief does not say is out of scope by construction. That is what keeps a fixed price honest in both directions." ],
+        [ "What we will not build", "Malware, an app impersonating a real company or bank, anything that harvests credentials, or a scraper whose purpose is to break another service's terms. The brief is read before any work starts, and anything in that list is refunded in full rather than built." ],
+        [ "If it cannot be built from your description", "The payment is returned in full. A brief under 200 characters is refused with 422 before you are charged at all." ]
+      ],
+      network: "Algorand MainNet", asset: "USDC", facilitator: "GoPlausible",
+      inputs: [
+        Field.new("brief", "string", "What the app does, who uses it, what each screen shows. 200–1,000 characters.", "A tip calculator for waiters in Honduras. One screen: bill amount, tip percent slider, number of people, and the split per person in lempiras. Remembers the last tip percent. No accounts, works offline."),
+        Field.new("package_name", "string", "Android package name.", "com.yourcompany.tips"),
+        Field.new("contact_email", "string", "Optional: emailed when the build is ready.", "buyer@example.com")
+      ],
+      outputs: [
+        Field.new("order_id", "string", "Token to poll at /orders/{order_id}.", "8kPz3nQ4vR7mB2xY6wLd"),
+        Field.new("status", "string", "pending until built, then delivered.", "pending"),
+        Field.new("eta", "string", "Fulfilment promise.", "within 7 business days"),
+        Field.new("result", "object", "Links to the bundle, the apk and the source.")
+      ]
+    ),
+    Service.new(
+      slug: "app-3000", name: "Android app, specified properly", category: "Software", provider: "Human-fulfilled",
+      fulfiller: "Fulfillers::HumanJob", price_usdc: 3000.00,
+      family: "app", family_label: "Describe an app, get it built",
+      family_summary: "Write what the app should do and receive it built: an Android App Bundle, an installable apk and the source. The tiers differ by how much you get to specify and how hard we try to break it before you see it.",
+      job: { eta: "within 14 business days", capacity: 1, required: {
+        "brief" => { min: 200, max: 5_000, hint: "what the app does, who uses it, what each screen shows" },
+        "package_name" => { min: 3, max: 120, hint: "e.g. com.yourcompany.notes" }
+      } },
+      summary: "Describe it in up to 5,000 characters; receive a built Android app in 14 business days.",
+      description: "Write what the app should do — up to 5,000 characters — and receive it built. A spec echo comes back before anything is written — our restatement of what we understood, including what we are treating as out of scope — and we wait for you to correct it. Then QA across three device profiles with a written report, and one revision round of up to 500 characters. You get the Android App Bundle that Play requires, an apk you can install on a phone today, and the full source. An agent can write a specification and cannot ship an artifact: no build machine, no signing, no account, nobody accountable if it does not run. That is the gap this closes.",
+      behaviour: [
+        [ "What you get", "Everything in the $1,000 tier, plus the spec echo, the QA report and one round of corrections applied. Yours outright, no licence back to us." ],
+        [ "Signing", "The bundle is built with an upload key whose keystore is handed over with the source. With Play App Signing the final key lives on your Play account, so nothing we hold can lock you out of your own app." ],
+        [ "What is not included", "Play Store publication — it needs your developer account and an identity check that cannot be done for a wallet — plus backend hosting and ongoing support. Those are separate conversations." ],
+        [ "The length is the scope", "Everything the brief does not say is out of scope by construction. That is what keeps a fixed price honest in both directions." ],
+        [ "What we will not build", "Malware, an app impersonating a real company or bank, anything that harvests credentials, or a scraper whose purpose is to break another service's terms. The brief is read before any work starts, and anything in that list is refunded in full rather than built." ],
+        [ "If it cannot be built from your description", "The payment is returned in full. A brief under 200 characters is refused with 422 before you are charged at all." ]
+      ],
+      network: "Algorand MainNet", asset: "USDC", facilitator: "GoPlausible",
+      inputs: [
+        Field.new("brief", "string", "What the app does, who uses it, what each screen shows. 200–5,000 characters.", "A tip calculator for waiters in Honduras. One screen: bill amount, tip percent slider, number of people, and the split per person in lempiras. Remembers the last tip percent. No accounts, works offline."),
+        Field.new("package_name", "string", "Android package name.", "com.yourcompany.tips"),
+        Field.new("contact_email", "string", "Optional: emailed when the build is ready.", "buyer@example.com")
+      ],
+      outputs: [
+        Field.new("order_id", "string", "Token to poll at /orders/{order_id}.", "8kPz3nQ4vR7mB2xY6wLd"),
+        Field.new("status", "string", "pending until built, then delivered.", "pending"),
+        Field.new("eta", "string", "Fulfilment promise.", "within 14 business days"),
+        Field.new("result", "object", "Links to the bundle, the apk and the source.")
+      ]
+    ),
+    Service.new(
+      slug: "app-5000", name: "Android app with an iOS export", category: "Software", provider: "Human-fulfilled",
+      fulfiller: "Fulfillers::HumanJob", price_usdc: 5000.00,
+      family: "app", family_label: "Describe an app, get it built",
+      family_summary: "Write what the app should do and receive it built: an Android App Bundle, an installable apk and the source. The tiers differ by how much you get to specify and how hard we try to break it before you see it.",
+      job: { eta: "within 21 business days", capacity: 1, required: {
+        "brief" => { min: 200, max: 15_000, hint: "what the app does, who uses it, what each screen shows" },
+        "package_name" => { min: 3, max: 120, hint: "e.g. com.yourcompany.notes" }
+      } },
+      summary: "Describe it in up to 15,000 characters; receive a built Android app in 21 business days.",
+      description: "Write what the app should do — up to 15,000 characters — and receive it built. Built cross-platform so an iOS export exists, with instrumented UI tests shipped alongside the source, crash reporting wired, and two revision rounds. You get the Android App Bundle that Play requires, an apk you can install on a phone today, and the full source. An agent can write a specification and cannot ship an artifact: no build machine, no signing, no account, nobody accountable if it does not run. That is the gap this closes.",
+      behaviour: [
+        [ "What you get", "The Android bundle and apk, plus an Xcode project and an unsigned iOS build that you sign with your own Apple account. Yours outright, no licence back to us." ],
+        [ "Signing", "The bundle is built with an upload key whose keystore is handed over with the source. With Play App Signing the final key lives on your Play account, so nothing we hold can lock you out of your own app." ],
+        [ "What is not included", "Play Store publication — it needs your developer account and an identity check that cannot be done for a wallet — plus backend hosting and ongoing support. Those are separate conversations." ],
+        [ "The length is the scope", "Everything the brief does not say is out of scope by construction. That is what keeps a fixed price honest in both directions." ],
+        [ "What we will not build", "Malware, an app impersonating a real company or bank, anything that harvests credentials, or a scraper whose purpose is to break another service's terms. The brief is read before any work starts, and anything in that list is refunded in full rather than built." ],
+        [ "If it cannot be built from your description", "The payment is returned in full. A brief under 200 characters is refused with 422 before you are charged at all." ]
+      ],
+      network: "Algorand MainNet", asset: "USDC", facilitator: "GoPlausible",
+      inputs: [
+        Field.new("brief", "string", "What the app does, who uses it, what each screen shows. 200–15,000 characters.", "A tip calculator for waiters in Honduras. One screen: bill amount, tip percent slider, number of people, and the split per person in lempiras. Remembers the last tip percent. No accounts, works offline."),
+        Field.new("package_name", "string", "Android package name.", "com.yourcompany.tips"),
+        Field.new("contact_email", "string", "Optional: emailed when the build is ready.", "buyer@example.com")
+      ],
+      outputs: [
+        Field.new("order_id", "string", "Token to poll at /orders/{order_id}.", "8kPz3nQ4vR7mB2xY6wLd"),
+        Field.new("status", "string", "pending until built, then delivered.", "pending"),
+        Field.new("eta", "string", "Fulfilment promise.", "within 21 business days"),
+        Field.new("result", "object", "Links to the bundle, the apk and the source.")
+      ]
+    ),
+    Service.new(
+      slug: "app-25000", name: "A product, not a deliverable", category: "Software", provider: "Human-fulfilled", status: "on_request",
+      price_usdc: 25000.00,
+      summary: "Multi-platform, a backend built alongside, and a scope agreed before anyone pays.",
+      description: "Past a certain size the specification is the first month of the work, so this is arranged before it is paid for. Multi-platform apps, a backend built alongside, an existing system integrated. Write first: we scope it, agree milestones, and then it is a normal paid call — or several.",
+      network: "Algorand MainNet", asset: "USDC", facilitator: "GoPlausible",
+      inputs: [ Field.new("brief", "string", "What you want built."), Field.new("contact_email", "string", "Where to reply.") ],
+      outputs: [ Field.new("scope", "object", "The agreed scope and milestones, once we have talked.") ]
+    ),
+    Service.new(
+      slug: "app-100000", name: "A team, for a quarter", category: "Software", provider: "Human-fulfilled", status: "on_request",
+      price_usdc: 100000.00,
+      summary: "Three months of sustained work on one product, scoped and milestone-billed.",
+      description: "Three months of building on one product, with the scope agreed up front and the payments split across milestones rather than taken in advance. Write first. Nothing at this size is bought from a catalog, and a fixed price on a paragraph would be a promise neither of us could keep.",
+      network: "Algorand MainNet", asset: "USDC", facilitator: "GoPlausible",
+      inputs: [ Field.new("brief", "string", "What you want built."), Field.new("contact_email", "string", "Where to reply.") ],
+      outputs: [ Field.new("scope", "object", "The agreed scope and milestones, once we have talked.") ]
+    ),
+    Service.new(
+      slug: "corridor-build", name: "Your own corridor, built and handed over", category: "Software", provider: "Human-fulfilled", status: "on_request",
+      price_usdc: 1_000_000.00,
+      summary: "The rail, the operation and a year alongside you — one operator per territory.",
+      description: "Not an app: the machine that makes them. Your own BotTrunk in your own country under your own brand — the x402 gateway deployed and settling real money, the catalog, the ledger, the admin queue, MCP distribution, your wallet, your facilitator relationship. Then the part that cannot be downloaded: hiring and training the people who fulfil, the queue discipline, the refund rules, the capacity limits that stop a promise being made twice. Phased and milestone-billed, starting with four weeks of discovery that tells you honestly whether to continue. Exclusive for your territory for the term.",
+      behaviour: [
+        [ "Phase 0 — discovery, four weeks", "The regulatory map for your territory: who licenses money movement there, what a corridor can legally carry, which partner you need. It is also the phase that tells you not to continue, if that is the answer. Paid on its own." ],
+        [ "Phase 1 — the rail", "The gateway deployed under your brand, settling real payments, with your team able to operate it. Not a fork thrown over a wall." ],
+        [ "Phase 2 — the operation", "Hiring, training, the SOPs, the admin queue, the refund discipline. Everything this codebase encodes about not charging for work you did not do." ],
+        [ "Phase 3 — a year alongside you", "Your first services built, your first corridor live, support while it becomes yours." ],
+        [ "How it is paid", "Per milestone, never in advance, each phase stoppable. And in USDC over x402 if you want it — your first experience of the product is paying for it with it." ]
+      ],
+      network: "Algorand MainNet", asset: "USDC", facilitator: "GoPlausible",
+      inputs: [ Field.new("territory", "string", "Where you want to operate."), Field.new("contact_email", "string", "Where to reply.") ],
+      outputs: [ Field.new("scope", "object", "The phased plan and milestones, once we have talked.") ]
+    ),
     Service.new(
       slug: "prices-hn", name: "What things cost in Honduras", category: "Data", provider: "By BotTrunk",
       fulfiller: "Fulfillers::PricesHn", price_usdc: 0.05, status: "on_request",

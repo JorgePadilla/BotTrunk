@@ -176,7 +176,7 @@ module Mcp
           type: "object",
           properties: {
             query: { type: "string", description: "Optional text to match against name, summary and category." },
-            category: { type: "string", description: "Optional exact category: Payments, Data, Verification, Translation or Procurement." }
+            category: { type: "string", description: "Optional exact category: Payments, Data, Verification, Translation, Procurement or Software." }
           },
           additionalProperties: false
         }

@@ -12,7 +12,10 @@ class WorkOrder < ApplicationRecord
   OPEN = OrderLifecycle::OPEN
   DONE = OrderLifecycle::DONE
 
-  MAX_BRIEF = 4_000
+  # A brief is a specification, and the app tiers sell specification length:
+  # 1,000 characters at the small end, 15,000 at the top. The column has to
+  # hold the largest thing any service is allowed to ask for.
+  MAX_BRIEF = 16_000
 
   validates :brief, presence: true, length: { maximum: MAX_BRIEF }
 

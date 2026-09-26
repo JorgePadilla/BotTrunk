@@ -63,6 +63,38 @@ module Fulfillers
       assert_equal service.job_capacity, WorkOrder.count, "no new job was opened"
     end
 
+    # The app tiers sell specification length, so the bound is the product.
+    test "each app tier accepts exactly the brief length it sells" do
+      { "app-1000" => 1_000, "app-3000" => 5_000, "app-5000" => 15_000 }.each do |slug, limit|
+        tier = Catalog::Service.find(slug)
+        base = { "package_name" => "com.example.app" }
+
+        at_limit = HumanJob.new(input: base.merge("brief" => "a" * limit), service: tier).call
+        assert_equal 202, at_limit[:status], "#{slug} should accept #{limit} characters"
+
+        over = HumanJob.new(input: base.merge("brief" => "a" * (limit + 1)), service: tier).call
+        assert_equal 422, over[:status], "#{slug} should refuse #{limit + 1}"
+        assert_match(/brief is required/, JSON.parse(over[:body])["error"])
+      end
+    end
+
+    test "a brief too short to build from is refused before anything is charged" do
+      tier = Catalog::Service.find("app-1000")
+
+      result = HumanJob.new(input: { "brief" => "make me an app", "package_name" => "com.example.app" }, service: tier).call
+      assert_equal 422, result[:status]
+      assert_equal 0, WorkOrder.count
+    end
+
+    test "the longest brief survives the round trip into the order" do
+      tier = Catalog::Service.find("app-5000")
+      spec = "s" * 15_000
+
+      order = HumanJob.new(input: { "brief" => spec, "package_name" => "com.example.app" }, service: tier).call[:order]
+      assert_equal spec, order.reload.brief, "15,000 characters stored, not truncated"
+      assert_equal "com.example.app", order.params["package_name"]
+    end
+
     test "jobs that were never paid for do not count against capacity" do
       service.job_capacity.times do
         WorkOrder.create!(service_slug: "rfq-global", price_atomic: 250_000_000, brief: BRIEF, status: "awaiting_payment")
