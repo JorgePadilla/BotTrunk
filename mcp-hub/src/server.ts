@@ -13,37 +13,83 @@ export interface HubDeps {
   paidFetch: PaidFetch | null;
   fetchImpl?: typeof fetch;
   version: string;
+  /** How long a fetched catalog is trusted. Tests pass 0 to refetch every time. */
+  catalogTtlMs?: number;
+  /** How long to wait for the gateway before giving up on a refresh. */
+  catalogTimeoutMs?: number;
 }
 
 const CATALOG_TOOL = "bottrunk_catalog";
 const WALLET_TOOL = "bottrunk_wallet";
 
+/** New services appear this long after they are listed, without a restart. */
+const CATALOG_TTL_MS = 5 * 60_000;
+/** After a failed refresh, wait this long before trying the gateway again. */
+const CATALOG_RETRY_MS = 30_000;
+/** A refresh runs inside a tools/list, so it gives up rather than hang the host. */
+const CATALOG_TIMEOUT_MS = 8_000;
+
 /**
  * Builds the MCP server: two free tools (catalog, wallet) plus one paid tool
- * per live catalog service. The catalog is fetched once at startup; restart
- * the server to pick up new services.
+ * per live catalog service.
+ *
+ * The catalog is fetched at startup and refreshed when it goes stale, because
+ * an MCP server started in the morning was still offering the morning's tools
+ * at night. Hosts that honour `notifications/tools/list_changed` pick up new
+ * services in place; the rest see them on their next `tools/list`.
  */
 export async function buildServer(deps: HubDeps): Promise<Server> {
   const fetchImpl = deps.fetchImpl ?? fetch;
+  const ttl = deps.catalogTtlMs ?? CATALOG_TTL_MS;
+  const timeoutMs = deps.catalogTimeoutMs ?? CATALOG_TIMEOUT_MS;
+
+  let catalog: CatalogService[] = [];
+  let catalogError: string | null = null;
+  let live: CatalogService[] = [];
+  let bySlug = new Map<string, CatalogService>();
+  let nextFetchAt = 0;
+  let started = false;
+
+  const server = new Server({ name: "bottrunk", version: deps.version }, { capabilities: { tools: { listChanged: true } } });
 
   // A blip at the gateway used to kill the process on startup, which silently
   // removed all eleven tools from the MCP host with a bare "fetch failed".
   // Start degraded instead: the free tools still work and bottrunk_catalog
-  // says what went wrong and how to get the paid tools back.
-  let catalog: CatalogService[] = [];
-  let catalogError: string | null = null;
-  try {
-    catalog = await fetchCatalog(deps.config.apiBase, fetchImpl);
-  } catch (e) {
-    catalogError = (e as Error).message;
-    console.error(`bottrunk-mcp: ${catalogError} — starting without paid tools; restart once it is reachable.`);
-  }
-  const live = liveServices(catalog);
-  const bySlug = new Map(live.map((s) => [toolName(s.slug), s] as const));
+  // says what went wrong. The same rule applies to every later refresh — a
+  // failed one keeps the tools we already have rather than deleting them.
+  const refresh = async (force = false): Promise<void> => {
+    if (!force && Date.now() < nextFetchAt) return;
+    try {
+      const fresh = await fetchCatalog(deps.config.apiBase, fetchImpl, timeoutMs);
+      const before = [...bySlug.keys()].sort().join(",");
+      catalog = fresh;
+      live = liveServices(fresh);
+      bySlug = new Map(live.map((s) => [toolName(s.slug), s] as const));
+      catalogError = null;
+      nextFetchAt = Date.now() + ttl;
+      // Only when the set of tools changed: deposit prices move with the
+      // exchange rate every minute, and that is not news to the host.
+      if (started && [...bySlug.keys()].sort().join(",") !== before) {
+        await server.sendToolListChanged().catch(() => {});
+      }
+    } catch (e) {
+      const message = (e as Error).message;
+      nextFetchAt = Date.now() + CATALOG_RETRY_MS;
+      if (catalog.length === 0) {
+        catalogError = message;
+        console.error(`bottrunk-mcp: ${message} — starting without paid tools; it retries by itself.`);
+      } else {
+        console.error(`bottrunk-mcp: catalog refresh failed (${message}) — keeping the ${live.length} tools from the last good fetch.`);
+      }
+    }
+  };
 
-  const server = new Server({ name: "bottrunk", version: deps.version }, { capabilities: { tools: {} } });
+  await refresh(true);
+  started = true;
 
   server.setRequestHandler(ListToolsRequestSchema, async () => {
+    await refresh();
+    const categories = [...new Set(catalog.map((s) => s.category))].sort();
     const tools: Tool[] = [
       {
         name: CATALOG_TOOL,
@@ -53,7 +99,10 @@ export async function buildServer(deps: HubDeps): Promise<Server> {
           type: "object",
           properties: {
             query: { type: "string", description: "Optional substring filter on name, summary or category." },
-            category: { type: "string", description: "Optional exact category filter: Payments, Data, Verification or Translation." },
+            category: {
+              type: "string",
+              description: `Optional exact category filter${categories.length ? `: ${categories.join(", ")}` : ""}.`,
+            },
           },
           additionalProperties: false,
         },
@@ -78,10 +127,11 @@ export async function buildServer(deps: HubDeps): Promise<Server> {
     const args = (req.params.arguments ?? {}) as Record<string, unknown>;
 
     if (name === CATALOG_TOOL) {
+      await refresh();
       if (catalogError) {
         return error(
           `The catalog could not be loaded, so no paid tools are available in this session.\n${catalogError}\n` +
-            `Check https://bottrunk.com/ and restart this MCP server once the gateway answers.`,
+            `Check https://bottrunk.com/ — this server retries by itself, so call bottrunk_catalog again in a minute.`,
         );
       }
       return text(
@@ -90,6 +140,9 @@ export async function buildServer(deps: HubDeps): Promise<Server> {
     }
     if (name === WALLET_TOOL) return text(await renderWallet(deps, fetchImpl));
 
+    // An agent that read a fresh catalog can ask for a tool this session has
+    // not heard of yet. Check with the gateway before telling it no.
+    if (!bySlug.has(name) && name.startsWith("bottrunk_")) await refresh(true);
     const service = bySlug.get(name);
     if (!service) return error(`Unknown tool ${name}`);
     if (!deps.wallet || !deps.paidFetch) {

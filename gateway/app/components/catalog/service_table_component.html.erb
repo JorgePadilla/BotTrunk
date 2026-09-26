@@ -1,0 +1,38 @@
+<div class="overflow-x-auto">
+  <table class="w-full text-sm">
+    <thead>
+      <tr class="border-b hairline text-[12px] uppercase tracking-wide text-muted">
+        <th class="py-2.5 pr-4 font-medium text-left">Service</th>
+        <th class="py-2.5 pr-4 font-medium text-left hidden md:table-cell">Category</th>
+        <th class="py-2.5 pr-4 font-medium text-right whitespace-nowrap">
+          <% if sortable?("price") %>
+            <%= link_to sort_url("price"), class: "inline-flex items-center gap-1 hover:text-base-content" do %>
+              Price<%= icon(sort == "price" ? "arrow-up" : "arrow-up-down", class: "size-3.5") %>
+            <% end %>
+          <% else %>
+            Price
+          <% end %>
+        </th>
+        <th class="py-2.5 pr-4 font-medium text-left whitespace-nowrap">Status</th>
+        <th class="py-2.5 font-medium text-right hidden sm:table-cell whitespace-nowrap">Paid calls</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% services.each do |service| %>
+        <tr class="border-b hairline align-top">
+          <td class="py-3 pr-4">
+            <%= link_to helpers.service_path(service), class: "flex flex-col gap-0.5 group" do %>
+              <span class="font-medium group-hover:underline underline-offset-4"><%= service.name %></span>
+              <span class="text-muted text-[13px]"><%= service.summary %></span>
+              <span class="font-mono text-[12px] text-muted md:hidden"><%= service.category %></span>
+            <% end %>
+          </td>
+          <td class="py-3 pr-4 text-muted hidden md:table-cell whitespace-nowrap"><%= service.category %></td>
+          <td class="py-3 pr-4 text-right font-mono tabular-nums whitespace-nowrap"><%= price(service) %></td>
+          <td class="py-3 pr-4 whitespace-nowrap <%= "text-muted" if service.on_request? %>"><%= status_label(service) %></td>
+          <td class="py-3 text-right font-mono tabular-nums text-muted hidden sm:table-cell"><%= calls(service).positive? ? calls(service) : "—" %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>

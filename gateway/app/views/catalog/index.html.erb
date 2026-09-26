@@ -26,7 +26,11 @@
 
   <div class="flex items-center justify-between gap-6 flex-wrap">
     <%= render Catalog::FilterChipsComponent.new(categories: Catalog::Service.categories, active: @category, path: root_path) %>
-    <span class="text-sm text-muted"><%= @services.size %> <%= "service".pluralize(@services.size) %></span>
+    <span class="text-sm text-muted">
+      <%= @services.size %> <%= "service".pluralize(@services.size) %><% if @browsing %> ·
+        <%= link_to "see the whole list", services_path, class: "underline underline-offset-4 hover:text-base-content" %>
+      <% end %>
+    </span>
   </div>
 
   <% if @query %>
@@ -36,17 +40,27 @@
     </p>
   <% end %>
 
-  <% if @groups.empty? %>
-    <div class="border hairline rounded-box py-16 flex flex-col items-center gap-3 text-center">
-      <span class="size-9 rounded-full bg-base-200 flex items-center justify-center"><%= icon("search") %></span>
-      <p class="font-medium">Nothing here yet.</p>
-      <p class="text-sm text-muted max-w-sm">No service matches. Have an API that would? <%= link_to "Sell it here", sell_path, class: "underline underline-offset-4 hover:text-base-content" %>.</p>
+  <% if @services.empty? %>
+    <%= render(Ui::EmptyStateComponent.new(title: "Nothing here yet.")) do %>
+      No service matches. Have an API that would? <%= link_to "Sell it here", sell_path, class: "underline underline-offset-4 hover:text-base-content" %>.
+    <% end %>
+  <% elsif @browsing %>
+    <%# Browsing: a few cards per category, the rest a click away. This is what
+        keeps the front page one screen of sections however long the catalog gets. %>
+    <div class="flex flex-col gap-14">
+      <% @sections.each do |category, cards| %>
+        <%= render Catalog::SectionComponent.new(category: category, cards: cards) %>
+      <% end %>
     </div>
   <% else %>
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-      <% @groups.each do |primary, variants, metrics| %>
-        <%= render Catalog::ServiceCardComponent.new(service: primary, metrics: metrics, variants: variants) %>
-      <% end %>
+    <%# Narrowed by a search or a category: a plain grid with pages. %>
+    <div class="flex flex-col gap-10">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <% @cards.each do |card| %>
+          <%= render Catalog::ServiceCardComponent.new(service: card.primary, metrics: card.metrics, variants: card.variants) %>
+        <% end %>
+      </div>
+      <%= render Ui::PaginationComponent.new(page: @page, pages: @pages, path: root_path, params: { q: @query, category: @category }) %>
     </div>
   <% end %>
 

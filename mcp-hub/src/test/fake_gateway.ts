@@ -1,5 +1,6 @@
 import http from "node:http";
 import { TESTNET } from "../config.js";
+import type { CatalogService } from "../catalog.js";
 
 /**
  * A stand-in for api.bottrunk.com + an Algorand node, good enough to drive the
@@ -14,6 +15,12 @@ export interface FakeGateway {
   simulateFails: boolean;
   /** What /v2/accounts/:addr reports, so a test can put a wallet at any stage of funding. */
   account: { amount: number; assets?: { "asset-id": number; amount: number }[] };
+  /** Services the catalog grows by, so a test can list one after the server booted. */
+  extraServices: CatalogService[];
+  /** Flip to make /api/v1/catalog fail the way a gateway blip does. */
+  catalogFails: boolean;
+  /** Make /api/v1/catalog slow, the way a cold start is. */
+  catalogDelayMs: number;
 }
 
 const GENESIS_HASH = TESTNET.split(":")[1];
@@ -63,6 +70,9 @@ export function catalogBody(priceAtomic: string) {
 export async function startFakeGateway(priceAtomic = "5000"): Promise<FakeGateway> {
   const state = {
     simulateFails: false,
+    catalogFails: false,
+    catalogDelayMs: 0,
+    extraServices: [] as CatalogService[],
     account: { amount: 2_000_000, assets: [{ "asset-id": 10458941, amount: 1_500_000 }] } as FakeGateway["account"],
   };
   const payments: FakeGateway["payments"] = [];
@@ -105,7 +115,10 @@ export async function startFakeGateway(priceAtomic = "5000"): Promise<FakeGatewa
 
     // --- gateway ---
     if (url.pathname === "/api/v1/catalog") {
+      if (state.catalogFails) return json(503, { error: "catalog unavailable" });
+      if (state.catalogDelayMs) await new Promise((resolve) => setTimeout(resolve, state.catalogDelayMs));
       const body = catalogBody(priceAtomic);
+      body.services.push(...(state.extraServices as typeof body.services));
       for (const s of body.services) s.endpoint = `${base}/s/${s.slug}`;
       return json(200, body);
     }
@@ -171,6 +184,24 @@ export async function startFakeGateway(priceAtomic = "5000"): Promise<FakeGatewa
     },
     set simulateFails(v: boolean) {
       state.simulateFails = v;
+    },
+    get catalogFails() {
+      return state.catalogFails;
+    },
+    set catalogFails(v: boolean) {
+      state.catalogFails = v;
+    },
+    get catalogDelayMs() {
+      return state.catalogDelayMs;
+    },
+    set catalogDelayMs(v: number) {
+      state.catalogDelayMs = v;
+    },
+    get extraServices() {
+      return state.extraServices;
+    },
+    set extraServices(v: CatalogService[]) {
+      state.extraServices = v;
     },
     get account() {
       return state.account;

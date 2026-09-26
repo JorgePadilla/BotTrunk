@@ -2,12 +2,13 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { after, before, describe, it } from "node:test";
+import { after, afterEach, before, describe, it } from "node:test";
 import algosdk from "algosdk";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
+import { ToolListChangedNotificationSchema } from "@modelcontextprotocol/sdk/types.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { atomicToUsdc, loadConfig, TESTNET, usdcToAtomic, type Config } from "../config.js";
-import { inputSchema, liveServices, toolName } from "../catalog.js";
+import { inputSchema, liveServices, toolName, type CatalogService } from "../catalog.js";
 import { createPayingFetch } from "../pay.js";
 import { buildServer } from "../server.js";
 import { SpendCapError, SpendTracker } from "../spend.js";
@@ -429,5 +430,132 @@ describe("one-approval funding group", () => {
     await assert.rejects(build({ operator: "not-an-address" }), /not an Algorand address/);
     await assert.rejects(build({ operator: wallet.address }), /cannot be the same account/);
     await assert.rejects(build({ usdcAtomic: 0n }), /funds no USDC/);
+  });
+});
+
+// An MCP server started in the morning used to be still offering the morning's
+// tools at night, because the catalog was fetched once at startup. This is the
+// part that keeps a long-lived session current.
+describe("catalog refresh", () => {
+  let gw: FakeGateway;
+  before(async () => {
+    gw = await startFakeGateway("5000");
+  });
+  after(() => gw.close());
+  afterEach(() => {
+    gw.extraServices = [];
+    gw.catalogFails = false;
+    gw.catalogDelayMs = 0;
+  });
+
+  function service(slug: string): CatalogService {
+    return {
+      slug,
+      name: `Service ${slug}`,
+      summary: "Listed after the server booted.",
+      description: "Listed after the server booted.",
+      category: "Procurement",
+      provider: "By BotTrunk",
+      endpoint: "REPLACED",
+      method: "POST",
+      status: "live",
+      network: { id: TESTNET, asset: "10458941", name: "Algorand TestNet" },
+      price: { amount: "5000", asset: "USDC", decimals: 6 },
+      inputs: [{ name: "url", type: "string", description: "Anything." }],
+      outputs: [{ name: "ok", type: "boolean", description: "Whatever." }],
+    };
+  }
+
+  async function connect(catalogTtlMs: number, withWallet = false, catalogTimeoutMs?: number) {
+    const home = tmpHome();
+    const config = configFor(gw, home);
+    const wallet = withWallet ? createWallet(config) : null;
+    const spend = new SpendTracker(config);
+    const paidFetch = wallet ? createPayingFetch(config, wallet, spend) : null;
+    const server = await buildServer({ config, wallet, spend, paidFetch, version: "test", catalogTtlMs, catalogTimeoutMs });
+    const [clientT, serverT] = InMemoryTransport.createLinkedPair();
+    await server.connect(serverT);
+    const client = new Client({ name: "test", version: "0" });
+    let changed = 0;
+    client.setNotificationHandler(ToolListChangedNotificationSchema, () => {
+      changed += 1;
+    });
+    await client.connect(clientT);
+    return { client, changed: () => changed };
+  }
+
+  it("lists a service added after startup, and tells the host the list changed", async () => {
+    const { client, changed } = await connect(0);
+    const before = (await client.listTools()).tools.map((t) => t.name);
+    assert.ok(!before.includes("bottrunk_late_arrival"));
+    assert.equal(changed(), 0, "nothing changed, so nothing was announced");
+
+    gw.extraServices = [service("late-arrival")];
+    const after = (await client.listTools()).tools.map((t) => t.name);
+    assert.ok(after.includes("bottrunk_late_arrival"));
+    await new Promise((r) => setTimeout(r, 20));
+    assert.equal(changed(), 1);
+
+    // A second list with the same catalog announces nothing: deposit prices
+    // move with the exchange rate every minute and that is not news.
+    await client.listTools();
+    await new Promise((r) => setTimeout(r, 20));
+    assert.equal(changed(), 1);
+  });
+
+  it("the catalog tool re-reads the gateway too", async () => {
+    const { client } = await connect(0);
+    gw.extraServices = [service("fresh-thing")];
+    const res = await client.callTool({ name: "bottrunk_catalog", arguments: {} });
+    assert.match((res.content as { text: string }[])[0].text, /bottrunk_fresh_thing/);
+  });
+
+  it("checks with the gateway before refusing a tool it has not heard of", async () => {
+    const { client } = await connect(60_000); // still fresh: tools/list will not refetch
+    gw.extraServices = [service("unheard-of")];
+    const res = await client.callTool({ name: "bottrunk_unheard_of", arguments: { url: "https://example.com" } });
+    const text = (res.content as { text: string }[])[0].text;
+    assert.doesNotMatch(text, /Unknown tool/);
+    assert.match(text, /No wallet configured/); // it found the service, it just cannot pay
+  });
+
+  it("a failed refresh keeps the tools from the last good fetch", async () => {
+    const { client } = await connect(0);
+    const quiet = console.error;
+    console.error = () => {};
+    try {
+      gw.catalogFails = true;
+      const names = (await client.listTools()).tools.map((t) => t.name);
+      assert.ok(names.includes("bottrunk_scrape_markdown"), "a gateway blip must not delete an agent's tools");
+      const res = await client.callTool({ name: "bottrunk_catalog", arguments: {} });
+      assert.notEqual(res.isError, true);
+      assert.match((res.content as { text: string }[])[0].text, /bottrunk_scrape_markdown/);
+    } finally {
+      console.error = quiet;
+    }
+  });
+
+  it("gives up on a slow gateway instead of holding the tool listing open", async () => {
+    const { client } = await connect(0, false, 50);
+    const quiet = console.error;
+    console.error = () => {};
+    try {
+      gw.catalogDelayMs = 400;
+      const started = Date.now();
+      const names = (await client.listTools()).tools.map((t) => t.name);
+      assert.ok(Date.now() - started < 350, "a cold start must not hang tools/list");
+      assert.ok(names.includes("bottrunk_scrape_markdown"), "and the last good tools are still there");
+    } finally {
+      console.error = quiet;
+    }
+  });
+
+  it("names the real categories in the catalog tool, rather than a hard-coded four", async () => {
+    const { client } = await connect(0);
+    gw.extraServices = [service("procured")];
+    const tool = (await client.listTools()).tools.find((t) => t.name === "bottrunk_catalog")!;
+    const properties = tool.inputSchema.properties as Record<string, { description: string }>;
+    assert.match(properties.category.description, /Data/);
+    assert.match(properties.category.description, /Procurement/);
   });
 });

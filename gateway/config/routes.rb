@@ -14,6 +14,9 @@ Rails.application.routes.draw do
   # Public catalog. `/s/:slug` is also the base of every paid endpoint
   # (the x402 paywall middleware will sit in front of POST /s/:slug/*path).
   root "catalog#index"
+  # The whole catalog as dense rows — the page you come to already knowing
+  # what you want, and the one that stays usable as the list grows.
+  get "services", to: "catalog#all", as: :services
   get "s/:slug", to: "catalog#show", as: :service
   # The paid endpoint itself: 402 → X-PAYMENT → verify → upstream → settle.
   post "s/:slug", to: "paid_calls#create", as: :paid_call

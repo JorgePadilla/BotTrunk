@@ -1,0 +1,44 @@
+<% content_for :title, "Every service on BotTrunk" %>
+<% content_for :description, "The full BotTrunk catalog: every service an agent can pay for over x402, with its price in USDC, its category and whether it is callable today." %>
+<% content_for :nav_active, "Catalog" %>
+
+<div class="flex flex-col gap-10 py-16 md:py-24">
+  <div class="flex flex-col gap-4 max-w-2xl">
+    <h1 class="text-4xl md:text-[44px] font-semibold tracking-[-0.03em] leading-[1.1]">Every service.</h1>
+    <p class="text-lg text-muted">The whole catalog, one line each — deposit tiers and app tiers listed separately rather than collapsed into a card. <%= link_to "Back to the catalog", root_path, class: "underline underline-offset-4 hover:text-base-content" %>.</p>
+  </div>
+
+  <div class="flex items-center justify-between gap-6 flex-wrap">
+    <%= render Catalog::FilterChipsComponent.new(categories: Catalog::Service.categories, active: @category, path: services_path) %>
+    <span class="text-sm text-muted tabular-nums">
+      <%= @services.size %> of <%= @total %> <%= "service".pluralize(@total) %>
+    </span>
+  </div>
+
+  <% if @query %>
+    <p class="text-sm text-muted -mt-6">
+      Matching <span class="font-medium text-base-content">“<%= @query %>”</span> ·
+      <%= link_to "clear", services_path(category: @category), class: "underline underline-offset-4 hover:text-base-content" %>
+    </p>
+  <% end %>
+
+  <% if @services.empty? %>
+    <%= render(Ui::EmptyStateComponent.new(title: "Nothing here yet.")) do %>
+      No service matches. <%= link_to "Browse the whole catalog", services_path, class: "underline underline-offset-4 hover:text-base-content" %>.
+    <% end %>
+  <% else %>
+    <div class="flex flex-col gap-10">
+      <%= render Catalog::ServiceTableComponent.new(services: @services, metrics: @metrics, path: services_path,
+                                                   params: { q: @query, category: @category }, sort: @sort) %>
+      <%= render Ui::PaginationComponent.new(page: @page, pages: @pages, path: services_path,
+                                             params: { q: @query, category: @category, sort: @sort }) %>
+    </div>
+  <% end %>
+
+  <hr class="hairline">
+
+  <section class="flex flex-col gap-3.5 max-w-2xl">
+    <h2 class="text-[22px] font-semibold tracking-tight">Reading this as a machine?</h2>
+    <p class="text-muted">The same list, complete and unpaginated: <%= link_to "/api/v1/catalog", api_v1_catalog_path, class: "font-mono underline underline-offset-4 hover:text-base-content" %> as JSON, <%= link_to "/llms.txt", llms_path, class: "font-mono underline underline-offset-4 hover:text-base-content" %> as prose, <%= link_to "/.well-known/x402", well_known_x402_path, class: "font-mono underline underline-offset-4 hover:text-base-content" %> for the payable endpoints.</p>
+  </section>
+</div>

@@ -1,0 +1,19 @@
+<nav class="flex items-center justify-between gap-4 border-t hairline pt-6" aria-label="Pagination">
+  <% if previous_url %>
+    <%= link_to previous_url, class: "btn btn-ghost btn-sm gap-2", rel: "prev" do %>
+      <%= icon("arrow-left", class: "size-4") %>Previous
+    <% end %>
+  <% else %>
+    <span></span>
+  <% end %>
+
+  <span class="text-sm text-muted tabular-nums"><%= label %></span>
+
+  <% if next_url %>
+    <%= link_to next_url, class: "btn btn-ghost btn-sm gap-2", rel: "next" do %>
+      Next<%= icon("arrow-right", class: "size-4") %>
+    <% end %>
+  <% else %>
+    <span></span>
+  <% end %>
+</nav>

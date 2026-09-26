@@ -58,6 +58,107 @@ class CatalogControllerTest < ActionDispatch::IntegrationTest
     assert_select "a[href='/sell']"
   end
 
+  test "index groups into sections, capped, with a way to the rest of each one" do
+    get root_url
+    assert_select "h2", text: "Payments"
+    assert_select "h2", text: "Data"
+    # Data is longer than a section shows, so it links to its own filtered page.
+    assert_select "a[href='/?category=Data']", text: /See all \d+ in Data/
+    assert_select "a[href='/services']", text: "see the whole list"
+    # No section renders more cards than the cap, however long the category is.
+    assert_select "section" do |sections|
+      sections.each { |section| assert_operator section.css("a[href^='/s/']").size, :<=, Catalog::SectionComponent::LIMIT }
+    end
+  end
+
+  test "a filtered view is a plain grid with pages, and paging keeps the filter" do
+    with_many_services do
+      get root_url(category: "Data")
+      assert_response :success
+      assert_select "h2", text: "Data", count: 0, message: "a narrowed catalog is a grid, not sections"
+      assert_select "a[href^='/s/']", count: CatalogController::PER_PAGE
+      assert_select "a[rel=next][href='/?category=Data&page=2']"
+
+      get root_url(category: "Data", page: 2)
+      assert_select "a[rel=prev][href='/?category=Data']"
+      assert_select "a[href^='/s/']", minimum: 1
+    end
+  end
+
+  test "a page past the end shows the last page instead of an empty screen" do
+    get root_url(category: "Payments", page: 99)
+    assert_response :success
+    assert_select "a[href='/s/deposit-bac-1000']"
+  end
+
+  test "the reference page lists every service, variants included" do
+    get services_url
+    assert_response :success
+    assert_select "h1", text: "Every service."
+    assert_select "tbody tr", count: Catalog::Service.all.size
+    assert_select "a[href='/s/deposit-bac-10000']", text: /Deposit L10,000/
+    assert_select "a[href='/s/scrape-markdown']"
+  end
+
+  test "the reference page paginates, filters, searches and sorts by price" do
+    with_many_services do
+      get services_url
+      assert_select "tbody tr", count: CatalogController::PER_PAGE_ALL
+      assert_select "a[rel=next][href='/services?page=2']"
+    end
+
+    get services_url(category: "Payments")
+    assert_select "tbody tr", count: Catalog::Service.all.count { |s| s.category == "Payments" }
+    assert_select "a[href='/s/scrape-markdown']", count: 0
+
+    get services_url(q: "lempiras")
+    assert_select "a[href='/s/deposit-bac-1000']"
+
+    get services_url(sort: "price")
+    assert_response :success
+    prices = css_select("tbody tr td:nth-child(3)").map { |td| td.text.strip.delete("$,").to_f }
+    assert_equal prices.sort, prices
+  end
+
+  test "the reference page says when nothing matches" do
+    get services_url(q: "zzzz-nothing")
+    assert_response :success
+    assert_select "tbody tr", count: 0
+    assert_select "p", text: "Nothing here yet."
+  end
+
+  test "a hundred services still render one screen of sections and a paged reference" do
+    with_many_services do
+      get root_url
+      assert_response :success
+      cards = css_select("a[href^='/s/']").size
+      assert_operator cards, :<=, Catalog::Ranking::SECTIONS.size * Catalog::SectionComponent::LIMIT
+
+      get services_url
+      assert_response :success
+      assert_select "tbody tr", count: CatalogController::PER_PAGE_ALL
+      assert_select "a[rel=next]"
+    end
+  end
+
+  # The machine surfaces are not paginated: mcp-hub reads the API once at
+  # startup with no cursor, so a truncated list silently deletes tools.
+  test "pagination never reaches the API, llms.txt or the well-known files" do
+    with_many_services do
+      get api_v1_catalog_url
+      assert_equal Catalog::Service.all.size, response.parsed_body["services"].size
+
+      get api_v1_catalog_url(page: 2)
+      assert_equal Catalog::Service.all.size, response.parsed_body["services"].size
+
+      get llms_url
+      assert_equal 100, response.body.scan("/s/scale-").size, "llms.txt lists every service"
+
+      get well_known_x402_url
+      assert_equal Catalog::Service.all.count(&:live?), response.parsed_body["resources"].size
+    end
+  end
+
   test "a deposit page lists the other amounts and prices them live" do
     get service_url("deposit-bac-2500")
     assert_response :success
@@ -104,5 +205,24 @@ class CatalogControllerTest < ActionDispatch::IntegrationTest
     cookies[:theme] = "bottrunk-dark"
     get root_url
     assert_select "html[data-theme=bottrunk-dark]"
+  end
+
+  private
+
+  # A hundred extra services, to prove the pages degrade the way they should.
+  def with_many_services
+    baseline = Catalog::Service.extra
+    Catalog::Service.extra = baseline + Array.new(100) { |i|
+      Catalog::Service.new(
+        slug: "scale-#{i}", name: "Scale test #{i}", category: "Data", provider: "BotTrunk",
+        summary: "Exists only while this test runs.", description: "Exists only while this test runs.",
+        price_usdc: 0.01, network: "Algorand TestNet", asset: "USDC", facilitator: "GoPlausible",
+        inputs: [ Catalog::Field.new("url", "string", "Anything.") ],
+        outputs: [ Catalog::Field.new("ok", "boolean", "Whatever.") ]
+      )
+    }
+    yield
+  ensure
+    Catalog::Service.extra = baseline
   end
 end

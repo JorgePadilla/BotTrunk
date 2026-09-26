@@ -1,0 +1,7 @@
+<div class="border hairline rounded-box py-16 flex flex-col items-center gap-3 text-center">
+  <span class="size-9 rounded-full bg-base-200 flex items-center justify-center"><%= icon(@icon_name) %></span>
+  <p class="font-medium"><%= title %></p>
+  <% if content.present? %>
+    <p class="text-sm text-muted max-w-sm"><%= content %></p>
+  <% end %>
+</div>

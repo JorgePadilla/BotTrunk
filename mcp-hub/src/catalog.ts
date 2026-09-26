@@ -26,11 +26,20 @@ export interface CatalogService {
   outputs: CatalogField[];
 }
 
-export async function fetchCatalog(apiBase: string, fetchImpl: typeof fetch = fetch): Promise<CatalogService[]> {
+/**
+ * `timeoutMs` matters because this is now also called mid-session, from inside
+ * a `tools/list`: a gateway that is slow rather than down (a cold start after a
+ * deploy) must not hold the host's tool listing open.
+ */
+export async function fetchCatalog(
+  apiBase: string,
+  fetchImpl: typeof fetch = fetch,
+  timeoutMs = 10_000,
+): Promise<CatalogService[]> {
   const url = `${apiBase}/api/v1/catalog`;
   let res: Response;
   try {
-    res = await fetchImpl(url, { headers: { Accept: "application/json" } });
+    res = await fetchImpl(url, { headers: { Accept: "application/json" }, signal: AbortSignal.timeout(timeoutMs) });
   } catch (e) {
     // A bare "fetch failed" told nobody which host was unreachable, which is
     // the only thing worth knowing when every tool has just disappeared.

@@ -102,6 +102,8 @@ Same server everywhere; only the spelling changes. Full steps with links to each
 
 Services marked `coming_soon` in the catalog are listed but not exposed as tools; the gateway answers 503 for them, so nothing can be charged by accident.
 
+The catalog is re-read every five minutes, so services added to BotTrunk appear in a session that is already running — no restart. Clients that honour `notifications/tools/list_changed` (Claude Desktop, Claude Code) update the tool list in place; others show the new services in `bottrunk_catalog` straight away and gain the tools on their next `tools/list`. If the gateway is unreachable, the last good list is kept rather than dropped.
+
 ## Configuration
 
 | Variable | Default | Meaning |

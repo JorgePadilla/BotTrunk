@@ -1,0 +1,17 @@
+<section class="flex flex-col gap-5">
+  <div class="flex items-end justify-between gap-6 flex-wrap">
+    <div class="flex flex-col gap-1">
+      <h2 class="text-[22px] font-semibold tracking-tight"><%= category %></h2>
+      <% if blurb %><p class="text-sm text-muted"><%= blurb %></p><% end %>
+    </div>
+    <% if more? %>
+      <%= link_to more_label, more_path, class: "text-sm underline underline-offset-4 text-muted hover:text-base-content whitespace-nowrap" %>
+    <% end %>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+    <% shown.each do |card| %>
+      <%= render Catalog::ServiceCardComponent.new(service: card.primary, metrics: card.metrics, variants: card.variants) %>
+    <% end %>
+  </div>
+</section>
