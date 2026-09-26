@@ -31,6 +31,8 @@ class WorkOrder < ApplicationRecord
     }.compact
   end
 
-  # Stated on the service page, repeated here so a polling agent can plan.
-  def eta = "within 5 business days"
+  # The promise comes from the catalog entry, so the page, the 202 body and a
+  # polling agent cannot disagree about how long this takes. A slug that has
+  # since left the catalog falls back rather than breaking an open order.
+  def eta = Catalog::Service.find(service_slug)&.job_eta || "within 5 business days"
 end

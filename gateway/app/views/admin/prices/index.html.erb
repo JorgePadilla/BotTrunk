@@ -1,0 +1,77 @@
+<% content_for :title, "Prices — BotTrunk admin" %>
+
+<div class="flex flex-col gap-14 py-12 md:py-16">
+  <header class="flex flex-col gap-3">
+    <%= render Dashboard::AdminNavComponent.new(active: "Prices") %>
+    <h1 class="text-4xl font-semibold tracking-[-0.03em]">What things cost</h1>
+    <p class="text-muted">The weekly round, typed in. Nothing here is ever edited — a new week is a new row, and the history is what makes the latest number worth paying for. Say where each figure came from; "phone, 3 exporters" is worth more to a buyer than a number on its own.</p>
+    <% if flash[:notice] %><p class="text-sm text-success"><%= flash[:notice] %></p><% end %>
+    <% if flash[:alert] %><p class="text-sm text-error"><%= flash[:alert] %></p><% end %>
+  </header>
+
+  <section class="flex flex-col gap-5">
+    <h2 class="text-[22px] font-semibold tracking-tight">Record an observation</h2>
+    <%= render Ui::CardComponent.new do %>
+      <%= form_with model: @price, url: admin_prices_path, method: :post, class: "grid grid-cols-1 md:grid-cols-3 gap-4" do |f| %>
+        <label class="flex flex-col gap-1.5">
+          <span class="text-sm font-medium">Item</span>
+          <%= f.text_field :item, placeholder: "coffee-quintal", required: true, class: "input w-full font-mono", autocomplete: "off" %>
+        </label>
+        <label class="flex flex-col gap-1.5">
+          <span class="text-sm font-medium">Unit</span>
+          <%= f.text_field :unit, placeholder: "quintal", required: true, class: "input w-full", autocomplete: "off" %>
+        </label>
+        <label class="flex flex-col gap-1.5">
+          <span class="text-sm font-medium">Price (L)</span>
+          <%= f.number_field :price_hnl, step: "0.01", placeholder: "3200.00", required: true, class: "input w-full font-mono" %>
+        </label>
+        <label class="flex flex-col gap-1.5">
+          <span class="text-sm font-medium">City</span>
+          <%= f.text_field :city, value: @price.city || "Tegucigalpa", required: true, class: "input w-full" %>
+        </label>
+        <label class="flex flex-col gap-1.5">
+          <span class="text-sm font-medium">Observed</span>
+          <%= f.date_field :observed_at, required: true, class: "input w-full" %>
+        </label>
+        <label class="flex flex-col gap-1.5">
+          <span class="text-sm font-medium">Source</span>
+          <%= f.text_field :source, placeholder: "phone, 3 exporters", required: true, class: "input w-full" %>
+        </label>
+        <label class="flex flex-col gap-1.5 md:col-span-2">
+          <span class="text-sm font-medium">Notes <span class="text-muted font-normal">(optional)</span></span>
+          <%= f.text_field :notes, placeholder: "Harvest starting, two quoted the same", class: "input w-full" %>
+        </label>
+        <div class="flex items-end">
+          <%= f.button "Record", class: "btn btn-neutral w-full" %>
+        </div>
+      <% end %>
+    <% end %>
+  </section>
+
+  <section class="flex flex-col gap-4">
+    <h2 class="text-[22px] font-semibold tracking-tight">Current — what the endpoint serves</h2>
+    <%= render Dashboard::TableComponent.new(
+      columns: [ "Item", "City", "Price (L)", "Unit", "Observed", "Age", "Source" ], numeric: [ 2 ],
+      rows: @latest.map { |p| [
+        tag.span(p.item, class: "font-mono"), p.city, number_with_delimiter(p.price_hnl.to_s("F")), p.unit,
+        p.observed_at.to_fs(:iso8601),
+        (p.stale? ? tag.span("#{p.days_old} d · stale", class: "text-error") : "#{p.days_old} d"),
+        tag.span(p.source, class: "text-muted")
+      ] },
+      empty: "Nothing recorded yet. The service stays on request until there is something to sell."
+    ) %>
+  </section>
+
+  <section class="flex flex-col gap-4">
+    <h2 class="text-[22px] font-semibold tracking-tight">History · last <%= @recent.size %></h2>
+    <%= render Dashboard::TableComponent.new(
+      columns: [ "Observed", "Item", "City", "Price (L)", "Source", "Typed" ], numeric: [ 3 ],
+      rows: @recent.map { |p| [
+        p.observed_at.to_fs(:iso8601), tag.span(p.item, class: "font-mono"), p.city,
+        number_with_delimiter(p.price_hnl.to_s("F")), tag.span(p.source, class: "text-muted"),
+        p.created_at.utc.strftime("%m-%d %H:%M")
+      ] },
+      empty: "No observations yet."
+    ) %>
+  </section>
+</div>

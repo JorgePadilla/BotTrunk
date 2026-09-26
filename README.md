@@ -53,8 +53,10 @@ Only the settle touches the chain. If the service fails, settle is never called 
 | `domain-dns` — A/AAAA/MX/NS/TXT/CNAME plus mail provider, SPF and DMARC hints | 0.03 USDC | **live** |
 | `email-check` — syntax, MX, and whether an address is disposable, free or a role account | 0.002 USDC | **live** |
 | **Get real supplier quotes** — `rfq-global`: a person phones and emails up to ten suppliers anywhere and returns structured quotes; five business days or refunded | 250 USDC | **live** |
-| `verify-business-hn` — a local visits the address, photographs it, checks the registry | 45 USDC | on request |
-| `translate-es-en` — human translation and review, up to 1,000 words | 60 USDC | on request |
+| `verify-business-hn` — a local visits the address, photographs it, checks the registry | 45 USDC | **live** |
+| `translate-es-en` — human translation and review, up to 1,000 words | 60 USDC | **live** |
+| `human-review` — a person judges your material and puts their name on the answer | 3 USDC | **live** |
+| `prices-hn` — farmgate coffee, the basic basket, fuel and the street dollar, observed in person | 0.05 USDC | on request |
 
 Every price is what the 402 asks for; the deposit tiers reprice hourly from the Banco Central de Honduras reference rate. Services marked *on request* are real work done by people — write to hello@bottrunk.com first; their endpoints answer 503 until then, so nothing can be charged by accident. Latency and success rates on the site are measured from settled calls, never estimated: a service with no traffic says so.
 

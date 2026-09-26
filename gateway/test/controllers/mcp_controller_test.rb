@@ -76,7 +76,7 @@ class McpControllerTest < ActionDispatch::IntegrationTest
   test "an on-request service explains itself instead of quoting a payment" do
     Catalog::Service.treat_all_live = false
     begin
-      result = rpc("tools/call", { name: "bottrunk_payment_instructions", arguments: { slug: "verify-business-hn" } })["result"]
+      result = rpc("tools/call", { name: "bottrunk_payment_instructions", arguments: { slug: "test-on-request" } })["result"]
     ensure
       Catalog::Service.treat_all_live = true
     end

@@ -34,8 +34,7 @@ class Catalog::ServiceCardComponentTest < ViewComponent::TestCase
   end
 
   test "an on-request service is badged" do
-    render_inline(Catalog::ServiceCardComponent.new(service: Catalog::Service.find("verify-business-hn")))
+    render_inline(Catalog::ServiceCardComponent.new(service: Catalog::Service.find("test-on-request")))
     assert_text "On request"
-    assert_text "$45.00"
   end
 end

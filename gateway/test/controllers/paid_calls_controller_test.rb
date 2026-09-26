@@ -218,7 +218,7 @@ class PaidCallsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "an RFQ we could not staff is refused before any money moves" do
-    Fulfillers::RfqGlobal::MAX_OPEN_JOBS.times do
+    Catalog::Service.find("rfq-global").job_capacity.times do
       WorkOrder.create!(service_slug: "rfq-global", price_atomic: 250_000_000, brief: "x" * 60, status: "pending")
     end
 

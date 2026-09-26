@@ -9,7 +9,7 @@ module Catalog
   # `all`, `find(slug)`, and the readers below — so no component changes.
   class Service < Data.define(:slug, :name, :summary, :description, :category, :provider, :price_usdc,
                               :network, :asset, :facilitator, :inputs, :outputs, :upstream_url, :fulfiller,
-                              :status, :price_hnl, :family, :family_label, :family_summary, :behaviour)
+                              :status, :price_hnl, :family, :family_label, :family_summary, :behaviour, :job)
     CATEGORIES = %w[Payments Data Verification Translation Procurement].freeze
 
     # live        — callable now, priced, in the Bazaar
@@ -31,8 +31,12 @@ module Catalog
     # from the day's exchange rate (Pricing::LempiraDeposit), not a constant.
     # `family:` groups variants of one product (the deposit tiers) into a
     # single catalog card.
+    # `job:` turns an entry into work a person does: what the buyer must supply,
+    # how long they are promised, and how many can be in flight at once. With
+    # it, `Fulfillers::HumanJob` serves the whole service and no new class is
+    # written — the catalog entry *is* the service.
     def initialize(upstream_url: DEFAULT_UPSTREAM, fulfiller: nil, status: "live", price_hnl: nil, price_usdc: nil,
-                   family: nil, family_label: nil, family_summary: nil, behaviour: [], **attrs) = super
+                   family: nil, family_label: nil, family_summary: nil, behaviour: [], job: nil, **attrs) = super
 
     # What a payer is actually buying, beyond the schema: the decisions this
     # service makes on their behalf. Published because the alternative is that
@@ -78,6 +82,14 @@ module Catalog
     def lempira? = price_hnl.present?
 
     def human_fulfilled? = provider == "Human-fulfilled"
+
+    # The promise printed on the page and returned to a polling agent. Kept
+    # here so the page, the 202 body and the admin queue cannot disagree.
+    def job_eta = job&.dig(:eta)
+
+    def job_capacity = job&.dig(:capacity)
+
+    def job_fields = job&.dig(:required) || {}
 
     def to_param = slug
 
@@ -327,7 +339,12 @@ module Catalog
     ),
     Service.new(
       slug: "rfq-global", name: "Get real supplier quotes", category: "Procurement", provider: "Human-fulfilled",
-      fulfiller: "Fulfillers::RfqGlobal", price_usdc: 250.00,
+      fulfiller: "Fulfillers::HumanJob", price_usdc: 250.00,
+      job: { eta: "within 5 business days", capacity: 12, required: {
+        "brief" => { min: 40, max: 4_000, hint: "the specification, in your own words" },
+        "quantity" => { hint: "how many, in whatever unit the trade uses" },
+        "destination" => { hint: "where the goods must be delivered or quoted to" }
+      } },
       summary: "A person phones and emails suppliers anywhere and comes back with real quotes.",
       description: "Describe what you want to buy, how much of it and where it has to land. A person contacts up to ten suppliers by phone and email, in English or Spanish, chases the ones who go quiet, and returns structured quotes: unit price, lead time, minimum order, incoterms, and who said what. Five business days, or the payment is returned. An agent can find two hundred suppliers in a minute and cannot get one of them to answer a question; this is that gap, closed by a person.",
       behaviour: [
@@ -353,22 +370,110 @@ module Catalog
       ]
     ),
     Service.new(
-      slug: "verify-business-hn", name: "Verify a Honduran business", category: "Verification", provider: "Human-fulfilled", status: "on_request",
-      summary: "A local visits the address, photographs the premises and checks the registry.",
-      description: "A verified local visits the address, photographs the premises, confirms the business is operating, and checks the mercantile registry. Proof bundle (photos, coordinates, registry excerpt) returned within 48 hours. Arranged by email first so we can agree scope and city; then it is a normal paid call.",
-      price_usdc: 45.00,
+      slug: "prices-hn", name: "What things cost in Honduras", category: "Data", provider: "By BotTrunk",
+      fulfiller: "Fulfillers::PricesHn", price_usdc: 0.05, status: "on_request",
+      summary: "Farmgate coffee, the basic basket, fuel and the street dollar — observed in person.",
+      description: "What things actually cost on the ground in Honduras, recorded by a person who went and asked: coffee at the farmgate, the basic food basket, fuel, and the street rate for dollars. The published number and the real number are different here, and the gap is invisible from outside the country. Every reading carries the day it was observed and how it was learned, so you can judge it rather than trust it.",
+      behaviour: [
+        [ "Where the numbers come from", "A person on a weekly round — phone calls to exporters, visits to markets and stations. Each reading names its source and the day it was made." ],
+        [ "Freshness is stated, never hidden", "Every reading carries `days_old`, and anything older than three weeks is marked `stale: true` rather than served quietly as current." ],
+        [ "Asking for something we do not price", "Answered 422 with the list of what is priced, and not charged. You pay for observations, not for an empty list." ],
+        [ "Dollars are converted, not observed", "`price_usd` uses the day's Banco Central reference rate. The lempira figure is the observation; the dollar figure is arithmetic." ]
+      ],
       network: "Algorand MainNet", asset: "USDC", facilitator: "GoPlausible",
-      inputs: [ Field.new("name", "string", "Business name."), Field.new("address", "string", "Street address, city.") ],
-      outputs: [ Field.new("verified", "boolean", "Whether the business exists and operates at the address."), Field.new("proof", "object", "Photos, coordinates and registry excerpt.") ]
+      inputs: [
+        Field.new("items", "array", "Optional: which readings you want. Omit for everything priced.", [ "coffee-quintal", "fuel-diesel" ]),
+        Field.new("city", "string", "Optional: Tegucigalpa or San Pedro Sula.", "Tegucigalpa")
+      ],
+      outputs: [
+        Field.new("prices", "array", "One reading per item: price_hnl, price_usd, unit, observed_at, days_old, stale, source."),
+        Field.new("as_of", "string", "Newest observation in the response.", "2026-09-22"),
+        Field.new("rate_hnl_per_usd", "string", "Reference rate used for the dollar column.", "26.2000")
+      ]
     ),
     Service.new(
-      slug: "translate-es-en", name: "Translate ES ↔ EN (human)", category: "Translation", provider: "Human-fulfilled", status: "on_request",
-      summary: "Human-reviewed translation with Central American context, up to 1,000 words.",
-      description: "Human translation and review, up to 1,000 words, with Central American idiom and legal terminology handled correctly — the difference between a machine translation and something you can sign. Arranged by email first so we can agree the deadline; then it is a normal paid call.",
-      price_usdc: 60.00,
+      slug: "human-review", name: "Human review and sign-off", category: "Verification", provider: "Human-fulfilled",
+      fulfiller: "Fulfillers::HumanJob", price_usdc: 3.00,
+      job: { eta: "within 24 hours", capacity: 25, required: {
+        "question" => { min: 20, max: 2_000, hint: "what you want judged, asked plainly" },
+        "material" => { min: 3, max: 4_000, hint: "the text, a URL, or whatever should be looked at" }
+      } },
+      summary: "A person looks at your work and answers, with their name on the answer.",
+      description: "Ask a person to judge something a model cannot settle alone: is this translation right, does this photo show what the seller claims, is this clause unusual, does this page look broken. You get a plain answer and the reasoning behind it, from someone who is accountable for it. Within 24 hours. An opinion a model produces in a second carries no weight because nobody stands behind it; this is the same sentence with a person behind it.",
+      behaviour: [
+        [ "What you get back", "A direct answer, the reasoning, and how confident the reviewer is. Poll `GET /orders/{order_id}` until status is `delivered`." ],
+        [ "What we will not do", "No legal, medical or financial advice — that needs a licensed professional, and this is not one. Questions that need a licence are refused and the payment returned." ],
+        [ "Ambiguity is an answer", "If the material does not settle the question, the reviewer says so rather than guessing. That is still delivered and still charged, because looking carefully is the work." ],
+        [ "When the queue is full", "Answered 429 and not charged." ]
+      ],
       network: "Algorand MainNet", asset: "USDC", facilitator: "GoPlausible",
-      inputs: [ Field.new("text", "string", "Up to 1,000 words."), Field.new("direction", "string", "es-en or en-es.") ],
-      outputs: [ Field.new("text", "string", "Translated text."), Field.new("notes", "string", "Translator notes, if any.") ]
+      inputs: [
+        Field.new("question", "string", "What you want judged, asked plainly.", "Does this photo show a working commercial kitchen, or a domestic one?"),
+        Field.new("material", "string", "The text, a URL, or whatever should be looked at.", "https://example.com/listing/8812"),
+        Field.new("contact_email", "string", "Optional: emailed with the answer.", "buyer@example.com")
+      ],
+      outputs: [
+        Field.new("order_id", "string", "Token to poll at /orders/{order_id}.", "8kPz3nQ4vR7mB2xY6wLd"),
+        Field.new("status", "string", "pending until reviewed, then delivered.", "pending"),
+        Field.new("eta", "string", "Fulfilment promise.", "within 24 hours"),
+        Field.new("result", "object", "The answer, the reasoning and the reviewer's confidence.")
+      ]
+    ),
+    Service.new(
+      slug: "verify-business-hn", name: "Verify a Honduran business", category: "Verification", provider: "Human-fulfilled",
+      fulfiller: "Fulfillers::HumanJob", price_usdc: 45.00,
+      job: { eta: "within 5 business days", capacity: 6, required: {
+        "business_name" => { min: 2, max: 120, hint: "the name as it should appear at the address" },
+        "address" => { min: 8, max: 300, hint: "street address and city" }
+      } },
+      summary: "A local visits the address, photographs the premises and checks the registry.",
+      description: "A verified local goes to the address, photographs the premises, confirms the business is operating, and checks the mercantile registry. You get back what was found — photos, what the sign says, whether anyone was there, and the registry excerpt — not a verdict dressed up as data. Five business days, or the payment is returned.",
+      behaviour: [
+        [ "What you get back", "A written report with the photo album link, what the registry says, and whether the business was operating when the visit happened. Poll `GET /orders/{order_id}` until status is `delivered`." ],
+        [ "An address that does not exist", "Still delivered, and still charged: the visit happened and the answer — nothing there — is usually the one worth paying for." ],
+        [ "Cities we cover", "Tegucigalpa and San Pedro Sula reliably. Anywhere else, we ask first; if we cannot get there the payment is returned in full." ],
+        [ "When the queue is full", "Answered 429 and not charged. One person carries this." ]
+      ],
+      network: "Algorand MainNet", asset: "USDC", facilitator: "GoPlausible",
+      inputs: [
+        Field.new("business_name", "string", "Business name as it should appear at the address.", "Ferretería El Progreso"),
+        Field.new("address", "string", "Street address and city.", "Blvd. Morazán, Tegucigalpa"),
+        Field.new("contact_email", "string", "Optional: emailed when the report is in.", "buyer@example.com")
+      ],
+      outputs: [
+        Field.new("order_id", "string", "Token to poll at /orders/{order_id}.", "8kPz3nQ4vR7mB2xY6wLd"),
+        Field.new("status", "string", "pending until the visit is done, then delivered.", "pending"),
+        Field.new("eta", "string", "Fulfilment promise.", "within 5 business days"),
+        Field.new("result", "object", "The report: what was found, photos, registry excerpt.")
+      ]
+    ),
+    Service.new(
+      slug: "translate-es-en", name: "Translate ES ↔ EN (human)", category: "Translation", provider: "Human-fulfilled",
+      fulfiller: "Fulfillers::HumanJob", price_usdc: 60.00,
+      job: { eta: "within 3 business days", capacity: 8, required: {
+        "text" => { min: 20, max: 12_000, hint: "the text to translate, up to about 1,000 words" },
+        "direction" => { min: 5, max: 5, hint: "es-en or en-es" }
+      } },
+      summary: "Human-reviewed translation with Central American context, up to 1,000 words.",
+      description: "A person translates and reviews it — up to 1,000 words — with Central American idiom and legal terminology handled correctly. The difference between a machine translation and something you can put your name on. Three business days, or the payment is returned.",
+      behaviour: [
+        [ "What you get back", "The translated text and the translator's notes on anything ambiguous. Poll `GET /orders/{order_id}` until status is `delivered`." ],
+        [ "Length", "Up to about 1,000 words per call. Longer text is refused with 422 and not charged — split it, or ask us for a quote." ],
+        [ "Direction", "`es-en` or `en-es`. Anything else is refused with 422 and not charged." ],
+        [ "Not certified", "This is a human translation, not a sworn or notarised one. If you need a translation that a court or a registry will accept, write first." ]
+      ],
+      network: "Algorand MainNet", asset: "USDC", facilitator: "GoPlausible",
+      inputs: [
+        Field.new("text", "string", "The text to translate, up to about 1,000 words.", "Estimado cliente, adjuntamos la factura…"),
+        Field.new("direction", "string", "es-en or en-es.", "es-en"),
+        Field.new("contact_email", "string", "Optional: emailed when it is done.", "buyer@example.com")
+      ],
+      outputs: [
+        Field.new("order_id", "string", "Token to poll at /orders/{order_id}.", "8kPz3nQ4vR7mB2xY6wLd"),
+        Field.new("status", "string", "pending until translated, then delivered.", "pending"),
+        Field.new("eta", "string", "Fulfilment promise.", "within 3 business days"),
+        Field.new("result", "object", "The translation and any translator notes.")
+      ]
     )
   ].freeze
 end

@@ -3,7 +3,7 @@
 require "test_helper"
 
 module Fulfillers
-  class RfqGlobalTest < ActiveSupport::TestCase
+  class HumanJobTest < ActiveSupport::TestCase
     BRIEF = "500 units of 20 oz double-wall stainless steel water bottles, powder-coated matte black, one-colour logo."
 
     def service = Catalog::Service.find("rfq-global")
@@ -13,7 +13,7 @@ module Fulfillers
     end
 
     test "opens a job awaiting payment and answers 202 with somewhere to poll" do
-      result = RfqGlobal.new(input: input("contact_email" => "buyer@example.com"), service: service).call
+      result = HumanJob.new(input: input("contact_email" => "buyer@example.com"), service: service).call
 
       assert result.success?
       assert_equal 202, result[:status]
@@ -42,7 +42,7 @@ module Fulfillers
         [ { "destination" => "" }, /destination is required/ ],
         [ { "contact_email" => "not-an-email" }, /contact_email/ ]
       ].each do |overrides, message|
-        result = RfqGlobal.new(input: input(**overrides), service: service).call
+        result = HumanJob.new(input: input(**overrides), service: service).call
         assert result.success?, "a refusal is still an answer"
         assert_equal 422, result[:status], overrides.inspect
         assert_match message, JSON.parse(result[:body])["error"]
@@ -52,23 +52,23 @@ module Fulfillers
     end
 
     test "a full queue is refused with 429 rather than promised and missed" do
-      RfqGlobal::MAX_OPEN_JOBS.times do
+      service.job_capacity.times do
         WorkOrder.create!(service_slug: "rfq-global", price_atomic: 250_000_000, brief: BRIEF, status: "pending")
       end
 
-      result = RfqGlobal.new(input: input, service: service).call
+      result = HumanJob.new(input: input, service: service).call
       assert result.success?
       assert_equal 429, result[:status]
       assert_match(/Nothing was charged/, JSON.parse(result[:body])["error"])
-      assert_equal RfqGlobal::MAX_OPEN_JOBS, WorkOrder.count, "no new job was opened"
+      assert_equal service.job_capacity, WorkOrder.count, "no new job was opened"
     end
 
     test "jobs that were never paid for do not count against capacity" do
-      RfqGlobal::MAX_OPEN_JOBS.times do
+      service.job_capacity.times do
         WorkOrder.create!(service_slug: "rfq-global", price_atomic: 250_000_000, brief: BRIEF, status: "awaiting_payment")
       end
 
-      result = RfqGlobal.new(input: input, service: service).call
+      result = HumanJob.new(input: input, service: service).call
       assert_equal 202, result[:status], "only settled work occupies the queue"
     end
   end

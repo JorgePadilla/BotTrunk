@@ -24,7 +24,8 @@ module Api
         assert_includes topics, "Private addresses"
         assert_includes scrape["behaviour"].find { |b| b["topic"] == "Method" }["detail"], "POST"
 
-        assert_equal "on_request", services.find { |s| s["slug"] == "verify-business-hn" }["status"]
+        assert_equal "on_request", services.find { |s| s["slug"] == "test-on-request" }["status"]
+        assert_equal "live", services.find { |s| s["slug"] == "verify-business-hn" }["status"], "human work is payable, not arranged by email"
         assert_equal "live", services.find { |s| s["slug"] == "deposit-bac-1000" }["status"]
       end
 

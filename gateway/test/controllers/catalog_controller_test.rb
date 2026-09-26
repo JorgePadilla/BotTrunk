@@ -68,7 +68,7 @@ class CatalogControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "an on-request service asks for an email instead of a payment" do
-    get service_url("verify-business-hn")
+    get service_url("test-on-request")
     assert_response :success
     assert_select "a[href^='mailto:hello@bottrunk.com']", text: "Request access"
     assert_select "a[href='/connect']", text: "Pay from your agent", count: 0
@@ -95,7 +95,7 @@ class CatalogControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "a human-fulfilled service has no built-in limits to publish" do
-    get service_url("verify-business-hn")
+    get service_url("test-on-request")
 
     assert_select "a[role=tab][href='#behaviour']", count: 0
   end

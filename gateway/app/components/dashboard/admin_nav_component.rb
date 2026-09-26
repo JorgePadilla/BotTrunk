@@ -18,6 +18,7 @@ module Dashboard
         [ "Stats", "/admin/stats" ],
         [ @queue.positive? ? "Orders · #{@queue} pending" : "Orders", "/admin/orders" ],
         [ @jobs.to_i.positive? ? "Jobs · #{@jobs} pending" : "Jobs", "/admin/work_orders" ],
+        [ "Prices", "/admin/prices" ],
         [ @inquiries.to_i.positive? ? "Sellers · #{@inquiries} to review" : "Sellers", "/admin/inquiries" ],
         [ @requests.to_i.positive? ? "Requests · #{@requests} to answer" : "Requests", "/admin/requests" ]
       ]
