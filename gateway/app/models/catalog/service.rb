@@ -182,6 +182,84 @@ module Catalog
       ]
     ),
     Service.new(
+      slug: "screenshot-url", name: "Screenshot a page", category: "Data", provider: "By BotTrunk", fulfiller: "Fulfillers::ScreenshotUrl",
+      summary: "A PNG of any page as a browser renders it, base64 in the response.",
+      description: "A picture of a page, taken in a real browser after its JavaScript has run. An agent cannot look at a page; this is the closest it gets — checking that a deploy renders, that a banner says what it claims, or handing a person an image of what the agent found. Viewport is yours to set, or capture the full scrolling page.",
+      price_usdc: 0.08,
+      behaviour: [
+        [ "What comes back", "The PNG as base64 in `image_base64`, with the real pixel size read off the file. Base64 is about a third larger than the file itself; budget for that." ],
+        [ "Size limit", "A render over 1.5 MB is refused with 422 and not charged, rather than returning a JSON body nobody wants. Narrow the viewport or drop `full_page` and try again." ],
+        [ "Viewport", "`width` and `height` are clamped to 240–3840. With `full_page` the height grows to whatever the page needs, so the returned `height` is what was captured, not what was asked for." ],
+        [ "Waiting for content", "`wait_for` takes a CSS selector the browser waits for before the shutter — the difference between catching a page mid-spinner and after its data lands." ],
+        [ "If the renderer is busy", "The free renderer runs one browser at a time. A busy answer is retried once, then the call fails and is never settled, so it costs you nothing." ]
+      ],
+      network: "Algorand MainNet", asset: "USDC", facilitator: "GoPlausible",
+      inputs: [
+        Field.new("url", "string", "Public http(s) URL to capture.", "https://example.com/pricing"),
+        Field.new("full_page", "boolean", "Capture the whole scrolling page instead of one viewport."),
+        Field.new("width", "integer", "Viewport width in pixels, 240–3840. Default 1280.", 1280),
+        Field.new("height", "integer", "Viewport height in pixels, 240–3840. Default 800.", 800),
+        Field.new("wait_for", "string", "Optional CSS selector to wait for before capturing.", "main img")
+      ],
+      outputs: [
+        Field.new("image_base64", "string", "The PNG, base64-encoded.", "iVBORw0KGgoAAAANSUhEUg…"),
+        Field.new("width", "integer", "Captured width in pixels.", 1280),
+        Field.new("height", "integer", "Captured height in pixels.", 800),
+        Field.new("bytes", "integer", "Size of the PNG before encoding.", 22268),
+        Field.new("captured_at", "string", "When the shot was taken, UTC.", "2026-09-26T01:12:04Z")
+      ]
+    ),
+    Service.new(
+      slug: "pdf-url", name: "Page to PDF", category: "Data", provider: "By BotTrunk", fulfiller: "Fulfillers::PdfUrl",
+      summary: "Any page printed to PDF by a real browser, base64 in the response.",
+      description: "A page printed to PDF the way a browser prints it, after its JavaScript has run — an invoice, a receipt, a terms page as it stood on the day. The paper a person keeps, produced by an agent that cannot print. Choose the paper size and orientation; backgrounds are printed.",
+      price_usdc: 0.10,
+      behaviour: [
+        [ "What comes back", "The PDF as base64 in `pdf_base64`. Base64 is about a third larger than the file itself; budget for that." ],
+        [ "Size limit", "A document over 1.5 MB is refused with 422 and not charged. Long pages hit this before short ones do." ],
+        [ "Paper", "`format` accepts a4, letter, legal, tabloid, a3 or a5. Anything else falls back to A4 rather than refusing — you asked for a PDF and you get one, with `paper` saying which was used." ],
+        [ "Waiting for content", "`wait_for` takes a CSS selector the browser waits for before printing." ],
+        [ "If the renderer is busy", "The free renderer runs one browser at a time. A busy answer is retried once, then the call fails and is never settled, so it costs you nothing." ]
+      ],
+      network: "Algorand MainNet", asset: "USDC", facilitator: "GoPlausible",
+      inputs: [
+        Field.new("url", "string", "Public http(s) URL to print.", "https://example.com/invoice/8812"),
+        Field.new("format", "string", "Paper size: a4, letter, legal, tabloid, a3, a5. Default a4.", "a4"),
+        Field.new("landscape", "boolean", "Print landscape instead of portrait."),
+        Field.new("wait_for", "string", "Optional CSS selector to wait for before printing.", "table.line-items")
+      ],
+      outputs: [
+        Field.new("pdf_base64", "string", "The PDF, base64-encoded.", "JVBERi0xLjQKJeLjz9MK…"),
+        Field.new("paper", "string", "Paper size used.", "a4"),
+        Field.new("bytes", "integer", "Size of the PDF before encoding.", 48210),
+        Field.new("captured_at", "string", "When it was printed, UTC.", "2026-09-26T01:12:04Z")
+      ]
+    ),
+    Service.new(
+      slug: "email-check", name: "Email address check", category: "Verification", provider: "By BotTrunk", fulfiller: "Fulfillers::EmailCheck",
+      summary: "Syntax, mail records, and whether an address is disposable, free or a role account.",
+      description: "What can be told about an email address without sending anything to it: whether the syntax is valid, whether the domain can receive mail at all, and whether it is a known disposable provider, a free consumer provider, or a role address like support@ that no single person reads. For filtering a signup list or deciding whether a contact address is worth writing to.",
+      price_usdc: 0.002,
+      behaviour: [
+        [ "What this is not", "Not a mailbox check. Proving an address exists needs an SMTP probe, which is unreliable and gets the prober blocked, so we do not do it. No mail is ever sent." ],
+        [ "Deliverable domain", "True when the domain publishes MX records, or an A record that mail can fall back to. It says the domain can receive mail, not that this mailbox does." ],
+        [ "Bad syntax", "Answered 200 with `valid_syntax: false` and no DNS lookup — a malformed address is a fact about the input, not a failure." ],
+        [ "Disposable and free lists", "Known-provider lists, not exhaustive. A false on either means we did not recognise it." ],
+        [ "If DNS is unreachable", "The call fails and is never settled, so it costs you nothing." ]
+      ],
+      network: "Algorand MainNet", asset: "USDC", facilitator: "GoPlausible",
+      inputs: [ Field.new("email", "string", "Address to check.", "support@stripe.com") ],
+      outputs: [
+        Field.new("valid_syntax", "boolean", "Whether the address parses as an email address.", true),
+        Field.new("domain", "string", "Domain part, lowercased.", "stripe.com"),
+        Field.new("mx", "array", "Mail exchangers, lowest preference first.", [ "aspmx.l.google.com" ]),
+        Field.new("deliverable_domain", "boolean", "Whether the domain can receive mail at all.", true),
+        Field.new("disposable", "boolean", "Known disposable-provider domain.", false),
+        Field.new("free_provider", "boolean", "Known free consumer provider.", false),
+        Field.new("role_account", "boolean", "Role address like support@ or billing@.", true)
+      ]
+    ),
+    Service.new(
       slug: "page-metadata", name: "Page metadata", category: "Data", provider: "By BotTrunk", fulfiller: "Fulfillers::PageMetadata",
       summary: "Title, description, OpenGraph, favicon and feeds — without reading the page.",
       description: "Everything a machine needs to describe a page it has not read: title, meta description, canonical URL, language, favicon, the full OpenGraph and Twitter card sets, any RSS/Atom feeds it advertises, and its robots directive. One request instead of fetching and parsing HTML yourself.",

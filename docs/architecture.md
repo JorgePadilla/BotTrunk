@@ -99,6 +99,7 @@ app/
                  adapters/base.rb adapters/algorand.rb          (adapters/base_evm.rb later)
     gateway/     handle_paid_call.rb proxy_call.rb
     fulfillers/  scrape_markdown.rb            (BotTrunk's own services, run in-process; Catalog::Service#fulfiller)
+    rendering/   cloudflare.rb                 (headless browser: content, screenshot, pdf — out of process on purpose)
     sellers/     create_inquiry.rb
     upstream/    client.rb
     ledger/      record_transaction.rb
@@ -136,7 +137,7 @@ Stateless on purpose: the 2026-07-28 revision of the transport removed protocol-
 
 `Catalog::Service` is still an in-memory list (`app/models/catalog/service.rb`). Each entry carries a `status` — **live** (priced, callable, in the Bazaar) or **on_request** (real work we do, arranged by email; `POST /s/:slug` answers 503 so nothing can be charged) — and optionally a `family` (`deposit-bac`), which collapses the four deposit tiers into one catalog card while staying four separate Bazaar resources. `Catalog::Service.extra` is a test-only hook for services the public catalog does not have (a proxied one, a not-live one).
 
-BotTrunk's own services are `Fulfillers::*`, all subclasses of `Fulfillers::Base`, which owns the SSRF guard (a host resolving to private space is refused before any request), the Faraday client, and the Result shapes: a 4xx is `Result.success` with that status (answered, never settled), a genuine upstream failure is `Result.failure`. Today: `ScrapeMarkdown`, `PageMetadata`, `ExtractLinks`, `UrlHealth`, `DomainDns` (all code, no dependencies beyond Nokogiri and stdlib Resolv/OpenSSL) and `DepositBac` (human-fulfilled, §7).
+BotTrunk's own services are `Fulfillers::*`, all subclasses of `Fulfillers::Base`, which owns the SSRF guard (a host resolving to private space is refused before any request), the Faraday client, and the Result shapes: a 4xx is `Result.success` with that status (answered, never settled), a genuine upstream failure is `Result.failure`. Today: `ScrapeMarkdown`, `PageMetadata`, `ExtractLinks`, `UrlHealth`, `DomainDns`, `EmailCheck` (all code, no dependencies beyond Nokogiri and stdlib Resolv/OpenSSL); `ScrapeMarkdownJs`, `ScreenshotUrl` and `PdfUrl`, which share `RenderedCapture` and reach a browser through `Rendering::Cloudflare` rather than running Chromium in this container (a render is 300-500 MB and an OOM here would take the deposit endpoints down with it); and `DepositBac` (human-fulfilled, §7). The two capture services answer base64 inside JSON, because the 402 advertises `application/json` and the Bazaar schema describes an object; a render over 1.5 MB is refused with 422 rather than returned, and a refusal is never settled.
 
 Each entry can carry `behaviour:` — the decisions a service makes on a payer's behalf that are not in the input/output schema (what markdown scraping strips, what it refuses, what it silently does not do). `Catalog::Service#documented_behaviour` appends the limits every `Fulfillers::Base` subclass shares (2 MB, 5 s/20 s, 3 redirects, the user agent, the SSRF refusal, POST-only). It renders as the "How it behaves" panel on a service page, ships in `behaviour[]` on the catalog API, and appears under each service in `llms.txt`. The rule is that a buyer should not have to pay to discover how a service treats their input.
 

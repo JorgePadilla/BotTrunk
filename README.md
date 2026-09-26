@@ -44,12 +44,16 @@ Only the settle touches the chain. If the service fails, settle is never called 
 |---|---|---|
 | **Pay someone in Honduras** — `deposit-bac-1000` … `-10000`: lempiras into any BAC Credomatic account, transferred by a person within 24 h, receipt reference returned | day's BCH rate + 5 % (≈ $42 for L1,000) | **live** |
 | `scrape-markdown` — any public page as clean, LLM-ready markdown | 0.09 USDC | **live** |
+| `scrape-markdown-js` — the same, after the page's JavaScript has run | 0.29 USDC | **live** |
+| `screenshot-url` — a PNG of a page as a browser renders it, base64 | 0.08 USDC | **live** |
+| `pdf-url` — a page printed to PDF by a real browser, base64 | 0.10 USDC | **live** |
 | `page-metadata` — title, description, OpenGraph, favicon, feeds | 0.02 USDC | **live** |
 | `extract-links` — every link, absolute, de-duplicated, internal vs external | 0.02 USDC | **live** |
 | `url-health` — status, redirect chain, timings, TLS issuer and expiry | 0.02 USDC | **live** |
 | `domain-dns` — A/AAAA/MX/NS/TXT/CNAME plus mail provider, SPF and DMARC hints | 0.03 USDC | **live** |
-| `verify-business-hn` — a local visits the address, photographs it, checks the registry | 25 USDC | on request |
-| `translate-es-en` — human translation and review, up to 1,000 words | 15 USDC | on request |
+| `email-check` — syntax, MX, and whether an address is disposable, free or a role account | 0.002 USDC | **live** |
+| `verify-business-hn` — a local visits the address, photographs it, checks the registry | 45 USDC | on request |
+| `translate-es-en` — human translation and review, up to 1,000 words | 60 USDC | on request |
 
 Every price is what the 402 asks for; the deposit tiers reprice hourly from the Banco Central de Honduras reference rate. Services marked *on request* are real work done by people — write to hello@bottrunk.com first; their endpoints answer 503 until then, so nothing can be charged by accident. Latency and success rates on the site are measured from settled calls, never estimated: a service with no traffic says so.
 

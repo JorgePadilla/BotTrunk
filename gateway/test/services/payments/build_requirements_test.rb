@@ -55,9 +55,18 @@ module Payments
       assert_equal :not_configured, result.code
     end
 
+    # Checks the property rather than one price: the last version asserted
+    # verify-business-hn cost $25 and went stale the day it was repriced.
+    # A float here rounds 0.07 to 69,999 µUSDC, so every fixed price is
+    # compared against its exact decimal conversion.
     test "prices never go through floats" do
-      svc = Catalog::Service.find("verify-business-hn")
-      assert_equal 25_000_000, svc.price_atomic
+      priced = Catalog::Service.all.select(&:price_usdc)
+      assert priced.any?, "no fixed-price services left to check"
+
+      priced.each do |svc|
+        assert_kind_of Integer, svc.price_atomic, svc.slug
+        assert_equal (BigDecimal(svc.price_usdc.to_s) * 1_000_000).to_i, svc.price_atomic, svc.slug
+      end
     end
   end
 end

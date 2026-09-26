@@ -33,6 +33,10 @@ services:
         sync: false            # free GeoLite2 key: country/city of visitors in /admin/stats
       - key: BCH_API_KEY
         sync: false            # Banco Central de Honduras Web API key (free): hourly reference rate
+      - key: CLOUDFLARE_API_TOKEN
+        sync: false            # Browser Rendering ("Browser Run" permission): scrape-markdown-js, screenshot-url, pdf-url
+      - key: CLOUDFLARE_ACCOUNT_ID
+        sync: false            # the account the renders are billed to; it goes in the API path, not a header
       # BCH_TCR_INDICATOR_ID (optional, default 97) · HNL_PER_USD (optional): pin the rate by hand
       - key: DATABASE_URL
         fromDatabase:
