@@ -63,6 +63,11 @@ module Catalog
 
     def self.categories = CATEGORIES
 
+    # The dearest thing an agent can actually call today. The setup pages quote
+    # it when they explain the spending caps, and it was hard-coded at $414
+    # until the catalog grew past it in one evening.
+    def self.top_live_price_atomic = all.select(&:live?).map(&:price_atomic).max
+
     def self.all = SEED + extra
 
     def self.find(slug) = all.find { |s| s.slug == slug }

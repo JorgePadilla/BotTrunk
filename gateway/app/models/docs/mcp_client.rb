@@ -119,7 +119,7 @@ module Docs
             command: "npx"
             args: ["-y", "bottrunk-mcp"]
             env:
-              BOTTRUNK_MAX_PER_CALL: "10000"
+              BOTTRUNK_MAX_PER_CALL: "100000000000"
       YAML
       note: "Hermes passes through only the env you list, so put your caps there.",
       docs_url: "https://hermes-agent.nousresearch.com/docs/user-guide/features/mcp"

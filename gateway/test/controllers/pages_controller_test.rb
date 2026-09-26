@@ -34,8 +34,8 @@ class PagesControllerTest < ActionDispatch::IntegrationTest
 
   test "connect suggests the per-call cap bottrunk-mcp defaults to" do
     get connect_url
-    assert_match "&quot;BOTTRUNK_MAX_PER_CALL&quot;: &quot;10000&quot;", response.body
-    assert_match "BOTTRUNK_MAX_PER_CALL: &quot;10000&quot;", response.body   # Hermes
+    assert_match "&quot;BOTTRUNK_MAX_PER_CALL&quot;: &quot;100000000000&quot;", response.body
+    assert_match "BOTTRUNK_MAX_PER_CALL: &quot;100000000000&quot;", response.body   # Hermes
     assert_no_match(/BOTTRUNK_MAX_PER_CALL(&quot;)?: &quot;0\.50/, response.body)
   end
 
@@ -86,6 +86,20 @@ class PagesControllerTest < ActionDispatch::IntegrationTest
     assert_includes response.body, "PAYTO…"
   ensure
     Rails.configuration.x402.pay_to = original
+  end
+
+  # A published cap below the catalog's own ceiling blocks most of what is for
+  # sale, and both pages quoted numbers the catalog outgrew: a $1,000 default
+  # and a $414 top price.
+  test "the setup pages quote the cap that ships and the catalog's real ceiling" do
+    ceiling = ApplicationController.helpers.usdc(Catalog::Service.top_live_price_atomic)
+
+    get docs_url
+    assert_includes response.body, "100,000,000,000 USDC"
+    assert_includes response.body, "goes up to #{ceiling} a call"
+
+    get connect_url
+    assert_includes response.body, "goes up to #{ceiling} a call"
   end
 
   test "sell shows the early-access form" do

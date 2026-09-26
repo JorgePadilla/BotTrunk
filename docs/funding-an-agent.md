@@ -157,11 +157,13 @@ signed:
 
 | | Default | Set with |
 |---|---|---|
-| Per call | 1000 USDC | `BOTTRUNK_MAX_PER_CALL` |
-| Per day (UTC) | 10000 USDC | `BOTTRUNK_MAX_PER_DAY` |
+| Per call | 100000000000 USDC | `BOTTRUNK_MAX_PER_CALL` |
+| Per day (UTC) | 100000000000 USDC | `BOTTRUNK_MAX_PER_DAY` |
 
-Those defaults are deliberately high, because the catalog includes services
-that cost hundreds of dollars per call. **If your agent should never spend
+Those defaults sit above anything the catalog can list, because a cap that
+refuses a purchase the buyer already decided on is not a safety feature. The
+real ceiling is the wallet balance — an agent can only spend what you already
+sent it. **If your agent should never spend
 that much, lower them before you fund the wallet** — they are the only thing
 standing between an agent and its whole balance.
 

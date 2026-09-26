@@ -45,8 +45,8 @@ describe("config", () => {
   it("defaults to the production gateway and the agreed caps", () => {
     const c = loadConfig({});
     assert.equal(c.apiBase, "https://api.bottrunk.com");
-    assert.equal(c.maxPerCallAtomic, usdcToAtomic("10000"));
-    assert.equal(c.maxPerDayAtomic, usdcToAtomic("10000"));
+    assert.equal(c.maxPerCallAtomic, usdcToAtomic("100000000000"));
+    assert.equal(c.maxPerDayAtomic, usdcToAtomic("100000000000"));
   });
 });
 
@@ -219,7 +219,7 @@ describe("MCP server", () => {
     const wText = (w.content as { text: string }[])[0].text;
     assert.match(wText, new RegExp(wallet!.address));
     assert.match(wText, /1\.500000 USDC/);
-    assert.match(wText, /10000 USDC per call/);
+    assert.match(wText, /100,000,000,000 USDC per call/);
   });
 
   it("pays and returns the service output with a receipt line", async () => {
@@ -294,10 +294,17 @@ describe("spending caps that can be turned off", () => {
     assert.throws(() => loadConfig({ BOTTRUNK_HOME: tmpHome(), BOTTRUNK_MAX_PER_CALL: "0" }), /refuse every call/);
   });
 
-  it("still defaults to a cap, because the catalog goes to hundreds of dollars a call", () => {
+  // A cap is still enforced by default — the machinery runs on every call — but
+  // it sits above anything BotTrunk can list, so it never refuses a purchase
+  // the buyer meant to make. The dearest thing in the catalog is the $1,000,000
+  // corridor build; the default has to clear that with room to spare.
+  it("still defaults to a cap, set above the dearest thing the catalog can list", () => {
     const config = loadConfig({ BOTTRUNK_HOME: tmpHome() });
 
-    assert.equal(config.maxPerCallAtomic, usdcToAtomic("10000"));
+    assert.notEqual(config.maxPerCallAtomic, null, "the cap is on by default");
+    assert.ok(config.maxPerCallAtomic! > usdcToAtomic("1000000"));
+    assert.ok(config.maxPerDayAtomic! > usdcToAtomic("1000000"));
+    assert.doesNotThrow(() => new SpendTracker(config).assertAllowed(usdcToAtomic("1000000")));
   });
 });
 

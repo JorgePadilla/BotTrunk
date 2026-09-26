@@ -67,7 +67,7 @@
                 "args": ["-y", "bottrunk-mcp"],
                 "env": {
                   "BOTTRUNK_MNEMONIC": "word1 word2 … word25",
-                  "BOTTRUNK_MAX_PER_CALL": "10000"
+                  "BOTTRUNK_MAX_PER_CALL": "100000000000"
                 }
               }
             }
@@ -106,7 +106,7 @@
     </div>
 
     <div class="flex flex-col gap-3 text-sm text-muted max-w-2xl">
-      <p><span class="font-medium text-base-content">Spending caps travel with the config either way:</span> <span class="font-mono">BOTTRUNK_MAX_PER_CALL</span> and <span class="font-mono">BOTTRUNK_MAX_PER_DAY</span>, in USDC. The server refuses anything above them before it signs. Set them: the catalog goes up to hundreds of dollars a call.</p>
+      <p><span class="font-medium text-base-content">Spending caps travel with the config either way:</span> <span class="font-mono">BOTTRUNK_MAX_PER_CALL</span> and <span class="font-mono">BOTTRUNK_MAX_PER_DAY</span>, in USDC. The server refuses anything above them before it signs. Set them: the catalog goes up to <%= usdc(Catalog::Service.top_live_price_atomic) %> a call.</p>
       <p><%= link_to "Package and options on npm →", "https://www.npmjs.com/package/bottrunk-mcp", class: "underline underline-offset-4 hover:text-base-content" %></p>
     </div>
   </section>

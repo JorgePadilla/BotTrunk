@@ -37,10 +37,16 @@ export const NETWORK_NAME: Record<string, string> = {
   [TESTNET]: "testnet",
 };
 
+// The caps exist so the mechanism is there and visible, not to second-guess
+// what someone meant to buy: a default below the catalog's own ceiling just
+// refuses a sale the buyer already decided on. Both ship above anything that
+// can be listed, and the real limit is the wallet balance — an agent can only
+// spend what a person already sent it. Lower them before funding if this agent
+// should never spend that much; "none" turns one off entirely.
 const DEFAULTS = {
   apiBase: "https://api.bottrunk.com",
-  maxPerCall: "10000",
-  maxPerDay: "10000",
+  maxPerCall: "100000000000",
+  maxPerDay: "100000000000",
 };
 
 /** Spellings that mean "I do not want this cap". */
@@ -73,7 +79,13 @@ export function usdcToAtomic(value: string): bigint {
 
 /** A cap for humans: an amount, or "no limit" when it is off. */
 export function capLabel(cap: bigint | null): string {
-  return cap === null ? "no limit" : `${atomicToUsdc(cap)} USDC`;
+  return cap === null ? "no limit" : `${withThousands(atomicToUsdc(cap))} USDC`;
+}
+
+/** "100000000000" → "100,000,000,000". Caps are long enough to need it. */
+function withThousands(amount: string): string {
+  const [whole, frac] = amount.split(".");
+  return whole.replace(/\B(?=(\d{3})+(?!\d))/g, ",") + (frac ? `.${frac}` : "");
 }
 
 /** Formats µUSDC for humans: 5000n → "0.005". */
