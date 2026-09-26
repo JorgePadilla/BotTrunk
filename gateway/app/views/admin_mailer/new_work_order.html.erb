@@ -1,0 +1,19 @@
+<p style="margin:0 0 16px 0;font-size:17px;font-weight:600;">A job is waiting: <%= @order.service_slug %>.</p>
+
+<p style="margin:0 0 20px 0;">
+  Paid and settled. The clock on the <%= @order.eta %> promise started
+  <%= l(@order.created_at, format: :long) %>.
+</p>
+
+<p style="margin:0 0 20px 0;white-space:pre-wrap;"><%= @order.brief %></p>
+
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 22px 0;">
+  <% @order.params.each do |key, value| %>
+    <%= receipt_row key.to_s.humanize, value.to_s %>
+  <% end %>
+  <%= receipt_row "We received", "#{usdc(@order.price_atomic)} USDC", mono: true %>
+  <%= receipt_row "Order", @order.token, mono: true %>
+  <%= receipt_row "Contact", @order.contact_email %>
+</table>
+
+<p style="margin:0 0 22px 0;"><%= mail_button "Open the queue", admin_work_orders_url %></p>

@@ -13,6 +13,15 @@ module MailHelpers
     ENV["ADMIN_EMAIL"] = previous
   end
 
+  def build_job(**overrides)
+    WorkOrder.create!({
+      service_slug: "rfq-global", price_atomic: 250_000_000, status: "pending",
+      brief: "500 units of 20 oz stainless steel bottles, matte black, one-colour logo.",
+      params: { "quantity" => "500 units", "destination" => "Port of Houston, TX" },
+      contact_email: "buyer@example.com"
+    }.merge(overrides))
+  end
+
   def build_order(**overrides)
     DepositOrder.create!({
       service_slug: "deposit-bac-1000", beneficiary_name: "Juana Martínez", bank: "BAC Credomatic",

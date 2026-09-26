@@ -21,6 +21,17 @@ module Notifications
       assert_match(/day/, report.oldest)
     end
 
+    test "jobs waiting at a desk are counted beside the deposits" do
+      job = build_job
+      job.update!(created_at: 30.hours.ago)
+      build_job(status: "delivered", delivered_at: Time.current, result: { "quotes" => [] })
+
+      report = DailyDigest.new.call[:report]
+
+      assert_equal [ job.id ], report.jobs.map(&:id), "only what is still waiting"
+      assert_match(/day/, report.oldest_job)
+    end
+
     test "an empty day still produces a report and an email" do
       with_admin_email do
         report = DailyDigest.new.call[:report]

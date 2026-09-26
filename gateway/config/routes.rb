@@ -49,6 +49,9 @@ Rails.application.routes.draw do
     get "orders", to: "orders#index"
     post "orders/:token/deliver", to: "orders#deliver", as: :deliver_order
     post "orders/:token/refund", to: "orders#refund", as: :refund_order
+    get "work_orders", to: "work_orders#index"
+    post "work_orders/:token/deliver", to: "work_orders#deliver", as: :deliver_work_order
+    post "work_orders/:token/refund", to: "work_orders#refund", as: :refund_work_order
     post "rates/refresh", to: "rates#refresh", as: :refresh_rates
     get "inquiries", to: "inquiries#index"
     post "inquiries/:id/approve", to: "inquiries#approve", as: :approve_inquiry

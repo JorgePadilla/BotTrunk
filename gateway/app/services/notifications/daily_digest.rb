@@ -11,7 +11,7 @@ module Notifications
   class DailyDigest
     WINDOW = 24.hours
 
-    Report = Data.define(:generated_at, :queue, :oldest, :delivered, :refunded, :calls, :volume, :commission, :inquiries, :owed_hnl)
+    Report = Data.define(:generated_at, :queue, :oldest, :delivered, :refunded, :calls, :volume, :commission, :inquiries, :owed_hnl, :jobs, :oldest_job)
 
     def initialize(now: Time.current)
       @now = now
@@ -29,6 +29,7 @@ module Notifications
     # and for anywhere else that wants to look at the day without mailing it.
     def report
       queue = DepositOrder.queue.to_a
+      jobs = WorkOrder.queue.to_a
       calls = Call.since(since)
       Report.new(
         generated_at: @now,
@@ -40,7 +41,9 @@ module Notifications
         calls: calls.count,
         volume: calls.sum(:amount),
         commission: calls.sum(:commission),
-        inquiries: SellerInquiry.where(created_at: since..).order(:created_at).to_a
+        inquiries: SellerInquiry.where(created_at: since..).order(:created_at).to_a,
+        jobs: jobs,
+        oldest_job: jobs.first && age(jobs.first.created_at)
       )
     end
 

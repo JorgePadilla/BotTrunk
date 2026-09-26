@@ -17,6 +17,13 @@ class AdminMailer < ApplicationMailer
     mail(to: admin, subject: "New deposit to make — #{hnl(@order.amount_hnl)} to #{@order.beneficiary_name}")
   end
 
+  def new_work_order
+    @order = params[:order]
+    return if admin.blank?
+
+    mail(to: admin, subject: "New job to do — #{@order.service_slug} (#{@order.token})")
+  end
+
   def new_inquiry
     @inquiry = params[:inquiry]
     return if admin.blank?

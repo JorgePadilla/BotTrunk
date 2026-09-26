@@ -12,6 +12,14 @@ module Notifications
       end
     end
 
+    test "a settled job tells the operator, and does not send deposit mail" do
+      with_admin_email do
+        assert_enqueued_emails 1 do
+          AnnounceOrder.new(order: build_job).call
+        end
+      end
+    end
+
     test "an agent with no inbox only costs us the admin alert" do
       with_admin_email do
         assert_enqueued_emails 1 do

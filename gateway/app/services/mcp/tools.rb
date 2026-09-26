@@ -137,10 +137,10 @@ module Mcp
 
     def order_status
       token = @arguments[:order_id].to_s.strip
-      return self.class.error("order_id is required — it is the token the deposit call returned.") if token.blank?
+      return self.class.error("order_id is required — it is the token a paid, human-fulfilled call returned.") if token.blank?
 
-      order = DepositOrder.find_by(token: token)
-      return self.class.error("No order with that id. Ids look like `8kPz3n…` and come from the response of a paid deposit call.") unless order
+      order = OrderLookup.find(token)
+      return self.class.error("No order with that id. Ids look like `8kPz3n…` and come from the response of a paid deposit or work call.") unless order
 
       self.class.text(order.public_status)
     end
@@ -176,7 +176,7 @@ module Mcp
           type: "object",
           properties: {
             query: { type: "string", description: "Optional text to match against name, summary and category." },
-            category: { type: "string", description: "Optional exact category: Payments, Data, Verification or Translation." }
+            category: { type: "string", description: "Optional exact category: Payments, Data, Verification, Translation or Procurement." }
           },
           additionalProperties: false
         }

@@ -190,6 +190,55 @@ class PaidCallsControllerTest < ActionDispatch::IntegrationTest
     assert_equal [ "cancelled" ], DepositOrder.pluck(:status)
   end
 
+  test "an RFQ opens a job, settles the quoted USDC and queues it for a person" do
+    input = { brief: "500 units of 20 oz stainless steel bottles, matte black, one-colour logo on one side.",
+              quantity: "500 units", destination: "Port of Houston, TX" }.to_json
+
+    post paid_call_path("rfq-global"), params: input, headers: { "Content-Type" => "application/json" }
+    assert_response :payment_required
+    assert_equal "250000000", response.parsed_body.dig("accepts", 0, "amount")
+    assert_equal 0, WorkOrder.count, "no job before a payment is presented"
+
+    post paid_call_path("rfq-global"), params: input, headers: { "Content-Type" => "application/json", "X-PAYMENT" => payment_header }
+    assert_response :accepted
+    body = response.parsed_body
+    assert_equal "pending", body["status"]
+    assert_equal "within 5 business days", body["eta"]
+
+    order = WorkOrder.find_by!(token: body["order_id"])
+    assert_equal "pending", order.status, "queued only once the USDC settled"
+    assert_equal Call.last, order.call
+    assert_equal 250_000_000, Call.last.amount
+    assert_equal 1, @adapter.settle_calls.size
+
+    get order_path(order.token)
+    assert_response :success
+    assert_equal "pending", response.parsed_body["status"]
+    assert_nil response.parsed_body["result"], "nothing delivered yet"
+  end
+
+  test "an RFQ we could not staff is refused before any money moves" do
+    Fulfillers::RfqGlobal::MAX_OPEN_JOBS.times do
+      WorkOrder.create!(service_slug: "rfq-global", price_atomic: 250_000_000, brief: "x" * 60, status: "pending")
+    end
+
+    post paid_call_path("rfq-global"),
+         params: { brief: "y" * 60, quantity: "10 pallets", destination: "Rotterdam" }.to_json,
+         headers: { "Content-Type" => "application/json", "X-PAYMENT" => payment_header }
+
+    assert_response :too_many_requests
+    assert_empty @adapter.settle_calls, "a queue we cannot serve costs the buyer nothing"
+  end
+
+  test "an RFQ whose settlement fails is cancelled, not queued" do
+    Payments::Adapters.stubs_current = FakePaymentAdapter.new(settle_success: false)
+    post paid_call_path("rfq-global"),
+         params: { brief: "z" * 60, quantity: "500 units", destination: "Houston" }.to_json,
+         headers: { "Content-Type" => "application/json", "X-PAYMENT" => payment_header }
+    assert_response :payment_required
+    assert_equal [ "cancelled" ], WorkOrder.pluck(:status)
+  end
+
   test "unknown service is 404" do
     post paid_call_path("nope"), params: "{}", headers: { "Content-Type" => "application/json" }
     assert_response :not_found

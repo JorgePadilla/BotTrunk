@@ -1,0 +1,17 @@
+A job is waiting: <%= @order.service_slug %>.
+
+Paid and settled. The clock on the <%= @order.eta %> promise started <%= l(@order.created_at, format: :long) %>.
+
+Brief:
+<%= @order.brief %>
+<% @order.params.each do |key, value| -%>
+<%= key.to_s.humanize.ljust(14) %><%= value %>
+<% end -%>
+
+We received:  <%= usdc(@order.price_atomic) %> USDC
+Order:        <%= @order.token %>
+<% if @order.contact_email.present? -%>
+Contact:      <%= @order.contact_email %>
+<% end -%>
+
+Open the queue: <%= admin_work_orders_url %>

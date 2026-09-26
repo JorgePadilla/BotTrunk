@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_16_090000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_26_000000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -112,6 +112,27 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_16_090000) do
     t.datetime "updated_at", null: false
     t.index ["service_slug"], name: "index_service_requests_on_service_slug"
     t.index ["status", "created_at"], name: "index_service_requests_on_status_and_created_at"
+  end
+
+  create_table "work_orders", force: :cascade do |t|
+    t.text "brief", null: false
+    t.bigint "call_id"
+    t.string "contact_email"
+    t.datetime "created_at", null: false
+    t.datetime "delivered_at"
+    t.text "notes"
+    t.jsonb "params", default: {}, null: false
+    t.bigint "price_atomic", null: false
+    t.string "refund_transaction_id"
+    t.datetime "refunded_at"
+    t.jsonb "result", default: {}, null: false
+    t.string "service_slug", null: false
+    t.string "status", default: "awaiting_payment", null: false
+    t.string "token", null: false
+    t.datetime "updated_at", null: false
+    t.index ["call_id"], name: "index_work_orders_on_call_id"
+    t.index ["status", "created_at"], name: "index_work_orders_on_status_and_created_at"
+    t.index ["token"], name: "index_work_orders_on_token", unique: true
   end
 
   add_foreign_key "deposit_orders", "calls"

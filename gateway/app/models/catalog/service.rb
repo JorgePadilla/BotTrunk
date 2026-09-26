@@ -10,7 +10,7 @@ module Catalog
   class Service < Data.define(:slug, :name, :summary, :description, :category, :provider, :price_usdc,
                               :network, :asset, :facilitator, :inputs, :outputs, :upstream_url, :fulfiller,
                               :status, :price_hnl, :family, :family_label, :family_summary, :behaviour)
-    CATEGORIES = %w[Payments Data Verification Translation].freeze
+    CATEGORIES = %w[Payments Data Verification Translation Procurement].freeze
 
     # live        — callable now, priced, in the Bazaar
     # on_request  — real work we do, arranged by email first (the endpoint answers 503)
@@ -323,6 +323,33 @@ module Catalog
         Field.new("ns", "array", "Nameservers."),
         Field.new("txt", "array", "TXT records, joined."),
         Field.new("hints", "object", "email provider, spf, dmarc, verifications.")
+      ]
+    ),
+    Service.new(
+      slug: "rfq-global", name: "Get real supplier quotes", category: "Procurement", provider: "Human-fulfilled",
+      fulfiller: "Fulfillers::RfqGlobal", price_usdc: 250.00,
+      summary: "A person phones and emails suppliers anywhere and comes back with real quotes.",
+      description: "Describe what you want to buy, how much of it and where it has to land. A person contacts up to ten suppliers by phone and email, in English or Spanish, chases the ones who go quiet, and returns structured quotes: unit price, lead time, minimum order, incoterms, and who said what. Five business days, or the payment is returned. An agent can find two hundred suppliers in a minute and cannot get one of them to answer a question; this is that gap, closed by a person.",
+      behaviour: [
+        [ "What you get back", "One entry per supplier actually reached — price, lead time, MOQ, incoterms, contact and the date of the conversation — plus a note on who never replied. Poll `GET /orders/{order_id}` until status is `delivered`." ],
+        [ "How long it takes", "Five business days. Suppliers answer when they answer, and the chasing is most of the work." ],
+        [ "If we cannot deliver", "The USDC is returned in full and the refund transaction is recorded on the order. You are never charged for quotes that did not arrive." ],
+        [ "When the queue is full", "Answered 429 and not charged. One person carries this, and a promise we cannot keep is worth less than an honest refusal." ],
+        [ "What this is not", "Not a directory lookup and not a scrape. If a published price list would answer your question, `scrape-markdown` costs nine cents." ]
+      ],
+      network: "Algorand MainNet", asset: "USDC", facilitator: "GoPlausible",
+      inputs: [
+        Field.new("brief", "string", "What you want quoted: the specification, in your own words.", "500 units of 20 oz double-wall stainless steel water bottles, powder-coated matte black, single-colour logo on one side."),
+        Field.new("quantity", "string", "How many, in whatever unit the trade uses.", "500 units"),
+        Field.new("destination", "string", "Where the goods must be delivered or quoted to.", "Port of Houston, TX"),
+        Field.new("contact_email", "string", "Optional: emailed when the quotes are in.", "buyer@example.com")
+      ],
+      outputs: [
+        Field.new("order_id", "string", "Token to poll at /orders/{order_id}.", "8kPz3nQ4vR7mB2xY6wLd"),
+        Field.new("status", "string", "pending until the quotes are in, then delivered.", "pending"),
+        Field.new("eta", "string", "Fulfilment promise.", "within 5 business days"),
+        Field.new("result", "object", "Quotes per supplier, once delivered."),
+        Field.new("status_url", "string", "Where to poll.", "https://api.bottrunk.com/orders/8kPz3nQ4vR7mB2xY6wLd")
       ]
     ),
     Service.new(

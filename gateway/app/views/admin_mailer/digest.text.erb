@@ -6,7 +6,17 @@
 <% end -%>
 
 Clear the queue: <%= admin_orders_url %>
-<% else -%>
+<% end -%>
+<% if @report[:jobs].any? -%>
+<%= pluralize(@report[:jobs].size, "job") %> waiting — oldest <%= @report[:oldest_job] %>.
+
+<% @report[:jobs].each do |job| -%>
+  <%= job.service_slug %> · <%= usdc(job.price_atomic) %> USDC · <%= time_ago_in_words(job.created_at) %> old
+<% end -%>
+
+Do the work: <%= admin_work_orders_url %>
+<% end -%>
+<% if @report[:queue].empty? && @report[:jobs].empty? -%>
 Queue is empty.
 <% end -%>
 
