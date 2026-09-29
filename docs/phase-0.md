@@ -1,5 +1,7 @@
 # Phase 0 — Spike & register
 
+**Status:** done (Sept 10, 2026). Next steps live in [plan.md](plan.md).
+
 **Window:** September 2026, weeks 1–2 · **Budget:** ~10–15 focused hours · **Owner:** Jorge
 
 ## Goal
@@ -25,7 +27,7 @@ Phase 0 produces no product features. It produces certainty, three registered na
 
 - [x] `bundle install`, `rails_icons:install --library=lucide`, `bin/dev` — app boots (Sept 3; runs on port 5000 locally because 3000 is taken by another project). Catalog, service page, theme toggle and Lookbook verified in the browser.
 - [x] `bin/rails db:prepare && bin/rails test` — 33 tests, 0 failures on the first run (Sept 10). Schema dumped and committed.
-- [ ] Enable the CI workflow (`.github/workflows/ci.yml`). (Org move waits for GitHub Support.)
+- [x] Enable the CI workflow (Sept 29). The old file sat in `gateway/.github/`, where GitHub never reads it; it now lives at the repo root in `.github/workflows/ci.yml` and runs gateway tests, RuboCop, Brakeman and the mcp-hub tests on every push to `main` and every PR. (Org move still waits for GitHub Support.)
 - [x] Add `faraday`, `faraday-retry`, `webmock` (test) to the Gemfile (Sept 10 — run `bundle`).
 
 ### C. The x402 spike (the real work, ~8 hours)

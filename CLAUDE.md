@@ -8,14 +8,14 @@ Monorepo: `gateway/` (Rails 8.1 — registry, x402 paywall + proxy, catalog, led
 
 | Need | File |
 |---|---|
-| What to do now | `docs/phase-0.md` |
+| What to do now | `docs/plan.md` (roadmap, current phase) |
 | Hackathon dates, checklist, judging | `docs/challenge.md` |
 | How the code is organized | `docs/architecture.md` |
 | Why each gem/lib | `docs/stack.md`, `docs/adr/` |
 | x402 / Algorand / facilitator facts | `docs/x402-algorand.md` |
 | How it is deployed (Render), MainNet switch | `docs/deploy.md` |
 | Rails conventions (auto-loaded inside `gateway/`) | `gateway/CLAUDE.md`, `.claude/rules/` |
-| Product plan and phases | Claude project doc `claude/plan.md` |
+| Phase 0 record (done) | `docs/phase-0.md` |
 
 ## Non-negotiables
 
@@ -27,4 +27,4 @@ Monorepo: `gateway/` (Rails 8.1 — registry, x402 paywall + proxy, catalog, led
 
 ## Current phase
 
-Phase 0 (Sept 2026): prove one paid x402 call on Algorand TestNet end to end. Checklist in `docs/phase-0.md`. Don't start Phase 1 features without asking.
+Phase 1 (Sept → Oct 2026): live MainNet marketplace, real usage from other people's agents, a path for outside sellers. Open items in `docs/plan.md`. Phase 0 is done (`docs/phase-0.md`). Don't start Phase 2 features without asking.

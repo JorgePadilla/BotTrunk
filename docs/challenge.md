@@ -1,6 +1,6 @@
 # Global x402 Challenge — what we know
 
-Sources: Algorand Foundation registration email (Sept 3, 2026 — Jorge is registered) and the official "how to build & submit" post: https://algorand.co/blog/the-x402-global-challenge-is-live-how-to-build-submit-your-entry. Official rules PDF: https://algorand.co/hubfs/x402%20competition%20Official%20Rules.pdf — still to be read for eligibility wording.
+Sources: Algorand Foundation registration email (Sept 3, 2026 — Jorge is registered) and the official "how to build & submit" post: https://algorand.co/blog/the-x402-global-challenge-is-live-how-to-build-submit-your-entry. Official rules PDF: https://algorand.co/hubfs/x402%20competition%20Official%20Rules.pdf — read Sept 3 and again Sept 10.
 
 ## Timeline (exact, from the Official Rules PDF — all times 11:45 pm Eastern)
 
@@ -29,8 +29,8 @@ Build phase and usage measurement run continuously until the review; the email s
 - [x] Add the required `x402-global-challenge` tag. — In `accepts[0].extra.tag`, and echoed back by the Bazaar record (verified Sept 11).
 - [x] Complete at least one real MainNet payment and confirm USDC is received. — MainNet settles from the payer wallet (`JJZEUY73…DEJQ` first); gateway wallet `UTWS33…MRE` holds 15.02 USDC on MainNet.
 - [x] Confirm the endpoint appears in the Bazaar and on the leaderboard. — Verified Sept 11: `/discovery/resources` lists `POST https://api.bottrunk.com/s/scrape-markdown` (merchant `UTWS33…`); leaderboard shows **BotTrunk · BAZAAR · HACKATHON · api.bottrunk.com** at #88 of 89 ($0.005). Top-50 cutoff that day ≈ $0.30.
-- [ ] Keep driving real usage through early October. — **The open item.** Volume must come from other people's agents (one self-payment is enough; never script self-calls). See plan.md Phase 1: mcp-hub, "pay with wallet", distribution.
-- [ ] Submit the project via the Foundation's form before the late-September deadline. — Project-information form sent Sept 10 (Foundation confirmed by email). The *final* submission form (deadline **Sep 29, 11:45 pm ET**) has not arrived yet — watch the inbox.
+- [ ] Keep driving real usage through early October. — **The open item.** Volume must come from other people's agents (one self-payment is enough; never script self-calls). See [plan.md](plan.md) Phase 1: distribution, "pay with wallet", seller sign-up.
+- [x] Submit the project via the Foundation's form before the late-September deadline. — Project-information form sent Sept 10 (Foundation confirmed by email); final submission sent before the **Sep 29, 11:45 pm ET** deadline. Next: shortlist notice **Oct 9**, final presentation **Nov 2**.
 
 ## Mechanics (from the build & submit post)
 
