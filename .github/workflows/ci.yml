@@ -1,0 +1,76 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gateway:
+    name: Gateway (tests, lint, security)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: gateway
+
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    # No RAILS_MASTER_KEY on purpose: the suite must not depend on secrets.
+    env:
+      RAILS_ENV: test
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/gateway_test
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          working-directory: gateway
+          bundler-cache: true
+
+      - name: Prepare database
+        run: bin/rails db:prepare
+
+      - name: Tests
+        run: bin/rails test
+
+      - name: RuboCop
+        run: bin/rubocop
+
+      - name: Brakeman
+        run: bin/brakeman --quiet --no-pager
+
+  mcp-hub:
+    name: mcp-hub (build, tests)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mcp-hub
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: mcp-hub/package-lock.json
+
+      - run: npm ci
+      - run: npm test

@@ -1,0 +1,11 @@
+{
+  "ignored_warnings": [
+    {
+      "warning_type": "Cross-Site Scripting",
+      "fingerprint": "407d23ec6744eb4829c4dea9bdfddf57706c04260c0ab9ba4ff5e54e1fffb07a",
+      "file": "app/views/pages/connect.html.erb",
+      "line": 135,
+      "note": "docs_url comes from Docs::McpClient::SEED, hard-coded https URLs in the repo; no user input reaches it."
+    }
+  ]
+}
