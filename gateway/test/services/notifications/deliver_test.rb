@@ -22,12 +22,14 @@ module Notifications
       assert_empty ActionMailer::Base.deliveries
     end
 
-    test "a broken mail server is logged, never raised" do
+    test "a broken mail server is reported, never raised" do
       exploding = Object.new
       def exploding.deliver_later = raise(Net::SMTPServerBusy, "450 too many")
 
       result = nil
-      assert_nothing_raised { result = Deliver.call(exploding) }
+      assert_error_reported(Net::SMTPServerBusy) do
+        assert_nothing_raised { result = Deliver.call(exploding) }
+      end
       assert result.failure?
       assert_equal :mail_error, result.code
     end
@@ -48,7 +50,9 @@ module Notifications
       def exploding.deliver_now = raise(Net::SMTPServerBusy, "450 too many")
 
       result = nil
-      assert_nothing_raised { result = Deliver.now(exploding) }
+      assert_error_reported(Net::SMTPServerBusy) do
+        assert_nothing_raised { result = Deliver.now(exploding) }
+      end
       assert result.failure?
       assert_equal :mail_error, result.code
     end

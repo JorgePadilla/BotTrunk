@@ -25,6 +25,7 @@ module Mcp
       new(arguments || {}).public_send(tool.handler)
     rescue StandardError => e
       Rails.logger.error("mcp: #{name} failed: #{e.class}: #{e.message}")
+      Rails.error.report(e, handled: true, context: { tool: name })
       error("#{name} failed: #{e.message}")
     end
 

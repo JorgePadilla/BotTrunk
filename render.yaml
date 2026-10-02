@@ -37,6 +37,8 @@ services:
         sync: false            # Browser Rendering ("Browser Run" permission): scrape-markdown-js, screenshot-url, pdf-url
       - key: CLOUDFLARE_ACCOUNT_ID
         sync: false            # the account the renders are billed to; it goes in the API path, not a header
+      - key: HONEYBADGER_API_KEY
+        sync: false            # error tracking (docs/deploy.md); without it nothing is reported
       # BCH_TCR_INDICATOR_ID (optional, default 97) · HNL_PER_USD (optional): pin the rate by hand
       - key: DATABASE_URL
         fromDatabase:
@@ -85,6 +87,8 @@ services:
         value: info
       - key: RAILS_MASTER_KEY
         sync: false            # same value as the web service
+      - key: HONEYBADGER_API_KEY
+        sync: false            # same value as the web service: a crashing digest is reported too
       - key: DATABASE_URL
         fromDatabase:
           name: bottrunk-db

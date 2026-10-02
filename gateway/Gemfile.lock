@@ -129,6 +129,9 @@ GEM
     globalid (1.4.0)
       activesupport (>= 6.1)
     hashdiff (1.2.1)
+    honeybadger (6.9.3)
+      logger
+      ostruct
     htmlbeautifier (1.4.3)
     htmlentities (4.4.2)
     i18n (1.15.2)
@@ -206,6 +209,7 @@ GEM
       racc (~> 1.4)
     nokogiri (1.19.4-x86_64-linux-musl)
       racc (~> 1.4)
+    ostruct (0.6.3)
     parallel (2.1.0)
     parser (3.3.12.0)
       ast (~> 2.4.1)
@@ -420,6 +424,7 @@ DEPENDENCIES
   faraday
   faraday-follow_redirects
   faraday-retry
+  honeybadger (~> 6.9)
   importmap-rails
   lookbook
   maxmind-db

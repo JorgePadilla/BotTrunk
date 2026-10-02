@@ -6,8 +6,8 @@ module Notifications
   # Email is never allowed to break the thing that triggered it: a settled
   # payment is on-chain and irreversible long before we try to tell anyone
   # about it, and a mail server having a bad afternoon must not turn that into
-  # an error for the payer. Failures are logged; the ledger and the order are
-  # the record of truth.
+  # an error for the payer. Failures are logged and reported (Rails.error), so
+  # they are not quiet; the ledger and the order are the record of truth.
   #
   # **Nothing here may touch the message.** Reading `mail.to` processes the
   # mailer, and Active Job then refuses to enqueue it — "you've accessed the
@@ -36,6 +36,7 @@ module Notifications
       Result.success(sent: true)
     rescue StandardError => e
       Rails.logger.error("mail: could not enqueue #{@mail.class.name}: #{e.class}: #{e.message}")
+      Rails.error.report(e, handled: true, context: { mail: @mail.class.name })
       Result.failure(e.message, code: :mail_error)
     end
 
@@ -44,6 +45,7 @@ module Notifications
       Result.success(sent: true)
     rescue StandardError => e
       Rails.logger.error("mail: could not send #{@mail.class.name}: #{e.class}: #{e.message}")
+      Rails.error.report(e, handled: true, context: { mail: @mail.class.name })
       Result.failure(e.message, code: :mail_error)
     end
   end

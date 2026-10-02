@@ -1,0 +1,14 @@
+# Error tracking (docs/deploy.md). App code reports through Rails.error; the
+# gem subscribes to it and also catches unhandled exceptions in requests.
+#
+# The API key comes from HONEYBADGER_API_KEY (read from ENV by the gem). With
+# no key nothing is sent, and development/test never report anyway, so local
+# runs and CI need no secret.
+
+# Render sets this on every deploy, so each error points at the commit it hit.
+revision: <%= ENV["RENDER_GIT_COMMIT"] %>
+
+# Errors only. Insights would ship request, query and job events off the
+# server; we have no use for them yet and they are more data leaving us.
+insights:
+  enabled: false

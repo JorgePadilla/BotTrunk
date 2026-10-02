@@ -62,6 +62,16 @@ Delivery is plain SMTP, so the provider is four environment variables and nothin
 
 Deliverability notes: the from address is `no-reply@bottrunk.com` and replies go to `hello@bottrunk.com`, which Namecheap forwards to a real inbox — so a customer hitting Reply reaches a person. Bounces and complaints show in the Resend dashboard; nothing in the app reads them yet.
 
+## Error tracking (Honeybadger)
+
+Added Oct 1, 2026. Unhandled exceptions in requests and rake tasks are reported automatically. The failures the app already rescues on purpose are reported through `Rails.error.report(…, handled: true)`, so app code never names the vendor; swapping trackers is a Gemfile change. That covers: a settled payment the ledger could not record (`Gateway::HandlePaidCall::UnrecordedSettlement`, the one to act on: reconcile it from the txn id in the report), orders that could not be opened or cancelled after settlement, call announcements, mail that could not be sent, and MCP tools that raised. Expected upstream failures (a site that times out, a rate feed that is down) are not reported.
+
+1. Create a Ruby project at honeybadger.io (free Developer plan) and copy its API key.
+2. Paste it into Render as `HONEYBADGER_API_KEY` on **both** `bottrunk-gateway` and `bottrunk-digest`; `render.yaml` already declares it (`sync: false`). Without it nothing is sent, which is also how development, test and CI run.
+3. Check it from the Render shell: `bin/rails runner 'Rails.error.report(RuntimeError.new("honeybadger smoke test"), handled: true)'` → the error shows up in the project within a minute.
+
+`config/honeybadger.yml` sets the revision from `RENDER_GIT_COMMIT` (each error names its deploy) and turns Insights off: errors only, no request or query events leave the server. Params and request headers are scrubbed with Rails' `filter_parameters`, which include `payment`, `signature` and `account`, so the signed transaction in `PAYMENT-SIGNATURE` / `X-PAYMENT` and deposit bank details are never sent (`test/config/filter_parameters_test.rb`).
+
 ## Rate limits (rack-attack)
 
 Per-IP throttles in `gateway/config/initializers/rack_attack.rb`, numbers in `config.x.rate_limits`:
@@ -80,4 +90,3 @@ Counters live in process memory, which is exact while the gateway is one Puma pr
 ## Not yet configured (Phase 1+)
 
 - Solid Queue / Solid Cache / Solid Cable: gems are installed but no schemas exist; `database.yml` production is a single primary and `cable.yml` uses `async`. Active Job runs on the `:async` adapter, which is fine for email; add Solid Queue and a worker when async settlement lands (`SettlePaymentJob`) or when a lost job would cost money.
-- Error tracking (Sentry/Honeybadger) — worth adding before real traffic.

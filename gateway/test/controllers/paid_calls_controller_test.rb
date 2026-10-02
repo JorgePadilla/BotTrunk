@@ -79,18 +79,33 @@ class PaidCallsControllerTest < ActionDispatch::IntegrationTest
     assert_equal 0, Call.count
   end
 
-  test "a settled call still returns 200 when the ledger blows up" do
+  test "a settled call still returns 200 when the ledger blows up, and the failure is reported" do
     stub_upstream(body: { ok: true }.to_json)
-    Call.singleton_class.alias_method(:create_without_boom!, :create!)
-    Call.define_singleton_method(:create!) { |*| raise ActiveRecord::StatementInvalid, "relation calls does not exist" }
-    begin
-      post paid_call_path("test-proxy"), params: "{}", headers: { "Content-Type" => "application/json", "X-PAYMENT" => payment_header }
-    ensure
-      Call.singleton_class.alias_method(:create!, :create_without_boom!)
-      Call.singleton_class.remove_method(:create_without_boom!)
+    report = with_failing_ledger(ActiveRecord::StatementInvalid.new("relation calls does not exist")) do
+      assert_error_reported(ActiveRecord::StatementInvalid) { paid_post }
     end
     assert_response :success
     assert_equal "TXID123", JSON.parse(Base64.strict_decode64(response.headers["X-PAYMENT-RESPONSE"]))["transaction"]
+    assert_equal "TXID123", report.context[:transaction]
+    assert_equal "test-proxy", report.context[:service]
+  end
+
+  # RecordTransaction turns an invalid row into a failed Result instead of
+  # raising. The money has still moved, so it is reported all the same.
+  test "a settled call the ledger refuses is reported as an unrecorded settlement" do
+    stub_upstream(body: { ok: true }.to_json)
+    report = with_failing_ledger(ActiveRecord::RecordInvalid.new(Call.new)) do
+      assert_error_reported(Gateway::HandlePaidCall::UnrecordedSettlement) { paid_post }
+    end
+    assert_response :success
+    assert_match "TXID123", report.error.message
+    assert_equal "TXID123", report.context[:transaction]
+  end
+
+  test "a clean paid call reports nothing" do
+    stub_upstream(body: { ok: true }.to_json)
+    assert_no_error_reported { paid_post }
+    assert_response :success
   end
 
   test "a service that is not live answers 503 before any payment is looked at" do
@@ -242,5 +257,20 @@ class PaidCallsControllerTest < ActionDispatch::IntegrationTest
   test "unknown service is 404" do
     post paid_call_path("nope"), params: "{}", headers: { "Content-Type" => "application/json" }
     assert_response :not_found
+  end
+
+  private
+
+  def paid_post
+    post paid_call_path("test-proxy"), params: "{}", headers: { "Content-Type" => "application/json", "X-PAYMENT" => payment_header }
+  end
+
+  def with_failing_ledger(error)
+    Call.singleton_class.alias_method(:create_without_boom!, :create!)
+    Call.define_singleton_method(:create!) { |*| raise error }
+    yield
+  ensure
+    Call.singleton_class.alias_method(:create!, :create_without_boom!)
+    Call.singleton_class.remove_method(:create_without_boom!)
   end
 end

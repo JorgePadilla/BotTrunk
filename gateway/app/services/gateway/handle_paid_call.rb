@@ -5,6 +5,10 @@ module Gateway
   # 402 → verify → upstream → settle → record. Returns a Result whose data is
   # ready to render: { status:, body:, headers:, content_type: }.
   class HandlePaidCall
+    # USDC settled on-chain and no `calls` row was written. The payer got their
+    # answer; we are the ones out of sync, and only a person can reconcile it.
+    class UnrecordedSettlement < StandardError; end
+
     def initialize(service:, payment_header:, body:, headers: {}, adapter: Payments::Adapters.current)
       @service = service
       @payment_header = payment_header
@@ -47,14 +51,18 @@ module Gateway
     private
 
     # The payment is already settled on-chain by the time we get here, so a
-    # ledger problem must not turn into an error for the payer. Log it loudly;
-    # the transaction id in the receipt lets us reconcile later.
+    # ledger problem must not turn into an error for the payer. Log it and
+    # report it; the transaction id in the receipt lets us reconcile later.
     def record(requirements, receipt, upstream)
       result = Ledger::RecordTransaction.new(service: @service, requirements: requirements, receipt: receipt, upstream: upstream.data).call
-      Rails.logger.error("ledger: failed to record settled txn #{receipt.transaction}: #{result.error}") if result.failure?
+      if result.failure?
+        Rails.logger.error("ledger: failed to record settled txn #{receipt.transaction}: #{result.error}")
+        report(UnrecordedSettlement.new("settled txn #{receipt.transaction} not recorded: #{result.error}"), transaction: receipt.transaction)
+      end
       result
     rescue StandardError => e
       Rails.logger.error("ledger: exception recording settled txn #{receipt.transaction}: #{e.class}: #{e.message}")
+      report(e, transaction: receipt.transaction)
       Result.failure(e.message, code: :ledger_error)
     end
 
@@ -75,6 +83,7 @@ module Gateway
       Notifications::AnnounceOrder.new(order: order).call
     rescue StandardError => e
       Rails.logger.error("orders: could not open #{order.token} after settlement: #{e.class}: #{e.message}")
+      report(e, order: order.token)
     end
 
     # The payer already has their answer; an alert that raises must not turn a
@@ -85,12 +94,18 @@ module Gateway
       Notifications::AnnounceCall.new(call: call_row).call
     rescue StandardError => e
       Rails.logger.error("calls: could not announce #{call_row&.transaction_id}: #{e.class}: #{e.message}")
+      report(e, transaction: call_row&.transaction_id)
     end
 
     def cancel_order(order)
       order&.update!(status: "cancelled")
     rescue StandardError => e
       Rails.logger.error("orders: could not cancel #{order.token}: #{e.class}: #{e.message}")
+      report(e, order: order.token)
+    end
+
+    def report(error, **context)
+      Rails.error.report(error, handled: true, context: { service: @service.slug, **context })
     end
 
     def payment_required(requirements, error)

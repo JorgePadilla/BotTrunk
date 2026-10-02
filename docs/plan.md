@@ -29,7 +29,7 @@ Open:
 - [ ] **"Pay with wallet" for humans**: a wallet-connect button, since phone-wallet 24-word HD phrases can't be used by the SDKs.
 - [ ] **Hardening before real traffic** (`deploy.md`, `stack.md`):
   - [x] Rate limits with `rack-attack` on `/s/*`, `/mcp` and the public forms (Oct 1).
-  - [ ] Error tracking (Sentry or Honeybadger).
+  - [x] Error tracking with Honeybadger through `Rails.error` (Oct 1). Needs `HONEYBADGER_API_KEY` set on both Render services.
   - [ ] Solid Queue + `SettlePaymentJob`, if settlement goes async.
 - [ ] **GitHub org move** once Support releases `bottrunk` (by Dec 2 at the latest): create the org, transfer the repo, reinstall the Claude GitHub App, update the remote.
 
