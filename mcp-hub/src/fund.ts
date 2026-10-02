@@ -172,3 +172,15 @@ function isAddress(value: string): boolean {
     return false;
   }
 }
+
+/**
+ * An ARC-90 payment link (ARC-26's successor, same grammar): wallets such as
+ * Pera open it, or a QR code of it, as a prefilled transfer. No network in the
+ * authority means MainNet, so these are only printed for MainNet wallets.
+ * Amounts are integers in base units: microALGO, or the asset's own (USDC
+ * has 6 decimals).
+ */
+export function paymentLink(address: string, amount: { microAlgos: number } | { asset: number; units: number }): string {
+  if ("microAlgos" in amount) return `algorand://${address}?amount=${amount.microAlgos}`;
+  return `algorand://${address}?amount=${amount.units}&asset=${amount.asset}`;
+}

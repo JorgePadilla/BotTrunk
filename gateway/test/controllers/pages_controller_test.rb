@@ -89,6 +89,19 @@ class PagesControllerTest < ActionDispatch::IntegrationTest
     assert_no_match(/10458941/, response.body)
   end
 
+  # The audit's biggest drop-off: every path ended at "get ALGO and USDC on
+  # Algorand" and nothing said where. Most exchanges list ALGO but cannot send
+  # USDC on Algorand, which is the half people get wrong.
+  test "connect and llms.txt name places that send USDC on the Algorand network" do
+    [ connect_path, llms_path ].each do |path|
+      get path
+      body = CGI.unescapeHTML(response.body)
+      %w[Kraken Coinbase Binance].each { |venue| assert_includes body, venue, path }
+      assert_includes body, "Pera Fund", path
+      assert_match(/send only the ALGO|send only ALGO/, body, path)
+    end
+  end
+
   test "llms.txt publishes the error contract and the retry hazard" do
     get "/llms.txt"
 

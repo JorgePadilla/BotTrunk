@@ -11,8 +11,9 @@ ALGO, send it USDC.
 
 ## Before you start
 
-You need an Algorand wallet of your own — Defly, Pera, or any exchange that
-can withdraw on the **Algorand network** — holding:
+You need ALGO and USDC **on the Algorand network**, in an exchange account or
+a wallet of your own (see *Where to get them* below for the ones that can
+send it), holding:
 
 | | Amount | What it is for |
 |---|---|---|
@@ -26,6 +27,23 @@ Two things worth checking before you send anything:
   is asset ID **31566704**.
 - **MainNet.** BotTrunk serves MainNet only. There is no public TestNet
   endpoint to rehearse against.
+
+### Where to get them
+
+Checked Oct 2, 2026 against each venue's own withdrawal tables. Most exchanges
+list ALGO, but few send **USDC on Algorand**; a USDC withdrawal on any other
+network does not arrive.
+
+| Where | ALGO out | USDC on Algorand out | Minimum / fee | Notes |
+|---|---|---|---|---|
+| Kraken | yes | yes | 1 ALGO, fee 0.1 · 1 USDC, fee 0.1 | Not New York. The cheapest published path in the US. |
+| Coinbase | yes | yes | 0.1 ALGO · 1 USDC; fee shown at send time | Buying USDC with local money: US, BR, CL, EC, PE, UY. |
+| Binance | yes | yes | 10 ALGO, fee 0.008 · 5 USDC, fee 1 | Not for US residents. Binance.US has paused Algorand. |
+| Pera Fund (in the Pera wallet) | yes | yes | set by the card provider | Buy USDC on Algorand directly by card (ACH in the US), no exchange account. |
+| OKX, Bitso, KuCoin, Gate, HTX | yes | **no** | — | Only the ALGO half. Swap ALGO for USDC in Pera (about 1.3% in fees) or Tinyman/Folks Router (0.1–0.3%). |
+
+For small amounts outside the US, withdrawing ALGO from Binance and swapping
+part of it to USDC in Pera costs less than Binance's flat 1 USDC withdrawal fee.
 
 ---
 
@@ -53,6 +71,10 @@ no file, no ALGO to send and no opt-in to do.
 Send **0.3 ALGO** to the address it printed. Wait a few seconds for it to
 land — Algorand blocks are under four seconds.
 
+`npx bottrunk-mcp wallet` also prints this as a payment link,
+`algorand://<address>?amount=300000` (ARC-90). Opened on a phone with Pera, or
+scanned as a QR code, it is the transfer already filled in.
+
 ## 3. Opt in to USDC
 
 An Algorand account has to opt in to an asset before it can hold it. This
@@ -69,6 +91,10 @@ npx bottrunk-mcp wallet optin
 ## 4. Send the USDC
 
 Send the USDC to the same address. Done.
+
+The wallet command prints a link for 5 USDC,
+`algorand://<address>?amount=5000000&asset=31566704`; change the amount in the
+wallet before you approve it. It works only after the opt-in in step 3.
 
 ## 5. Check it
 

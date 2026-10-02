@@ -13,7 +13,7 @@ import { createPayingFetch } from "../pay.js";
 import { buildServer } from "../server.js";
 import { SpendCapError, SpendTracker } from "../spend.js";
 import { createWallet, ensureReady, loadWallet, walletFromMnemonic } from "../wallet.js";
-import { buildFundGroup, simulateFundGroup } from "../fund.js";
+import { buildFundGroup, paymentLink, simulateFundGroup } from "../fund.js";
 import { catalogBody, startFakeGateway, type FakeGateway } from "./fake_gateway.js";
 
 // Quiet the AVM scheme's console.log so test output stays readable.
@@ -613,5 +613,19 @@ describe("registry metadata", () => {
 
   it("points at the hosted endpoint", () => {
     assert.deepEqual(server.remotes, [{ type: "streamable-http", url: "https://mcp.bottrunk.com/mcp" }]);
+  });
+});
+
+// ARC-90 (ARC-26's successor): base units, no network authority means MainNet.
+// Pera opens these as a prefilled transfer.
+describe("payment links", () => {
+  const address = "UTWS33TM7IT7NINJSFWS5KVGL73G4ERJMYDKHF7KE4WDXHYO4L7V2PNMRE";
+
+  it("asks for ALGO in microALGO", () => {
+    assert.equal(paymentLink(address, { microAlgos: 300_000 }), `algorand://${address}?amount=300000`);
+  });
+
+  it("asks for USDC by asset id in its 6-decimal units", () => {
+    assert.equal(paymentLink(address, { asset: 31566704, units: 5_000_000 }), `algorand://${address}?amount=5000000&asset=31566704`);
   });
 });

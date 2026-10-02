@@ -27,6 +27,11 @@ An agent cannot fund itself: an Algorand account needs ALGO before it can hold
 anything, and only the key holder can sign an ASA opt-in. USDC sent before the
 opt-in is **rejected, not held**, which is why the order matters.
 
+`wallet` prints both sends as `algorand://` payment links that Pera opens
+prefilled. **Where to get ALGO and USDC on Algorand:** Kraken, Coinbase or
+Binance (not for US residents) withdraw both on the Algorand network; Pera
+Fund sells USDC on Algorand by card. OKX, Bitso and KuCoin send only the ALGO.
+
 **Already run an Algorand account?** Skip all of it — put its 25 words in
 `BOTTRUNK_MNEMONIC` and the agent uses that account directly.
 

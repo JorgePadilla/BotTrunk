@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { createRequire } from "node:module";
-import { atomicToUsdc, capLabel, loadConfig, MAINNET, TESTNET, usdcToAtomic } from "./config.js";
+import { atomicToUsdc, capLabel, loadConfig, MAINNET, TESTNET, USDC_ASSET, usdcToAtomic } from "./config.js";
 import { createPayingFetch } from "./pay.js";
 import { buildServer } from "./server.js";
 import { SpendTracker } from "./spend.js";
 import { balances, createWallet, FUND_ALGO_MICRO, loadWallet, optInToUsdc, readMnemonic } from "./wallet.js";
-import { buildFundGroup, simulateFundGroup } from "./fund.js";
+import { buildFundGroup, paymentLink, simulateFundGroup } from "./fund.js";
 import fs from "node:fs";
 import path from "node:path";
 
@@ -133,6 +133,7 @@ async function main(argv: string[]): Promise<void> {
       const txid = await optInToUsdc(config, wallet, network, readMnemonic(config));
       process.stdout.write(`Opted in to USDC on ${process.env.ALGORAND_NETWORK ?? "mainnet"} · txn ${txid}\n`);
     }
+    const mainnet = (process.env.ALGORAND_NETWORK ?? "mainnet") !== "testnet";
     process.stdout.write(`Address: ${wallet.address}\n`);
     try {
       for (const b of await balances(config, wallet.address)) {
@@ -149,9 +150,16 @@ async function main(argv: string[]): Promise<void> {
         `before the opt-in does not arrive, it fails.\n\n` +
         `  1. ${(FUND_ALGO_MICRO / 1e6).toFixed(1)} ALGO to ${wallet.address}\n` +
         `     (0.1 for the account to exist, 0.1 to hold USDC, the rest for fees)\n` +
-        `  2. the USDC you want this agent to be able to spend, to the same address\n\n` +
-        `The USDC opt-in in between happens by itself the next time a tool runs —\n` +
-        `\`npx bottrunk-mcp wallet optin\` still works if you would rather do it now.\n\n` +
+        (mainnet ? `     one tap in Pera: ${paymentLink(wallet.address, { microAlgos: FUND_ALGO_MICRO })}\n` : "") +
+        `  2. the USDC you want this agent to be able to spend, to the same address\n` +
+        (mainnet
+          ? `     5 USDC, after the opt-in: ${paymentLink(wallet.address, { asset: USDC_ASSET[MAINNET], units: 5_000_000 })}\n`
+          : "") +
+        `\nThe USDC opt-in in between happens by itself the next time a tool runs —\n` +
+        `\`npx bottrunk-mcp wallet optin\` does it now, before you send the USDC.\n\n` +
+        `Where to get them, on the Algorand network: Kraken, Coinbase or Binance (not\n` +
+        `for US residents) withdraw both ALGO and USDC on Algorand; Pera Fund sells\n` +
+        `USDC on Algorand by card. OKX, Bitso and KuCoin send only the ALGO.\n\n` +
         `Already have a funded Algorand account? Skip all of this: put its 25 words in\n` +
         `BOTTRUNK_MNEMONIC and the agent uses that account directly.\n`,
     );

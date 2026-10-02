@@ -14,7 +14,7 @@ Every service is `POST https://api.bottrunk.com/s/<slug>` with a JSON body.
 
 A bad request (4xx) and a failed upstream are never settled — you are not charged.
 
-**What your wallet needs.** Build the transfer as an atomic group naming `extra.feePayer` and the facilitator covers the network fee, so the call costs you USDC only; sign a plain single transfer instead and you pay its ~0.001 ALGO. Either way the paying account must be opted in to USDC asset 31566704, and an Algorand account holding an asset needs about 0.1 ALGO of minimum balance. Send **0.3 ALGO once** (0.1 to exist, 0.1 to hold the asset, the rest for fees), then USDC per call. An agent funded with USDC and no ALGO cannot pay at all, and USDC sent before the opt-in does not arrive — it fails. `bottrunk-mcp` opts in by itself once the ALGO lands.
+**What your wallet needs.** Build the transfer as an atomic group naming `extra.feePayer` and the facilitator covers the network fee, so the call costs you USDC only; sign a plain single transfer instead and you pay its ~0.001 ALGO. Either way the paying account must be opted in to USDC asset 31566704, and an Algorand account holding an asset needs about 0.1 ALGO of minimum balance. Send **0.3 ALGO once** (0.1 to exist, 0.1 to hold the asset, the rest for fees), then USDC per call. An agent funded with USDC and no ALGO cannot pay at all, and USDC sent before the opt-in does not arrive — it fails. `bottrunk-mcp` opts in by itself once the ALGO lands. Where a person gets them on the Algorand network: Kraken, Coinbase or Binance (not for US residents) withdraw both ALGO and USDC on Algorand; Pera Fund sells USDC on Algorand by card; OKX, Bitso and KuCoin send only ALGO.
 
 ## What you get back, and whether it costs you
 
