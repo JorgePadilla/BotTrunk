@@ -75,12 +75,27 @@ class RateLimitsTest < ActionDispatch::IntegrationTest
     assert_response :too_many_requests
   end
 
-  test "the public forms are throttled, since each one sends an email" do
+  test "the two public forms share one budget, since each submission sends an email" do
     limit(:forms).times { post seller_inquiries_path, params: { seller_inquiry: { email: "not-an-email" } } }
     assert_response :unprocessable_entity
 
-    post service_requests_path, params: { service_request: { email: "not-an-email" } }
+    assert_no_difference -> { ServiceRequest.count } do
+      post service_requests_path, params: { service_request: { email: "buyer@example.com", details: "Valid, but over the limit." } }
+    end
     assert_response :too_many_requests
+    assert_no_enqueued_emails
+  end
+
+  # A refusal outside the app's layout makes Turbo reload /sell, and the person
+  # sees nothing happen. They get the page back with what they typed and why.
+  test "a person over the form limit sees the form again with their input and the reason" do
+    limit(:forms).times { post seller_inquiries_path, params: { seller_inquiry: { email: "not-an-email" } } }
+
+    post seller_inquiries_path, params: { seller_inquiry: { email: "seller@example.com", service_name: "My API" } }
+    assert_response :too_many_requests
+    assert_equal "text/html", response.media_type
+    assert_select "form[action='#{seller_inquiries_path}'] p.text-error", text: /Too many submissions from your network this hour/
+    assert_select "input[name='seller_inquiry[email]'][value='seller@example.com']"
   end
 
   test "each address has its own budget" do

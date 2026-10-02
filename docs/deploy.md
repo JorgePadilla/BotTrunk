@@ -74,18 +74,18 @@ Added Oct 1, 2026. Unhandled exceptions in requests and rake tasks are reported 
 
 ## Rate limits (rack-attack)
 
-Per-IP throttles in `gateway/config/initializers/rack_attack.rb`, numbers in `config.x.rate_limits`:
+Per-IP limits, all numbers in `config.x.rate_limits` (`gateway/config/initializers/rack_attack.rb`):
 
 | Rule | Requests | Limit per IP |
 |---|---|---|
 | `paywall/probe` | POST `/s/:slug` without a payment header | 60 / min |
 | `paywall/paid` | POST `/s/:slug` with a payment header (each is a `/verify`) | 120 / min |
 | `mcp` | POST `/mcp` | 120 / min |
-| `forms` | POST `/sell` and `/service-requests` (each sends an email) | 10 / hour |
+| `forms` | POST `/sell` and `/service-requests` (each sends an email) | 30 / hour |
 
-A throttled request gets a 429 JSON body with `retry_after` and `charged: false`, a `Retry-After` header and `Access-Control-Allow-Origin: *`; it never reaches the paywall, so nothing is verified or settled. Each one logs a `rack-attack:` warning line. The catalog page (GET `/s/:slug`), CORS preflights and `/up` are never throttled.
+The agent limits are rack-attack rules: a throttled request gets a 429 JSON body with `retry_after` and `charged: false`, a `Retry-After` header and `Access-Control-Allow-Origin: *`; it never reaches the paywall, so nothing is verified or settled, and it logs a `rack-attack:` warning line. The form limit is Rails' `rate_limit` in the two form controllers (`ThrottlesForms`), with one budget shared by both forms, because people need to see the refusal: the 429 is the `/sell` page again, with what they typed and the reason where form errors appear. A bare error page outside the app layout makes Turbo reload `/sell` instead, and the button looks dead. It logs a `rate-limit: forms` warning line. The catalog page (GET `/s/:slug`), CORS preflights and `/up` are never throttled.
 
-Counters live in process memory, which is exact while the gateway is one Puma process on one instance (`WEB_CONCURRENCY` unset). Before adding processes or instances, move `Rack::Attack.cache.store` to Solid Cache, or each process counts on its own. If a real agent ever hits a limit, raise the number in `config.x.rate_limits`; the tests read it from there.
+All counters live in one in-process store, `RATE_LIMIT_STORE`, which is exact while the gateway is one Puma process on one instance (`WEB_CONCURRENCY` unset). Before adding processes or instances, point it at Solid Cache, or each process counts on its own. If a real agent ever hits a limit, raise the number in `config.x.rate_limits`; the tests read it from there.
 
 ## Not yet configured (Phase 1+)
 

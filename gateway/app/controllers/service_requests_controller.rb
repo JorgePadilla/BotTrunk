@@ -4,6 +4,7 @@
 # reads, never a listing and never a charge.
 class ServiceRequestsController < ApplicationController
   include RendersSellPage
+  include ThrottlesForms
 
   def create
     attrs = { email: nil, details: nil, service_slug: nil, budget_usdc: nil }.merge(request_params.to_h.symbolize_keys)
@@ -18,6 +19,13 @@ class ServiceRequestsController < ApplicationController
   end
 
   private
+
+  # ThrottlesForms: show the form again with what was typed and why it was refused.
+  def refuse_submission(message)
+    service_request = ServiceRequest.new(request_params)
+    service_request.errors.add(:base, message)
+    sell_page(request: service_request)
+  end
 
   def request_params
     params.require(:service_request).permit(:email, :details, :service_slug, :budget_usdc)

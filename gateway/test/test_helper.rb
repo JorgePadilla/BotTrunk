@@ -44,7 +44,7 @@ class ActiveSupport::TestCase
   # Rate-limit counters live in process memory and every test request comes
   # from 127.0.0.1, so without this a worker's earlier tests spend the budget
   # of the later ones.
-  setup { Rack::Attack.reset! }
+  setup { RATE_LIMIT_STORE.clear }
 end
 
 # No DNS in tests: every host is "public" except the ones that look private.

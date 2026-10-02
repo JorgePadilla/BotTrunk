@@ -1,6 +1,6 @@
-# Per-IP throttles in front of the endpoints anyone can hit without paying
+# Per-IP limits on what anyone can make us do without paying
 # (docs/deploy.md, "Rate limits"). Nothing here blocks a paying agent at a
-# realistic pace; it caps what one address can make us do for free:
+# realistic pace:
 #
 #   paywall_probe  POST /s/:slug with no payment — a 402 costs us a render.
 #   paywall_paid   POST /s/:slug with a payment — each one is a facilitator
@@ -9,21 +9,26 @@
 #   forms          POST /sell and /service-requests — each sends an email,
 #                  and Resend's free tier stops at 100 a day.
 #
-# GET /s/:slug is the catalog page and is never throttled, nor are CORS
-# preflights or /up.
+# The first three are agent traffic and are refused here, in rack-attack,
+# before Rails does any work. The forms are filled in by people, who need an
+# answer they can see, so ThrottlesForms enforces that limit in the
+# controllers with Rails' rate_limit. GET /s/:slug is the catalog page and is
+# never throttled, nor are CORS preflights or /up.
 Rails.application.config.x.rate_limits = {
   paywall_probe: { limit: 60, period: 1.minute },
   paywall_paid: { limit: 120, period: 1.minute },
   mcp: { limit: 120, period: 1.minute },
-  forms: { limit: 10, period: 1.hour }
+  forms: { limit: 30, period: 1.hour }
 }.freeze
 
+# Every counter, rack-attack's and ThrottlesForms', lives in this process. The
+# gateway is one Puma process on one Render instance (WEB_CONCURRENCY unset),
+# so the count is exact and a restart only forgives a window. With more
+# processes or instances, point this at Solid Cache or each one counts alone.
+RATE_LIMIT_STORE = ActiveSupport::Cache::MemoryStore.new
+
 class Rack::Attack
-  # Counters live in this process. The gateway is one Puma process on one
-  # Render instance (WEB_CONCURRENCY unset), so the count is exact and a
-  # restart only forgives a minute. With more processes or instances, point
-  # this at Solid Cache instead or each one counts on its own.
-  cache.store = ActiveSupport::Cache::MemoryStore.new
+  cache.store = RATE_LIMIT_STORE
 
   class Request < ::Rack::Request
     # The same address TracksEvents records: the client Render's proxy saw,
@@ -51,10 +56,6 @@ class Rack::Attack
 
   throttle("mcp", **limits[:mcp]) do |req|
     req.remote_ip if req.post? && req.path == "/mcp"
-  end
-
-  throttle("forms", **limits[:forms]) do |req|
-    req.remote_ip if req.post? && req.path.in?(%w[/sell /service-requests])
   end
 
   # Agents read the body; browsers on the paywall need the CORS header to see
