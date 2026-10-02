@@ -16,8 +16,13 @@ the payment is the credential.
 3. Retry the same request with the `PAYMENT-SIGNATURE` header (`X-PAYMENT` is
    accepted for v1 clients). The receipt comes back in `PAYMENT-RESPONSE`.
 
-`extra.feePayer` is advertised, so you sign only the payment leg — you never need
-ALGO for fees. Nothing is charged when a call fails.
+**What the paying wallet needs.** `extra.feePayer` is advertised, so the network
+fee is covered and each call costs USDC only. The paying account must still exist
+and be able to hold USDC: send it **0.3 ALGO once** (0.1 minimum balance, 0.1 to
+hold an asset, the rest spare), opt it in to USDC asset
+<%= Payments::Networks.algorand(Rails.configuration.x402.network)[:usdc_asa] %>, then fund it with USDC. An account holding USDC and no ALGO
+cannot pay at all, and USDC sent before the opt-in fails. `npx bottrunk-mcp` opts
+in by itself once the ALGO lands. Nothing is charged when a call fails.
 
 - Network: Algorand MainNet (`<%= Payments::Networks.algorand(Rails.configuration.x402.network)[:caip2] %>`)
 - Asset: USDC (`<%= Payments::Networks.algorand(Rails.configuration.x402.network)[:usdc_asa] %>`)
@@ -25,7 +30,7 @@ ALGO for fees. Nothing is charged when a call fails.
 
 ## Endpoints
 <% Catalog::Service.all.select(&:live?).each do |service| %>
-- `POST /s/<%= service.slug %>` — <%= service.summary %> <%= format("%.2f", service.usd_price) %> USDC<%= service.lempira? ? " (priced from the day's reference rate, so it moves)" : "" %>.
+- `POST /s/<%= service.slug %>` — <%= service.summary %> <%= usdc(service.price_atomic).delete_prefix("$") %> USDC<%= service.lempira? ? " (priced from the day's reference rate, so it moves)" : "" %>.
 <% end %>
 <% on_request = Catalog::Service.all.select(&:on_request?) %>
 <% if on_request.any? %>

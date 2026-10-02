@@ -28,6 +28,18 @@ module Payments
       assert_equal "application/json", h[:mimeType]
     end
 
+    # The Bazaar shows this text to an agent choosing what to call. The bare
+    # summary lost to listings that say what you get, the price and the terms.
+    test "the listed description says what you get, the exact price and that no account is needed" do
+      description = requirements_for.description
+      assert description.start_with?(service.description)
+      assert_includes description, "0.09 USDC per call"
+      assert_includes description, "No account or API key"
+
+      email_check = Catalog::Service.find("email-check")
+      assert_includes BuildRequirements.new(service: email_check).call[:requirements].description, "0.002 USDC per call"
+    end
+
     test "402 body carries accepts and a bazaar extension shaped like the reference SDK" do
       body = BuildRequirements.body_for(service: service, requirements: requirements_for)
       assert_equal 2, body[:x402Version]
@@ -35,7 +47,10 @@ module Payments
       assert_equal "https://api.bottrunk.test/s/scrape-markdown", body.dig(:resource, :url)
 
       info = body.dig(:extensions, :bazaar, :info)
-      assert_equal({ type: "http", method: "POST", bodyType: "json", body: { "url" => "https://example.com/pricing", "render_js" => false, "selector" => "…" } }, info[:input])
+      # Only inputs with a real example: a placeholder selector or a deprecated
+      # flag in a body an agent copies gets refused with 422.
+      assert_equal({ type: "http", method: "POST", bodyType: "json", body: { "url" => "https://example.com/pricing" } }, info[:input])
+      assert_equal %w[url render_js selector], body.dig(:extensions, :bazaar, :schema, :properties, :input, :properties, :body, :properties).keys.map(&:to_s)
       assert_equal "json", info.dig(:output, :type)
       assert_equal 412, info.dig(:output, :example, "word_count")
 

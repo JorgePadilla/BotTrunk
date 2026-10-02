@@ -76,6 +76,34 @@ class WellKnownControllerTest < ActionDispatch::IntegrationTest
     assert_equal "https://mcp.bottrunk.com/mcp", transport["url"]
   end
 
+  # The hosted server answers tools/list with the free, read-only tools. The
+  # manifest advertised every paid tool there instead, which an agent could
+  # never call on that endpoint.
+  test "mcp manifest lists the tools the hosted server really has, and where the paid ones live" do
+    get "/.well-known/mcp.json"
+    body = JSON.parse(response.body)
+
+    assert_equal Mcp::Tools.list.map { |t| t[:name] }.sort, body["tools"].map { |t| t["name"] }.sort
+    assert_equal "npx -y bottrunk-mcp", body.dig("paidTools", "command")
+    live = Catalog::Service.all.select(&:live?)
+    assert_equal live.map(&:tool_name).sort, body.dig("paidTools", "tools").map { |t| t["name"] }.sort
+  end
+
+  # "%.2f" printed email-check ($0.002) as "0.00 USDC".
+  test "sub-cent prices are published exactly" do
+    email_check = Catalog::Service.find("email-check")
+    assert_equal 2_000, email_check.price_atomic, "this test assumes email-check costs $0.002"
+
+    get "/agents.md"
+    assert_includes response.body, "/s/email-check` — #{email_check.summary} 0.002 USDC"
+    get "/.well-known/agent-card.json"
+    skill = JSON.parse(response.body)["skills"].find { |s| s["id"] == "email-check" }
+    assert_includes skill["description"], "(0.002 USDC)"
+    get "/.well-known/mcp.json"
+    tool = JSON.parse(response.body).dig("paidTools", "tools").find { |t| t["name"] == "bottrunk_email_check" }
+    assert_includes tool["description"], "0.002 USDC per call"
+  end
+
   test "agents.md is markdown that names the endpoints and their prices" do
     get "/agents.md"
     assert_response :success
@@ -85,5 +113,16 @@ class WellKnownControllerTest < ActionDispatch::IntegrationTest
     live = Catalog::Service.all.select(&:live?)
     live.each { |service| assert_includes response.body, "/s/#{service.slug}" }
     assert_includes response.body, "PAYMENT-SIGNATURE"
+  end
+
+  # It used to say "you never need ALGO for fees" and stop there. An agent that
+  # trusted it funded USDC alone and could never pay: the account needs ALGO
+  # for its minimum balance and must be opted in to USDC first.
+  test "agents.md tells an agent the wallet needs ALGO and the USDC opt-in" do
+    get "/agents.md"
+    assert_not_includes response.body, "never need ALGO"
+    assert_includes response.body, "0.3 ALGO"
+    usdc_asa = Payments::Networks.algorand(Rails.configuration.x402.network)[:usdc_asa]
+    assert_match(/opt it in to USDC asset\s+#{usdc_asa}/, response.body)
   end
 end

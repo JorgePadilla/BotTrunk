@@ -4,6 +4,8 @@ module Payments
   # Builds the payment requirements for one service: the `accepts` entry of the
   # 402 body. Pure — no HTTP, no chain access.
   class BuildRequirements
+    include MoneyHelper
+
     def initialize(service:, config: Rails.configuration.x402)
       @service = service
       @config = config
@@ -21,11 +23,20 @@ module Payments
         pay_to: @config.pay_to,
         max_timeout_seconds: @config.max_timeout_seconds,
         resource: "#{@config.public_host}/s/#{@service.slug}",
-        description: @service.summary,
+        description: listing_description,
         mime_type: "application/json",
         extra: { decimals: net[:decimals], tag: @config.tag, feePayer: @config.fee_payer }.compact
       )
       Result.success(requirements: requirements)
+    end
+
+    # What the Bazaar shows an agent deciding whether to call us. The one-line
+    # summary read like a tagline next to listings that say what you get, what
+    # it costs and that no signup is needed, so it is the full description plus
+    # the price and the terms.
+    def listing_description
+      "#{@service.description} #{usdc(@service.price_atomic).delete_prefix('$')} USDC per call, " \
+        "paid over x402 on Algorand. No account or API key; a call that fails is not charged."
     end
 
     # The full 402 body: requirements + Bazaar discovery extension, shaped
@@ -43,7 +54,10 @@ module Payments
     end
 
     def self.bazaar_extension(service)
-      input_example  = service.inputs.to_h { |f| [ f.name, f.example_value ] }
+      # Only inputs that carry a real example. Filling the rest with placeholders
+      # gave agents a body they could copy that was refused (a "…" selector, a
+      # deprecated flag).
+      input_example  = service.example_body
       input_schema   = { type: "object", properties: service.inputs.to_h { |f| [ f.name, f.json_schema ] } }
       output_example = service.outputs.to_h { |f| [ f.name, f.example_value ] }
       output_schema  = { properties: service.outputs.to_h { |f| [ f.name, f.json_schema ] } }

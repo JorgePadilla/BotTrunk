@@ -47,7 +47,7 @@ class WellKnownController < ApplicationController
         {
           id: service.slug,
           name: service.name,
-          description: "#{service.summary} Paid per call via x402 (#{format('%.2f', service.usd_price)} USDC).",
+          description: "#{service.summary} Paid per call via x402 (#{price(service)} USDC).",
           tags: [ "x402", "algorand", service.category.downcase ].uniq
         }
       end
@@ -64,17 +64,27 @@ class WellKnownController < ApplicationController
     }
   end
 
-  # MCP manifest. Streamable HTTP, not SSE — the hosted endpoint is stateless
-  # POST-only (docs/architecture.md §6c).
+  # MCP manifest for the hosted endpoint. Streamable HTTP, not SSE — it is
+  # stateless POST-only (docs/architecture.md §6c). `tools` is what that server
+  # really answers: the free, read-only ones. A remote server cannot hold an
+  # agent's wallet, so the paid tools run in the local package; they are listed
+  # under `paidTools` with how to get them, not advertised as if this endpoint
+  # could run them.
   def mcp
     render json: {
       name: "BotTrunk MCP",
-      description: "MCP server exposing BotTrunk's x402-paid tools. The agent pays from its own Algorand wallet.",
+      description: "Free, read-only MCP server for BotTrunk's catalog: what is for sale, what it costs and how to pay. " \
+                   "To buy, run the local server (npx -y bottrunk-mcp), which pays from the agent's own Algorand wallet.",
       version: "1.0.0",
       transport: { type: "streamable-http", url: "https://mcp.bottrunk.com/mcp" },
-      tools: live_services.map do |service|
-        { name: service.tool_name, description: "#{service.summary} #{format('%.2f', service.usd_price)} USDC per call." }
-      end
+      tools: Mcp::Tools.list.map { |tool| tool.slice(:name, :description) },
+      paidTools: {
+        package: "bottrunk-mcp",
+        command: "npx -y bottrunk-mcp",
+        tools: live_services.map do |service|
+          { name: service.tool_name, description: "#{service.summary} #{price(service)} USDC per call." }
+        end
+      }
     }
   end
 
@@ -92,4 +102,7 @@ class WellKnownController < ApplicationController
   def net = Payments::Networks.algorand(Rails.configuration.x402.network)
 
   def pay_to = Rails.configuration.x402.pay_to
+
+  # Exact USDC, as many decimals as the price needs: "0.002", not "0.00".
+  def price(service) = helpers.usdc(service.price_atomic).delete_prefix("$")
 end
