@@ -1,0 +1,34 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "com.bottrunk/bottrunk",
+  "title": "BotTrunk",
+  "description": "Pay-per-call AI services for agents: USDC over x402 on Algorand, paid from your own wallet.",
+  "version": "0.4.1",
+  "websiteUrl": "https://bottrunk.com/docs",
+  "repository": {
+    "url": "https://github.com/JorgePadilla/BotTrunk",
+    "source": "github",
+    "subfolder": "mcp-hub"
+  },
+  "packages": [
+    {
+      "registryType": "npm",
+      "registryBaseUrl": "https://registry.npmjs.org",
+      "identifier": "bottrunk-mcp",
+      "version": "0.4.1",
+      "runtimeHint": "npx",
+      "transport": { "type": "stdio" },
+      "environmentVariables": [
+        { "name": "BOTTRUNK_MNEMONIC", "description": "25-word Algorand mnemonic of the paying wallet. Omit to use ~/.bottrunk/wallet.json (run `npx bottrunk-mcp wallet`).", "isRequired": false, "isSecret": true, "format": "string" },
+        { "name": "BOTTRUNK_MAX_PER_CALL", "description": "Refuse any single call above this many USDC (decimal, e.g. 0.05). \"none\" disables.", "isRequired": false, "isSecret": false, "format": "string", "default": "100000000000" },
+        { "name": "BOTTRUNK_MAX_PER_DAY", "description": "Refuse once today's UTC total would exceed this many USDC. \"none\" disables.", "isRequired": false, "isSecret": false, "format": "string", "default": "100000000000" },
+        { "name": "BOTTRUNK_WALLET_FILE", "description": "Path of the generated wallet file.", "isRequired": false, "format": "filepath", "default": "~/.bottrunk/wallet.json" },
+        { "name": "BOTTRUNK_API", "description": "Gateway base URL.", "isRequired": false, "format": "string", "default": "https://api.bottrunk.com" },
+        { "name": "ALGORAND_NETWORK", "description": "Network for `wallet optin` / `wallet fund`.", "isRequired": false, "format": "string", "choices": ["mainnet", "testnet"], "default": "mainnet" }
+      ]
+    }
+  ],
+  "remotes": [
+    { "type": "streamable-http", "url": "https://mcp.bottrunk.com/mcp" }
+  ]
+}

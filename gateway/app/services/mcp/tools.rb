@@ -8,11 +8,21 @@ module Mcp
   # machine, or by calling the endpoint and answering the 402 directly, which
   # `bottrunk_payment_instructions` spells out.
   class Tools
-    Tool = Data.define(:name, :description, :schema, :handler)
+    Tool = Data.define(:name, :title, :description, :schema, :handler)
+
+    # Every tool here only reads our own catalog and orders: it changes
+    # nothing, can be repeated, and touches no outside system. Hosts and
+    # directories read these hints to decide what needs a confirmation.
+    ANNOTATIONS = { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false }.freeze
 
     def self.all = DEFINITIONS
 
-    def self.list = DEFINITIONS.map { |t| { name: t.name, description: t.description, inputSchema: t.schema } }
+    def self.list
+      DEFINITIONS.map do |t|
+        { name: t.name, title: t.title, description: t.description, inputSchema: t.schema,
+          annotations: ANNOTATIONS.merge(title: t.title) }
+      end
+    end
 
     def self.find(name) = DEFINITIONS.find { |t| t.name == name }
 
@@ -171,7 +181,7 @@ module Mcp
 
     DEFINITIONS = [
       Tool.new(
-        name: "bottrunk_catalog", handler: :catalog,
+        name: "bottrunk_catalog", title: "Browse the BotTrunk catalog", handler: :catalog,
         description: "Everything an agent can buy on BotTrunk, priced in USDC per call: data utilities, and work a person does in the real world — such as putting money into someone's bank account and returning the receipt. Free to call. Returns slug, price, status and endpoint for each service.",
         schema: {
           type: "object",
@@ -183,7 +193,7 @@ module Mcp
         }
       ),
       Tool.new(
-        name: "bottrunk_service", handler: :service,
+        name: "bottrunk_service", title: "Describe one service", handler: :service,
         description: "Everything about one BotTrunk service: full description, input and output schema, an example request body, the live price and how to pay for it. Free to call.",
         schema: {
           type: "object",
@@ -192,7 +202,7 @@ module Mcp
         }
       ),
       Tool.new(
-        name: "bottrunk_payment_instructions", handler: :payment_instructions,
+        name: "bottrunk_payment_instructions", title: "How to pay for a service", handler: :payment_instructions,
         description: "The exact x402 payment requirements for a service — amount in atomic USDC, asset, network and payTo address — plus the four steps to pay it. Use this when your agent has its own Algorand wallet and wants to pay the endpoint directly. Free to call.",
         schema: {
           type: "object",
@@ -201,7 +211,7 @@ module Mcp
         }
       ),
       Tool.new(
-        name: "bottrunk_quote_deposit", handler: :quote_deposit,
+        name: "bottrunk_quote_deposit", title: "Quote a bank deposit", handler: :quote_deposit,
         description: "What it costs in USDC, right now, to put money in a person's bank account: the day's reference rate, the spread, the fee and the final price. The live corridor is Honduras — lempiras into a BAC Credomatic account, priced from the Banco Central de Honduras rate. Free to call.",
         schema: {
           type: "object",
@@ -210,7 +220,7 @@ module Mcp
         }
       ),
       Tool.new(
-        name: "bottrunk_order_status", handler: :order_status,
+        name: "bottrunk_order_status", title: "Check an order", handler: :order_status,
         description: "Status of an order a person has to fulfil, such as a bank deposit: pending, delivered with the bank receipt reference, or refunded with the transaction id. Free to call.",
         schema: {
           type: "object",

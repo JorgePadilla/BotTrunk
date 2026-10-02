@@ -208,6 +208,25 @@ describe("MCP server", () => {
     assert.deepEqual((paidTool.inputSchema as { required: string[] }).required, ["url"]);
   });
 
+  it("annotates free tools as read-only and paid tools as spending, open-world calls", async () => {
+    const { client } = await connect(true);
+    const { tools } = await client.listTools();
+    for (const name of ["bottrunk_catalog", "bottrunk_wallet"]) {
+      assert.equal(tools.find((t) => t.name === name)!.annotations?.readOnlyHint, true, name);
+    }
+    const paid = tools.find((t) => t.name === "bottrunk_scrape_markdown")!;
+    assert.equal(paid.annotations?.readOnlyHint, false);
+    assert.equal(paid.annotations?.idempotentHint, false);
+    assert.equal(paid.annotations?.openWorldHint, true);
+    assert.ok(paid.title);
+  });
+
+  it("the wallet tool says ALGO comes first, not just USDC", async () => {
+    const { client } = await connect(true);
+    const wallet = (await client.listTools()).tools.find((t) => t.name === "bottrunk_wallet")!;
+    assert.match(wallet.description ?? "", /0\.3 ALGO once/);
+  });
+
   it("catalog and wallet tools work and mention coming-soon services", async () => {
     const { client, wallet } = await connect(true);
     const cat = await client.callTool({ name: "bottrunk_catalog", arguments: {} });
@@ -564,5 +583,35 @@ describe("catalog refresh", () => {
     const properties = tool.inputSchema.properties as Record<string, { description: string }>;
     assert.match(properties.category.description, /Data/);
     assert.match(properties.category.description, /Procurement/);
+  });
+});
+
+// The MCP Registry rejects a publish whose server.json name differs from the
+// npm package's `mcpName`, and a version it has already seen. It also shows
+// users these env vars, so each must be one the server really reads.
+describe("registry metadata", () => {
+  const root = path.resolve(path.dirname(new URL(import.meta.url).pathname), "../..");
+  const pkg = JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8"));
+  const server = JSON.parse(fs.readFileSync(path.join(root, "server.json"), "utf8"));
+
+  it("server.json matches package.json by name and version", () => {
+    assert.equal(server.name, pkg.mcpName);
+    assert.equal(server.version, pkg.version);
+    assert.equal(server.packages[0].identifier, pkg.name);
+    assert.equal(server.packages[0].version, pkg.version);
+    assert.ok(server.description.length <= 100, "the registry caps description at 100 characters");
+  });
+
+  it("lists only environment variables the server reads", () => {
+    const source = ["config.ts", "cli.ts", "wallet.ts"]
+      .map((f) => fs.readFileSync(path.join(root, "src", f), "utf8"))
+      .join("\n");
+    for (const { name } of server.packages[0].environmentVariables as { name: string }[]) {
+      assert.match(source, new RegExp(`\\b${name}\\b`), `${name} is advertised but never read`);
+    }
+  });
+
+  it("points at the hosted endpoint", () => {
+    assert.deepEqual(server.remotes, [{ type: "streamable-http", url: "https://mcp.bottrunk.com/mcp" }]);
   });
 });

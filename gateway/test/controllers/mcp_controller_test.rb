@@ -37,7 +37,18 @@ class McpControllerTest < ActionDispatch::IntegrationTest
     assert_equal %w[bottrunk_catalog bottrunk_order_status bottrunk_payment_instructions bottrunk_quote_deposit bottrunk_service], tools.map { |t| t["name"] }.sort
     tools.each do |tool|
       assert tool["description"].present?
+      assert tool["title"].present?
       assert_equal "object", tool["inputSchema"]["type"]
+    end
+  end
+
+  # Directories and hosts read these to decide what needs a confirmation; every
+  # hosted tool only reads our own catalog and orders.
+  test "every hosted tool is annotated read-only, non-destructive and closed-world" do
+    rpc("tools/list")["result"]["tools"].each do |tool|
+      assert_equal({ "readOnlyHint" => true, "destructiveHint" => false, "idempotentHint" => true, "openWorldHint" => false },
+                   tool["annotations"].except("title"), tool["name"])
+      assert_equal tool["title"], tool["annotations"]["title"]
     end
   end
 

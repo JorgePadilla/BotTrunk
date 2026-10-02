@@ -6,6 +6,14 @@ import type { PaidFetch } from "./pay.js";
 import { SpendCapError, type SpendTracker } from "./spend.js";
 import { balances, ensureReady, FUND_ALGO_MICRO, type Balances, type Wallet } from "./wallet.js";
 
+/**
+ * Hints hosts use to decide what needs a confirmation. The free tools only
+ * read. A paid tool changes nothing it could destroy, but every call spends
+ * the agent's USDC (so it is not idempotent) and reaches a real service.
+ */
+const FREE_TOOL = { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false } as const;
+const PAID_TOOL = { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true } as const;
+
 export interface HubDeps {
   config: Config;
   wallet: Wallet | null;
@@ -93,6 +101,8 @@ export async function buildServer(deps: HubDeps): Promise<Server> {
     const tools: Tool[] = [
       {
         name: CATALOG_TOOL,
+        title: "Browse the BotTrunk catalog",
+        annotations: FREE_TOOL,
         description:
           "List BotTrunk services (name, price in USDC, inputs, status). Free. Use it to discover what can be bought before calling a paid tool.",
         inputSchema: {
@@ -109,12 +119,16 @@ export async function buildServer(deps: HubDeps): Promise<Server> {
       },
       {
         name: WALLET_TOOL,
+        title: "Show this agent's wallet",
+        annotations: { ...FREE_TOOL, openWorldHint: true }, // reads balances from the Algorand network
         description:
-          "Show this agent's BotTrunk wallet: Algorand address, ALGO/USDC balances, spending caps and what was spent today. Free. Fund the address with USDC on Algorand to enable paid tools.",
+          "Show this agent's BotTrunk wallet: Algorand address, ALGO/USDC balances, spending caps and what was spent today. Free. To enable paid tools, send the address 0.3 ALGO once (minimum balance and the USDC opt-in), then USDC on Algorand.",
         inputSchema: { type: "object", properties: {}, additionalProperties: false },
       },
       ...live.map<Tool>((s) => ({
         name: toolName(s.slug),
+        title: s.name,
+        annotations: { ...PAID_TOOL, title: s.name },
         description: toolDescription(s),
         inputSchema: inputSchema(s) as Tool["inputSchema"],
       })),
