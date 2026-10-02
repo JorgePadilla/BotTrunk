@@ -40,6 +40,19 @@ module Payments
       assert_includes BuildRequirements.new(service: email_check).call[:requirements].description, "0.002 USDC per call"
     end
 
+    # Shape from the facilitator guide, matched against a live 402 that the
+    # catalog reads (x402-echo-service). `name` is the one required field.
+    test "402 body names the merchant with the x402-merchant extension" do
+      merchant = BuildRequirements.body_for(service: service, requirements: requirements_for)[:extensions][:"x402-merchant"]
+
+      assert_equal "BotTrunk", merchant.dig(:info, :name)
+      assert_equal "https://bottrunk.com", merchant.dig(:info, :website)
+      assert merchant.dig(:info, :logo).start_with?("https://bottrunk.com/")
+      assert merchant.dig(:info, :categories).all?(String)
+      assert_equal %w[name], merchant.dig(:schema, :required)
+      assert_equal "array", merchant.dig(:schema, :properties, :categories, :type)
+    end
+
     test "402 body carries accepts and a bazaar extension shaped like the reference SDK" do
       body = BuildRequirements.body_for(service: service, requirements: requirements_for)
       assert_equal 2, body[:x402Version]

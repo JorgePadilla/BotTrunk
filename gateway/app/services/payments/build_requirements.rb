@@ -6,6 +6,31 @@ module Payments
   class BuildRequirements
     include MoneyHelper
 
+    # Merchant identity for the facilitator's catalog, GoPlausible's
+    # `x402-merchant` extension (docs/x402-algorand.md). Without it BotTrunk is
+    # a bare address in /discovery/merchants with no categories, and the guide
+    # calls it the only way to set them. Clients copy `extensions` into the
+    # payment payload, so it reaches the facilitator the same way as `bazaar`.
+    MERCHANT = {
+      info: {
+        name: "BotTrunk",
+        website: "https://bottrunk.com",
+        logo: "https://bottrunk.com/icon.png",
+        categories: [ "web data", "developer tools", "human services", "payments", "algorand" ]
+      },
+      schema: {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        type: "object",
+        required: %w[name],
+        properties: {
+          name: { type: "string" },
+          website: { type: "string" },
+          logo: { type: "string" },
+          categories: { type: "array", items: { type: "string" } }
+        }
+      }
+    }.freeze
+
     def initialize(service:, config: Rails.configuration.x402)
       @service = service
       @config = config
@@ -49,9 +74,13 @@ module Payments
         error: "Payment required",
         resource: requirements.resource_info,
         accepts: [ requirements.to_h ], # spec fields + resource fields kept for v1-style clients
-        extensions: { bazaar: bazaar_extension(service) }
+        extensions: extensions_for(service)
       }
     end
+
+    # Everything the 402 advertises beyond the requirements, and what the
+    # gateway hands the facilitator on verify and settle.
+    def self.extensions_for(service) = { bazaar: bazaar_extension(service), "x402-merchant": MERCHANT }
 
     def self.bazaar_extension(service)
       # Only inputs that carry a real example. Filling the rest with placeholders

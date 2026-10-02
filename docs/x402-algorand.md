@@ -160,7 +160,21 @@ CORS for browser payers: `Access-Control-Allow-Origin: *`, allow `PAYMENT-SIGNAT
   Built by `Payments::BuildRequirements.bazaar_extension`; field examples come from `Catalog::Field#example`.
   The client copies `extensions` into the payment payload; the facilitator catalogs the resource when it **settles** — there is no registration call. **`schema` is mandatory**: the catalog validator rejects a `bazaar` extension whose `schema` is not an object (our first MainNet settle was not cataloged for exactly this reason — the Doctor at https://facilitator.goplausible.xyz/guide says so verbatim). `Payments::BuildRequirements::BAZAAR_SCHEMA` is the JSON Schema we ship for `info`.
 - **Diagnose with the x402 Doctor** (Get started guide, "Check yourself"): paste the endpoint URL + method; it grades 402-first, header, CORS, fee payer, tag and both extensions with the same gate the catalog uses. 20 checks/day.
-- The requirement's `description` is the catalog text: concrete, say what the caller gets.
+- The requirement's `description` is the catalog text: concrete, say what the caller gets. Ours is the service's full `description` plus the exact price and "No account or API key; a call that fails is not charged." (`Payments::BuildRequirements#listing_description`, Oct 2, 2026), after an audit found the top-20 listings average ~230 characters against our 45–123.
+- **Merchant identity (`x402-merchant`)**, from the facilitator guide (Oct 2, 2026; not in `@x402-avm/extensions`). A sibling of `bazaar` in the 402's top-level `extensions`; clients copy it into the payload like `bazaar`, and the gateway passes it on verify and settle. Without it the merchant is a bare address with no categories; the guide calls it the only way to set them.
+
+  ```json
+  "x402-merchant": {
+    "info": { "name": "BotTrunk", "website": "https://bottrunk.com", "logo": "https://bottrunk.com/icon.png",
+              "categories": ["web data", "developer tools", "human services", "payments", "algorand"] },
+    "schema": { "$schema": "https://json-schema.org/draft/2020-12/schema", "type": "object", "required": ["name"],
+                "properties": { "name": {"type": "string"}, "website": {"type": "string"}, "logo": {"type": "string"},
+                                "categories": {"type": "array", "items": {"type": "string"}} } }
+  }
+  ```
+
+  Only `name`, `website`, `logo` and `categories` are documented; categories are free-form strings. The facilitator picks it up through dashboard → Leaderboards → Merchants → **⟳ Refresh metadata** (sends an empty request, so the endpoint must answer 402 before validating input — ours does; 10 a day). **⟳ Refresh resource** is the separate action that updates a listed resource's price and example; later payments do not rewrite a catalogued resource.
+- **Python client** (for `/docs` and the service pages): `pip install "x402-avm[avm,requests]==2.0.2"` (Oct 2, 2026). The plain `x402` package has no Algorand support. The AVM code ships only in the PyPI wheel, not in the GoPlausible/x402-avm GitHub repo, and there is no ready-made signer: `ClientAvmSigner` is a Protocol (`address` + `sign_transactions(unsigned_txns: list[bytes], indexes_to_sign) -> list[bytes | None]`), so the snippet carries a 10-line `MnemonicSigner`. Unlike the TypeScript `ExactAvmScheme`, the Python one does not default to TestNet. Checked by paying our own 402 on a local TestNet gateway with a fresh wallet: the facilitator's simulation got as far as the USDC opt-in. TypeScript: `toClientAvmSigner` takes only a base64 64-byte key; from a mnemonic, `Buffer.from(algosdk.mnemonicToSecretKey(m).sk).toString("base64")` (algosdk 3).
 - The Bazaar also enriches from the endpoint's OpenGraph tags, `llms.txt`, well-known files, and the merchant NFD.
 - Catalogs: `https://facilitator.goplausible.xyz/discovery/resources`, `/discovery/merchants`. Leaderboard: `/dashboard/leaderboards`.
 - **One payTo per domain**, opted in to USDC; never reuse it on another domain.

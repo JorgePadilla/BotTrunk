@@ -38,34 +38,8 @@
             # Claude Desktop / Cursor (claude_desktop_config.json / .cursor/mcp.json)
             { "mcpServers": { "bottrunk": { "command": "npx", "args": ["-y", "bottrunk-mcp"] } } }
           SH
-          "Python" => <<~PY.strip,
-            # pip install x402 py-algorand-sdk
-            from x402.clients import requests as x402_requests
-
-            session = x402_requests.x402_http_adapter(account)   # your agent's Algorand account
-            r = session.post("#{@example_service.endpoint_url}",
-                             json={"url": "https://example.com/pricing"})
-            print(r.json()["markdown"])
-            print(r.headers["PAYMENT-RESPONSE"])                 # settlement receipt
-          PY
-          "TypeScript" => <<~TS.strip,
-            // npm install @x402-avm/fetch @x402-avm/avm @x402-avm/core
-            import { x402Client } from "@x402-avm/core/client";
-            import { ExactAvmScheme } from "@x402-avm/avm/exact/client";
-            import { toClientAvmSigner } from "@x402-avm/avm";
-            import { wrapFetchWithPayment } from "@x402-avm/fetch";
-
-            const signer = toClientAvmSigner(process.env.AVM_PRIVATE_KEY); // base64 64-byte key
-            const client = new x402Client().register("algorand:wGHE2Pwdvd7S12BL5FaOP20EGYesN73ktiC1qzkkit8=",
-              new ExactAvmScheme(signer, { algodUrl: "https://mainnet-api.algonode.cloud" }));
-            const fetchWithPay = wrapFetchWithPayment(fetch, client);
-            const r = await fetchWithPay("#{@example_service.endpoint_url}", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ url: "https://example.com/pricing" }),
-            });
-            console.log(await r.json());
-          TS
+          "Python" => python_client_snippet(@example_service.endpoint_url, { url: "https://example.com/pricing" }),
+          "TypeScript" => typescript_client_snippet(@example_service.endpoint_url, { url: "https://example.com/pricing" }),
           "Ruby" => <<~RB.strip,
             # gem "faraday"  — the two HTTP steps are plain; only the signing is chain-specific.
             require "faraday"; require "json"; require "base64"

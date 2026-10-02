@@ -49,24 +49,8 @@
               -H "Content-Type: application/json" \\
               -d '#{@service.example_body.to_json}'
           SH
-          "Python" => <<~PY.strip,
-            from x402.clients import requests as x402_requests
-
-            session = x402_requests.x402_http_adapter(account)   # your agent's Algorand account
-            r = session.post("#{@service.endpoint_url}", json=#{@service.example_body.to_json.gsub('true', 'True').gsub('false', 'False')})
-            print(r.json())
-            print(r.headers["PAYMENT-RESPONSE"])                  # settlement receipt
-          PY
-          "TypeScript" => <<~TS.strip
-            import { wrapFetchWithPayment } from "@x402-avm/fetch";
-
-            const r = await fetchWithPay("#{@service.endpoint_url}", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(#{@service.example_body.to_json}),
-            });
-            console.log(await r.json());
-          TS
+          "Python" => python_client_snippet(@service.endpoint_url, @service.example_body),
+          "TypeScript" => typescript_client_snippet(@service.endpoint_url, @service.example_body)
         }) %>
       </div>
 

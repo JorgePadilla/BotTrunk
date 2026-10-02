@@ -102,6 +102,19 @@ class PaidCallsControllerTest < ActionDispatch::IntegrationTest
     assert_equal "TXID123", report.context[:transaction]
   end
 
+  # The facilitator catalogs the resource and the merchant from what it is
+  # handed on settle, so both extensions have to travel with the payment.
+  test "verify and settle hand the facilitator the bazaar and merchant extensions" do
+    stub_upstream(body: { ok: true }.to_json)
+    paid_post
+    assert_response :success
+
+    [ @adapter.verify_calls.last, @adapter.settle_calls.last ].each do |(_, _, extensions)|
+      assert_equal %i[bazaar x402-merchant], extensions.keys
+      assert_equal "BotTrunk", extensions.dig(:"x402-merchant", :info, :name)
+    end
+  end
+
   test "a clean paid call reports nothing" do
     stub_upstream(body: { ok: true }.to_json)
     assert_no_error_reported { paid_post }

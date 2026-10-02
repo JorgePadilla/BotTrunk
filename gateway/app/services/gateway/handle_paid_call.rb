@@ -25,7 +25,7 @@ module Gateway
       payload = Payments::Payload.from_header(@payment_header)
       return payment_required(requirements, "Payment required") if payload.nil?
 
-      extensions = { bazaar: Payments::BuildRequirements.bazaar_extension(@service) }
+      extensions = Payments::BuildRequirements.extensions_for(@service)
       verified = Payments::VerifyPayment.new(payload: payload, requirements: requirements, extensions: extensions, adapter: @adapter).call
       return payment_required(requirements, verified.error) if verified.failure?
 

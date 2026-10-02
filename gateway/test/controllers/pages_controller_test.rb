@@ -13,6 +13,33 @@ class PagesControllerTest < ActionDispatch::IntegrationTest
     assert_includes response.body, "/api/v1/catalog"
   end
 
+  # The old Python snippet imported `x402.clients` from `pip install x402`,
+  # which has neither that module nor Algorand support, and used an `account`
+  # it never defined. The TypeScript one passed a mnemonic where a base64 key
+  # goes and left algosdk out of the install line.
+  test "docs and service pages show clients that can pay on Algorand MainNet" do
+    caip2 = Payments::Networks.algorand(:mainnet)[:caip2]
+    [ docs_path, service_path("scrape-markdown") ].each do |path|
+      get path
+      body = CGI.unescapeHTML(response.body)
+      assert_includes body, 'pip install "x402-avm[avm,requests]==2.0.2"', path
+      assert_includes body, "from x402.mechanisms.avm.exact import ExactAvmScheme", path
+      assert_includes body, 'algod_url="https://mainnet-api.algonode.cloud"', path
+      assert_not_includes body, "x402.clients", path
+      assert_not_includes body, "x402_http_adapter", path
+      assert_includes body, "npm install @x402-avm/fetch @x402-avm/avm @x402-avm/core algosdk", path
+      assert_includes body, 'toClientAvmSigner(Buffer.from(sk).toString("base64"))', path
+      assert_includes body, "register(\"#{caip2}\"", path
+    end
+  end
+
+  test "the Python snippet writes the request body as a Python literal" do
+    get service_path("url-health")
+    body = CGI.unescapeHTML(response.body)
+    assert_match(/session\.post\("https:\/\/api\.bottrunk\.com\/s\/url-health", json=\{"url": "[^"]+"\}\)/, body)
+    assert_no_match(/json=\{[^}]*\b(true|false|null)\b/, body)
+  end
+
   test "connect lists every client with its own snippet" do
     get connect_url
     assert_response :success
