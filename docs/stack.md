@@ -25,7 +25,7 @@ Principle: a solo developer at 5–10 hrs/week cannot afford surface area. Every
 | `view_component` | components with Ruby classes, testable with `render_inline` | replaces partials entirely |
 | `rails_icons` | Lucide SVGs inlined at render time | icons follow `currentColor`, no icon font |
 | `faraday` + `faraday-retry` | one HTTP client for the facilitator and for proxying upstream | timeouts per endpoint; retries only on idempotent facilitator reads |
-| `rack-attack` | throttle unpaid probes and per-IP bursts on `/s/*` | Phase 1 |
+| `rack-attack` | per-IP throttles on `/s/*` (unpaid probes and payment attempts), `/mcp` and the public forms | limits in `config/initializers/rack_attack.rb`, see `deploy.md` |
 | `rouge` | syntax highlighting rendered on the server | no JS highlighter, works in both themes via CSS vars |
 | `pagy` | pagination for calls / ledger tables | lighter than Kaminari |
 | `mission_control-jobs` | UI for Solid Queue | mounted behind auth |

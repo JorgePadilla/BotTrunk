@@ -27,7 +27,10 @@ Open:
 - [ ] **Seller sign-up and auth**: turns `SellerInquiry` into accounts; `Catalog::Service` moves from in-code seed to an ActiveRecord model (see `architecture.md` §3).
 - [ ] **Seller dashboard**: `stat_row`, `calls_table`, `endpoint_form`, `api_key_reveal` components (`architecture.md`).
 - [ ] **"Pay with wallet" for humans**: a wallet-connect button, since phone-wallet 24-word HD phrases can't be used by the SDKs.
-- [ ] **Hardening before real traffic**: `rack-attack` on `/s/*`, error tracking (Sentry or Honeybadger), Solid Queue + `SettlePaymentJob` if settlement goes async (`deploy.md`, `stack.md`).
+- [ ] **Hardening before real traffic** (`deploy.md`, `stack.md`):
+  - [x] Rate limits with `rack-attack` on `/s/*`, `/mcp` and the public forms (Oct 1).
+  - [ ] Error tracking (Sentry or Honeybadger).
+  - [ ] Solid Queue + `SettlePaymentJob`, if settlement goes async.
 - [ ] **GitHub org move** once Support releases `bottrunk` (by Dec 2 at the latest): create the org, transfer the repo, reinstall the Claude GitHub App, update the remote.
 
 ## Phase 2 — Sellers and non-crypto buyers

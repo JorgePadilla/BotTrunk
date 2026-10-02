@@ -40,6 +40,11 @@ Catalog::Service.treat_all_live = true
 # none was sent. That is exactly what a delivery test found.
 class ActiveSupport::TestCase
   setup { ActionMailer::Base.deliveries.clear }
+
+  # Rate-limit counters live in process memory and every test request comes
+  # from 127.0.0.1, so without this a worker's earlier tests spend the budget
+  # of the later ones.
+  setup { Rack::Attack.reset! }
 end
 
 # No DNS in tests: every host is "public" except the ones that look private.

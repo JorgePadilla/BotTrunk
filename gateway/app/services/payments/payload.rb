@@ -5,6 +5,16 @@ module Payments
   # sent it — the facilitator gets it back untouched.
   class Payload < Data.define(:raw)
     HEADER = "X-PAYMENT"
+    # x402 v2 renamed the request header; v1 clients still send HEADER.
+    V2_HEADER = "PAYMENT-SIGNATURE"
+
+    # The raw payment header from a request, v2 name first. `headers` is
+    # anything that looks headers up by their HTTP names
+    # (ActionDispatch::Http::Headers), so the controller and the rate limiter
+    # ask the same question without knowing what the headers are called.
+    def self.header_in(headers)
+      headers[V2_HEADER].presence || headers[HEADER].presence
+    end
 
     def self.from_header(value)
       return nil if value.blank?

@@ -15,7 +15,7 @@ class PaidCallsController < ApplicationController
     service = Catalog::Service.find(params[:slug]) or return head(:not_found)
     return coming_soon(service) unless service.live?
 
-    payment_header = request.headers["PAYMENT-SIGNATURE"].presence || request.headers[Payments::Payload::HEADER]
+    payment_header = Payments::Payload.header_in(request.headers)
     result = Gateway::HandlePaidCall.new(
       service: service,
       payment_header: payment_header,

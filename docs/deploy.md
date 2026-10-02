@@ -62,6 +62,21 @@ Delivery is plain SMTP, so the provider is four environment variables and nothin
 
 Deliverability notes: the from address is `no-reply@bottrunk.com` and replies go to `hello@bottrunk.com`, which Namecheap forwards to a real inbox — so a customer hitting Reply reaches a person. Bounces and complaints show in the Resend dashboard; nothing in the app reads them yet.
 
+## Rate limits (rack-attack)
+
+Per-IP throttles in `gateway/config/initializers/rack_attack.rb`, numbers in `config.x.rate_limits`:
+
+| Rule | Requests | Limit per IP |
+|---|---|---|
+| `paywall/probe` | POST `/s/:slug` without a payment header | 60 / min |
+| `paywall/paid` | POST `/s/:slug` with a payment header (each is a `/verify`) | 120 / min |
+| `mcp` | POST `/mcp` | 120 / min |
+| `forms` | POST `/sell` and `/service-requests` (each sends an email) | 10 / hour |
+
+A throttled request gets a 429 JSON body with `retry_after` and `charged: false`, a `Retry-After` header and `Access-Control-Allow-Origin: *`; it never reaches the paywall, so nothing is verified or settled. Each one logs a `rack-attack:` warning line. The catalog page (GET `/s/:slug`), CORS preflights and `/up` are never throttled.
+
+Counters live in process memory, which is exact while the gateway is one Puma process on one instance (`WEB_CONCURRENCY` unset). Before adding processes or instances, move `Rack::Attack.cache.store` to Solid Cache, or each process counts on its own. If a real agent ever hits a limit, raise the number in `config.x.rate_limits`; the tests read it from there.
+
 ## Not yet configured (Phase 1+)
 
 - Solid Queue / Solid Cache / Solid Cable: gems are installed but no schemas exist; `database.yml` production is a single primary and `cable.yml` uses `async`. Active Job runs on the `:async` adapter, which is fine for email; add Solid Queue and a worker when async settlement lands (`SettlePaymentJob`) or when a lost job would cost money.

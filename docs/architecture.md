@@ -239,7 +239,7 @@ the price went to $0.09). These files are the layer we control.
 ## 9. Cross-cutting
 
 - **Jobs:** Active Job on the `:async` adapter today (email only, §8b). Solid Queue and a worker service when something has to survive a restart: payouts, retrying facilitator calls, health checks.
-- **Rate limiting:** rack-attack in front of the paywall; unpaid 402 probes are cheap but not free.
+- **Rate limiting:** rack-attack in front of the paywall, `/mcp` and the public forms; unpaid 402 probes are cheap but not free, and every payment attempt costs a facilitator `/verify` (`deploy.md`, "Rate limits").
 - **Observability:** Rails structured logging with `request_id`, `call_id`, `tx_id` tags; the `calls` table is the audit log; `events` + `/admin/stats` for traffic (§7).
 - **Security:** secrets in Rails credentials; wallet mnemonics never on the server (the gateway only *receives*); CSP on; `allow_browser versions: :modern`.
 - **i18n:** English first; `es` locale added when the seller UI opens to LATAM developers.
