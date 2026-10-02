@@ -7,7 +7,7 @@ class McpControllerTest < ActionDispatch::IntegrationTest
     body = { jsonrpc: "2.0", method: method, params: params }
     body[:id] = id unless id.nil?
     post "/mcp", params: body.to_json,
-         headers: { "Content-Type" => "application/json", "Accept" => "application/json, text/event-stream", "MCP-Protocol-Version" => "2026-07-28" }
+         headers: { "Content-Type" => "application/json", "Accept" => "application/json, text/event-stream", "MCP-Protocol-Version" => "2025-11-25" }
     response.parsed_body
   end
 
@@ -20,6 +20,12 @@ class McpControllerTest < ActionDispatch::IntegrationTest
     assert_equal({ "listChanged" => false }, result["capabilities"]["tools"])
     assert_equal "bottrunk", result["serverInfo"]["name"]
     assert_match "cannot spend money for you", result["instructions"]
+  end
+
+  # We answer initialize-based revisions only. Echoing 2026-07-28 back promised
+  # server/discover, per-request _meta and cacheable results we do not serve.
+  test "a client asking for 2026-07-28 is offered 2025-11-25, the newest revision we implement" do
+    assert_equal "2025-11-25", rpc("initialize", { protocolVersion: "2026-07-28" })["result"]["protocolVersion"]
   end
 
   test "an unknown protocol version falls back to the newest we speak" do

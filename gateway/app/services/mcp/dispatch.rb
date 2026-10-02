@@ -4,16 +4,22 @@ module Mcp
   # A JSON-RPC 2.0 dispatcher for the Streamable HTTP transport, in the small
   # subset a tools-only server needs: initialize, ping, tools/list, tools/call.
   #
-  # Stateless on purpose. The 2026-07-28 revision removed protocol-level
-  # sessions and the GET stream, and everything we expose answers in one round
-  # trip, so there is nothing to keep between requests: no session ids, no SSE.
-  # Older clients (2025-03-26 … 2025-11-25) still begin with `initialize`, so
-  # that method is answered too, and their `Mcp-Session-Id` header is ignored.
+  # Stateless on purpose: everything we expose answers in one round trip, so
+  # there is nothing to keep between requests (no session ids, no SSE), and
+  # an `Mcp-Session-Id` header is ignored.
+  #
+  # This speaks the initialize-based revisions, up to 2025-11-25. It used to
+  # also list 2026-07-28, which it does not implement: that revision drops
+  # `initialize` for a mandatory `server/discover`, carries the version in
+  # every request's `_meta` with matching headers, and adds `resultType`,
+  # `ttlMs` and `cacheScope` to results. Echoing it back told a client it would
+  # get all that. Clients that speak both revisions fall back to
+  # `initialize`; serving 2026-07-28-only clients is its own piece of work.
   #
   # Returns [http_status, body_hash_or_nil]; a notification answers 202 with
   # no body, per the transport spec.
   class Dispatch
-    SUPPORTED_VERSIONS = %w[2024-11-05 2025-03-26 2025-06-18 2025-11-25 2026-07-28].freeze
+    SUPPORTED_VERSIONS = %w[2024-11-05 2025-03-26 2025-06-18 2025-11-25].freeze
     SERVER_VERSION = "0.1.0"
     LATEST_VERSION = SUPPORTED_VERSIONS.last
 
