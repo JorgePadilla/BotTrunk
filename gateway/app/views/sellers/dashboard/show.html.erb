@@ -1,7 +1,8 @@
 <% content_for :title, "Your account — BotTrunk" %>
 <% content_for :nav_active, "" %>
+<% r = @overview %>
 
-<div class="flex flex-col gap-12 py-16 md:py-20">
+<div class="flex flex-col gap-14 py-16 md:py-20">
   <div class="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
     <div class="flex flex-col gap-3">
       <h1 class="text-4xl md:text-[40px] font-semibold tracking-[-0.03em] leading-[1.15]"><%= current_seller.name.presence || "Your seller account" %></h1>
@@ -13,52 +14,126 @@
   <% if flash[:notice] %><p class="text-sm text-muted"><%= flash[:notice] %></p><% end %>
   <% if flash[:alert] %><p class="text-sm text-error"><%= flash[:alert] %></p><% end %>
 
-  <section class="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_400px] gap-12 lg:gap-20 items-start">
-    <div class="flex flex-col gap-5 min-w-0">
-      <div class="flex items-center justify-between gap-4">
-        <h2 class="text-[22px] font-semibold tracking-tight">Your APIs</h2>
-        <%= link_to new_seller_listing_path, class: "btn btn-sm" do %><%= icon("plus", class: "size-4") %> List an API<% end %>
-      </div>
-      <% listings = current_seller.listings.order(:created_at) %>
-      <% if listings.empty? %>
-        <p class="text-muted">Describe your endpoint and its price, submit it, and a person reviews it. Once approved, agents pay for it per call and you keep 85% of every settled call.</p>
-      <% else %>
-        <%= render Dashboard::TableComponent.new(
-          columns: [ "API", "Price", "Status", "" ], numeric: [ 1 ],
-          rows: listings.map { |l| [
-            safe_join([ (l.live? ? link_to(l.name, service_path(l.slug), class: "link link-hover") : l.name), tag.span(" /s/#{l.slug}", class: "font-mono text-muted text-xs") ]),
-            usdc(l.price_atomic),
-            safe_join([ l.status.humanize, (tag.span(" · #{l.review_notes}", class: "text-muted") if l.rejected? && l.review_notes.present?) ]),
-            safe_join([
-              (link_to("Edit", edit_seller_listing_path(l), class: "link link-hover") if l.editable?),
-              (button_to("Submit for review", submit_seller_listing_path(l), class: "link link-hover", form_class: "inline ml-3") if l.editable?),
-              (button_to("Pause", pause_seller_listing_path(l), class: "link link-hover", form_class: "inline") if l.live?)
-            ].compact)
-          ] },
-          empty: "No APIs yet."
-        ) %>
-      <% end %>
+  <section class="flex flex-col gap-4">
+    <h2 class="text-[22px] font-semibold tracking-tight">What you are owed</h2>
+    <%= render Dashboard::StatRowComponent.new(stats: [
+      { label: "owed to you", value: usdc(r.owed), hint: "sent by hand, monthly, once it reaches $1" },
+      { label: "earned", value: usdc(r.earned), hint: "85% of every settled call" },
+      { label: "paid out", value: usdc(r.paid), hint: "#{r.payouts.size} #{"payout".pluralize(r.payouts.size)}" },
+      { label: "payout address", value: current_seller.payout_address ? tag.span(short_address(current_seller.payout_address), class: "text-base") : "not set", hint: "set it below" }
+    ]) %>
+  </section>
+
+  <section class="flex flex-col gap-4">
+    <h2 class="text-[22px] font-semibold tracking-tight">Calls</h2>
+    <%= render Dashboard::StatRowComponent.new(stats: r.windows.map { |w|
+      { label: w.label, value: w.calls, hint: "#{usdc(w.volume)} paid · #{usdc(w.earned)} yours" }
+    }) %>
+  </section>
+
+  <section class="flex flex-col gap-5">
+    <div class="flex items-center justify-between gap-4">
+      <h2 class="text-[22px] font-semibold tracking-tight">Your APIs</h2>
+      <%= link_to new_seller_listing_path, class: "btn btn-sm" do %><%= icon("plus", class: "size-4") %> List an API<% end %>
+    </div>
+    <% if r.listings.empty? %>
+      <p class="text-muted">Describe your endpoint and its price, submit it, and a person reviews it. Once approved, agents pay for it per call and you keep 85% of every settled call.</p>
+    <% else %>
+      <%= render Dashboard::TableComponent.new(
+        columns: [ "API", "Price", "Status", "Calls · 30 d", "Yours · 30 d", "" ], numeric: [ 1, 3, 4 ],
+        rows: r.listings.map { |row| l = row.listing; [
+          safe_join([ (l.live? ? link_to(l.name, service_path(l.slug), class: "link link-hover") : l.name), tag.span(" /s/#{l.slug}", class: "font-mono text-muted text-xs") ]),
+          usdc(l.price_atomic),
+          safe_join([ l.status.humanize, (tag.span(" · #{l.review_notes}", class: "text-muted") if l.rejected? && l.review_notes.present?) ]),
+          row.calls, usdc(row.earned),
+          safe_join([
+            (link_to("Edit", edit_seller_listing_path(l), class: "link link-hover") if l.editable?),
+            (button_to("Submit for review", submit_seller_listing_path(l), class: "link link-hover", form_class: "inline ml-3") if l.editable?),
+            (button_to("Pause", pause_seller_listing_path(l), class: "link link-hover", form_class: "inline") if l.live?)
+          ].compact)
+        ] },
+        empty: "No APIs yet."
+      ) %>
+    <% end %>
+  </section>
+
+  <section class="flex flex-col gap-4">
+    <h2 class="text-[22px] font-semibold tracking-tight">Recent calls</h2>
+    <%= render Dashboard::TableComponent.new(
+      columns: [ "When (UTC)", "API", "Paid by", "Paid", "Yours", "Your API answered" ], numeric: [ 3, 4 ],
+      rows: r.recent_calls.map { |c| [
+        c.created_at.utc.strftime("%m-%d %H:%M"), c.service_slug, tag.span(short_address(c.payer_address), class: "font-mono"),
+        usdc(c.amount), usdc(c.seller_amount), "#{c.upstream_status} · #{c.upstream_latency_ms} ms"
+      ] },
+      empty: "No paid calls yet. They appear here as they settle."
+    ) %>
+  </section>
+
+  <% if r.payouts.any? %>
+    <section class="flex flex-col gap-4">
+      <h2 class="text-[22px] font-semibold tracking-tight">Payouts</h2>
+      <%= render Dashboard::TableComponent.new(
+        columns: [ "Sent (UTC)", "Amount", "Transaction" ], numeric: [ 1 ],
+        rows: r.payouts.map { |p| [ p.paid_at.utc.strftime("%Y-%m-%d"), usdc(p.amount),
+          link_to(short_address(p.transaction_id, head: 8, tail: 4), "https://allo.info/tx/#{p.transaction_id}", class: "link link-hover font-mono", target: "_blank", rel: "noopener") ] }
+      ) %>
+    </section>
+  <% end %>
+
+  <section id="secret" class="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_400px] gap-12 lg:gap-20 items-start scroll-mt-24">
+    <div class="flex flex-col gap-4 min-w-0">
+      <h2 class="text-[22px] font-semibold tracking-tight">Check that a call came through BotTrunk</h2>
+      <p class="text-muted">Every call we forward to your API carries three headers: <span class="font-mono">BotTrunk-Service</span> (the slug), <span class="font-mono">BotTrunk-Timestamp</span> (Unix seconds) and <span class="font-mono">BotTrunk-Signature: v1=&lt;hex&gt;</span>, an HMAC-SHA256 of <span class="font-mono">"&lt;timestamp&gt;.&lt;raw body&gt;"</span> with your secret. Refuse a call whose signature does not match, or whose timestamp is more than five minutes old: it did not come through the paywall, so nobody paid for it.</p>
+      <%= render Docs::CodeSnippetComponent.new(snippets: {
+        "Ruby" => <<~RUBY,
+          ts, sig = request.headers["BotTrunk-Timestamp"], request.headers["BotTrunk-Signature"].to_s
+          expected = "v1=" + OpenSSL::HMAC.hexdigest("SHA256", ENV["BOTTRUNK_SECRET"], "\#{ts}.\#{request.raw_post}")
+          ok = Rack::Utils.secure_compare(expected, sig) && (Time.now.to_i - ts.to_i).abs < 300
+        RUBY
+        "Python" => <<~PY,
+          import hmac, hashlib, os, time
+          ts, sig = request.headers["BotTrunk-Timestamp"], request.headers.get("BotTrunk-Signature", "")
+          expected = "v1=" + hmac.new(os.environ["BOTTRUNK_SECRET"].encode(), f"{ts}.".encode() + request.get_data(), hashlib.sha256).hexdigest()
+          ok = hmac.compare_digest(expected, sig) and abs(time.time() - int(ts)) < 300
+        PY
+        "Node" => <<~JS
+          import { createHmac, timingSafeEqual } from "node:crypto";
+          const ts = req.headers["bottrunk-timestamp"], sig = req.headers["bottrunk-signature"] ?? "";
+          const expected = "v1=" + createHmac("sha256", process.env.BOTTRUNK_SECRET).update(`${ts}.${rawBody}`).digest("hex");
+          const ok = sig.length === expected.length && timingSafeEqual(Buffer.from(sig), Buffer.from(expected)) && Math.abs(Date.now() / 1000 - Number(ts)) < 300;
+        JS
+      }) %>
     </div>
 
-    <%= render(Ui::CardComponent.new) do %>
-      <%= form_with model: current_seller, url: seller_path, method: :patch, class: "flex flex-col gap-4" do |f| %>
-        <div class="flex flex-col gap-1">
-          <h2 class="font-semibold tracking-tight">Account</h2>
-          <p class="text-sm text-muted">Payouts are sent in USDC on Algorand to this address.</p>
+    <div class="flex flex-col gap-8">
+      <%= render(Ui::CardComponent.new) do %>
+        <div class="flex flex-col gap-3">
+          <h2 class="font-semibold tracking-tight">Your signing secret</h2>
+          <p class="text-sm text-muted">Keep it on your server, next to your API. Anyone with it can forge our signature.</p>
+          <%= render Sellers::SecretRevealComponent.new(secret: current_seller.signing_secret, rotate_url: seller_rotate_secret_path) %>
         </div>
-        <% if current_seller.errors.any? %>
-          <p class="text-sm text-error"><%= current_seller.errors.full_messages.to_sentence %></p>
-        <% end %>
-        <label class="flex flex-col gap-1.5 text-sm">
-          <span class="font-medium">Name <span class="text-muted font-normal">(you or your company)</span></span>
-          <%= f.text_field :name, class: "input w-full", placeholder: "Acme Data" %>
-        </label>
-        <label class="flex flex-col gap-1.5 text-sm">
-          <span class="font-medium">Payout address</span>
-          <%= f.text_field :payout_address, class: "input w-full font-mono text-xs", placeholder: "58-character Algorand address, opted in to USDC" %>
-        </label>
-        <%= render(Ui::ButtonComponent.new(variant: :primary, type: "submit", class: "w-full")) { "Save" } %>
       <% end %>
-    <% end %>
+
+      <%= render(Ui::CardComponent.new) do %>
+        <%= form_with model: current_seller, url: seller_path, method: :patch, class: "flex flex-col gap-4" do |f| %>
+          <div class="flex flex-col gap-1">
+            <h2 class="font-semibold tracking-tight">Account</h2>
+            <p class="text-sm text-muted">Payouts are sent in USDC on Algorand to this address. It must already hold USDC (be opted in), or the transfer fails.</p>
+          </div>
+          <% if current_seller.errors.any? %>
+            <p class="text-sm text-error"><%= current_seller.errors.full_messages.to_sentence %></p>
+          <% end %>
+          <label class="flex flex-col gap-1.5 text-sm">
+            <span class="font-medium">Name <span class="text-muted font-normal">(you or your company)</span></span>
+            <%= f.text_field :name, class: "input w-full", placeholder: "Acme Data" %>
+          </label>
+          <label class="flex flex-col gap-1.5 text-sm">
+            <span class="font-medium">Payout address</span>
+            <%= f.text_field :payout_address, class: "input w-full font-mono text-xs", placeholder: "58-character Algorand address, opted in to USDC" %>
+          </label>
+          <%= render(Ui::ButtonComponent.new(variant: :primary, type: "submit", class: "w-full")) { "Save" } %>
+        <% end %>
+      <% end %>
+    </div>
   </section>
 </div>

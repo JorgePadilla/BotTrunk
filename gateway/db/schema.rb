@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_18_090000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_18_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -124,6 +124,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_18_090000) do
     t.index ["observed_at"], name: "index_local_prices_on_observed_at"
   end
 
+  create_table "payouts", force: :cascade do |t|
+    t.bigint "amount", null: false
+    t.string "asset", default: "31566704", null: false
+    t.datetime "created_at", null: false
+    t.text "notes"
+    t.datetime "paid_at", null: false
+    t.bigint "seller_id", null: false
+    t.string "transaction_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["seller_id"], name: "index_payouts_on_seller_id"
+    t.index ["transaction_id"], name: "index_payouts_on_transaction_id", unique: true
+  end
+
   create_table "seller_inquiries", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "email", null: false
@@ -189,4 +202,5 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_18_090000) do
   add_foreign_key "calls", "sellers"
   add_foreign_key "deposit_orders", "calls"
   add_foreign_key "listings", "sellers"
+  add_foreign_key "payouts", "sellers"
 end

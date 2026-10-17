@@ -34,6 +34,7 @@ Rails.application.routes.draw do
   scope "seller", module: "sellers", as: "seller" do
     get "/", to: "dashboard#show", as: :root
     patch "/", to: "dashboard#update"
+    post "secret", to: "dashboard#rotate_secret", as: :rotate_secret
     get "sign_in", to: "sessions#new"
     post "sign_in", to: "sessions#create"
     get "sign_in/:token", to: "sessions#confirm", as: :confirm_sign_in

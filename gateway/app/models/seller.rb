@@ -13,6 +13,7 @@ class Seller < ApplicationRecord
 
   has_many :listings, dependent: :restrict_with_error
   has_many :calls, dependent: :restrict_with_error
+  has_many :payouts, dependent: :restrict_with_error
 
   encrypts :signing_secret
 
@@ -33,6 +34,14 @@ class Seller < ApplicationRecord
   end
 
   def active? = status == "active"
+
+  # µUSDC. Earned is their share of every settled call; owed is what we have
+  # not sent yet.
+  def earned_atomic = calls.sum(:seller_amount)
+
+  def paid_atomic = payouts.sum(:amount)
+
+  def owed_atomic = earned_atomic - paid_atomic
 
   def rotate_signing_secret! = update!(signing_secret: self.class.new_secret)
 
