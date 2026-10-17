@@ -38,7 +38,7 @@ module MailPreviewData
       generated_at: Time.current, queue: queue, oldest: empty ? nil : "19 hours",
       owed_hnl: queue.sum(&:amount_hnl),
       delivered: empty ? [] : [ order(amount_hnl: 5_000, beneficiary_name: "Ana Zelaya", status: "delivered") ],
-      refunded: [], calls: empty ? 0 : 14, outside_calls: empty ? 0 : 9, outside_payers: empty ? 0 : 3, volume: empty ? 0 : 1_260_000, commission: empty ? 0 : 189_000,
+      refunded: [], calls: empty ? 0 : 14, outside_calls: empty ? 0 : 9, outside_payers: empty ? 0 : 3, owed_to_sellers: empty ? 0 : 4_250_000, volume: empty ? 0 : 1_260_000, commission: empty ? 0 : 189_000,
       inquiries: empty ? [] : [ inquiry ]
     ).to_h
   end

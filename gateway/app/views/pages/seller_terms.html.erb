@@ -1,0 +1,48 @@
+<% content_for :title, "Seller terms — BotTrunk" %>
+<% content_for :description, "What BotTrunk does for sellers, what sellers agree to, and how and when they are paid." %>
+<% content_for :nav_active, "Sell" %>
+
+<article class="flex flex-col gap-10 py-16 md:py-24 max-w-2xl">
+  <header class="flex flex-col gap-4">
+    <h1 class="text-4xl md:text-[40px] font-semibold tracking-[-0.03em] leading-[1.15]">Seller terms</h1>
+    <p class="text-muted">Version <span class="font-mono"><%= Seller::TERMS_VERSION %></span>. These apply when you list an API on BotTrunk. In short: we put your API behind a paywall, agents pay per call, you keep 85%, and we send it to you in USDC every month.</p>
+  </header>
+
+  <% [
+    [ "What BotTrunk does", [
+      "We list your API in our catalog, the x402 Bazaar and our MCP tools, and put it behind an x402 paywall. Agents pay per call in USDC on Algorand, and the payment settles to BotTrunk's wallet.",
+      "We forward each paid call's request body to your endpoint, signed with your secret, and return your answer to the agent.",
+      "A person reviews every listing before it goes live. We may decline a listing, or pause or remove one later, for example if it breaks these terms, fails often, or puts buyers at risk. We tell you when we do."
+    ] ],
+    [ "What you keep, and how you are paid", [
+      "You keep 85% of the price of every settled call; BotTrunk keeps 15%. A call your endpoint answers with an error (a 4xx or 5xx status) is not charged to the agent and earns nothing.",
+      "We send what you are owed in USDC on Algorand to the payout address in your account, once a month, when you are owed at least 1 USDC. Each payout is listed on your dashboard with its transaction id.",
+      "Your payout address must be an Algorand account you control that holds USDC (is opted in). USDC sent to the address you gave us is paid; we cannot recover a transfer to a wrong address.",
+      "You are responsible for any taxes on what you earn."
+    ] ],
+    [ "Prices", [
+      "You set the price. Once a listing has been live its price is fixed, because buyers' agents budget for it; to change it, list the API again under a new name."
+    ] ],
+    [ "What you agree to", [
+      "You have the right to offer the API and everything it returns, and offering it is lawful where you operate it.",
+      "Your listing describes truthfully what the API does, what it accepts and what it returns.",
+      "Your API does not collect or return personal data it has no right to, does not harm the agents or people who call it, and does not try to reach anything beyond answering the request.",
+      "You keep your signing secret private and check our signature, so that only calls that paid through BotTrunk are served.",
+      "You answer as described, within a reasonable time, and tell us at hello@bottrunk.com before you retire the API."
+    ] ],
+    [ "Limits", [
+      "BotTrunk is provided as is. We are not responsible for what your API returns to agents, and you are not responsible for how an agent uses it.",
+      "Neither of us is liable to the other for indirect losses. BotTrunk's total liability to you is limited to what we owe you and have not paid."
+    ] ],
+    [ "Changes", [
+      "We may change these terms. We email you before a change takes effect, and you accept the new version before your next submission. If you do not agree, you can pause your listings at any time; what you earned is still paid."
+    ] ]
+  ].each do |heading, paragraphs| %>
+    <section class="flex flex-col gap-3.5">
+      <h2 class="text-[22px] font-semibold tracking-tight"><%= heading %></h2>
+      <% paragraphs.each do |p| %><p class="text-muted"><%= p %></p><% end %>
+    </section>
+  <% end %>
+
+  <p class="text-sm text-muted">Questions: <%= mail_to "hello@bottrunk.com", "hello@bottrunk.com", class: "link" %>.</p>
+</article>

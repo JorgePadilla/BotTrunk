@@ -12,7 +12,7 @@ module Notifications
     WINDOW = 24.hours
 
     Report = Data.define(:generated_at, :queue, :oldest, :delivered, :refunded, :calls, :volume, :commission, :inquiries, :owed_hnl, :jobs, :oldest_job,
-                         :outside_calls, :outside_payers)
+                         :outside_calls, :outside_payers, :owed_to_sellers)
 
     def initialize(now: Time.current)
       @now = now
@@ -42,6 +42,7 @@ module Notifications
         calls: calls.count,
         outside_calls: calls.outside.count,
         outside_payers: calls.outside.distinct.count(:payer_address),
+        owed_to_sellers: Call.where.not(seller_id: nil).sum(:seller_amount) - Payout.sum(:amount),
         volume: calls.sum(:amount),
         commission: calls.sum(:commission),
         inquiries: SellerInquiry.where(created_at: since..).order(:created_at).to_a,

@@ -38,6 +38,7 @@
   <%= receipt_row "From outside wallets", "#{@report[:outside_calls]} from #{pluralize(@report[:outside_payers], "payer")}" %>
   <%= receipt_row "Volume", "#{usdc(@report[:volume])} USDC", mono: true %>
   <%= receipt_row "Our share", "#{usdc(@report[:commission])} USDC", mono: true %>
+  <%= receipt_row "Owed to sellers", "#{usdc(@report[:owed_to_sellers])} USDC (all time, not yet paid)", mono: true if @report[:owed_to_sellers].to_i.positive? %>
   <%= receipt_row "Delivered", @report[:delivered].map { |o| "#{hnl(o.amount_hnl)} to #{o.beneficiary_name}" }.join(", ") %>
   <%= receipt_row "Refunded", @report[:refunded].map { |o| "#{hnl(o.amount_hnl)} to #{o.beneficiary_name}" }.join(", ") %>
   <%= receipt_row "Seller inquiries", @report[:inquiries].map(&:service_name).join(", ") %>

@@ -1,0 +1,13 @@
+Your payout is on its way.
+
+Amount:      <%= usdc(@payout.amount) %> USDC
+To:          <%= @payout.seller.payout_address %>
+Transaction: <%= @payout.transaction_id %>
+<% if @payout.notes.present? -%>
+Note:        <%= @payout.notes %>
+<% end -%>
+Still owed:  <%= usdc(@payout.seller.owed_atomic) %> USDC
+
+<%= explorer_url(@payout.transaction_id) %>
+
+Something looks wrong? Reply to this email.

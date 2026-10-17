@@ -48,6 +48,18 @@ module Notifications
       assert_match "3 from 2 payers", ActionMailer::Base.deliveries.last.text_part.body.to_s
     end
 
+    test "the digest says what is owed to sellers and not yet paid" do
+      listing = live_listing
+      Call.create!(service_slug: listing.slug, seller: listing.seller, pay_to: "G", network: "algorand:x", asset: "31566704",
+                   amount: 2_000_000, commission: 300_000, seller_amount: 1_700_000, transaction_id: "S1", status: "settled")
+      listing.seller.payouts.create!(amount: 700_000, transaction_id: "D" * 52, paid_at: Time.current)
+
+      with_admin_email do
+        assert_equal 1_000_000, DailyDigest.new.call[:report].owed_to_sellers
+      end
+      assert_match "$1.00 USDC to sellers", ActionMailer::Base.deliveries.last.text_part.body.to_s
+    end
+
     test "an empty day still produces a report and an email" do
       with_admin_email do
         report = DailyDigest.new.call[:report]

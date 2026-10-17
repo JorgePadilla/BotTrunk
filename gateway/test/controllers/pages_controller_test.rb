@@ -186,6 +186,14 @@ class PagesControllerTest < ActionDispatch::IntegrationTest
     assert_select "a[href='/seller/sign_in']"
   end
 
+  test "the seller terms are public and carry their version" do
+    get seller_terms_url
+    assert_response :success
+    assert_select "h1", "Seller terms"
+    assert_select "span.font-mono", text: Seller::TERMS_VERSION
+    assert_match "85%", response.body
+  end
+
   test "every page carries a description and OpenGraph tags (the Bazaar reads them)" do
     [ root_url, docs_url, connect_url, sell_url, service_url("scrape-markdown") ].each do |url|
       get url

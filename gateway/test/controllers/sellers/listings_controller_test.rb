@@ -45,6 +45,24 @@ module Sellers
       assert_match(/payout address/, flash[:alert])
     end
 
+    test "no accepted terms, no submission; accepting them unblocks it" do
+      @seller.update!(terms_version: nil)
+      listing = build_listing(seller: @seller)
+      post submit_seller_listing_path(listing)
+      assert_equal "draft", listing.reload.status
+
+      post seller_accept_terms_path, params: { accept: "1" }
+      assert_equal Seller::TERMS_VERSION, @seller.reload.terms_version
+      post submit_seller_listing_path(listing)
+      assert_equal "pending", listing.reload.status
+    end
+
+    test "the terms are accepted only with the box ticked" do
+      @seller.update!(terms_version: nil)
+      post seller_accept_terms_path
+      assert_nil @seller.reload.terms_version
+    end
+
     test "a live listing must be paused before it is edited, and its price stays fixed" do
       listing = live_listing(seller: @seller)
       get edit_seller_listing_path(listing)

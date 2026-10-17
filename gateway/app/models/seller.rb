@@ -10,6 +10,10 @@ class Seller < ApplicationRecord
   STATUSES = %w[active suspended].freeze
   ALGORAND_ADDRESS = /\A[A-Z2-7]{58}\z/
   SIGN_IN_LINK_TTL = 15.minutes
+  # Bump when /seller-terms changes in substance; sellers accept it again
+  # before their next submission.
+  TERMS_VERSION = "2026-10-18"
+  MIN_PAYOUT_ATOMIC = 1_000_000 # 1 USDC
 
   has_many :listings, dependent: :restrict_with_error
   has_many :calls, dependent: :restrict_with_error
@@ -34,6 +38,10 @@ class Seller < ApplicationRecord
   end
 
   def active? = status == "active"
+
+  def accepted_current_terms? = terms_version == TERMS_VERSION
+
+  def accept_terms!(now: Time.current) = update!(terms_accepted_at: now, terms_version: TERMS_VERSION)
 
   # µUSDC. Earned is their share of every settled call; owed is what we have
   # not sent yet.

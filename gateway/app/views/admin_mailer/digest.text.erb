@@ -25,6 +25,9 @@ Paid calls:  <%= @report[:calls] %>
 Outside:     <%= @report[:outside_calls] %> from <%= pluralize(@report[:outside_payers], "payer") %>
 Volume:      <%= usdc(@report[:volume]) %> USDC
 Our share:   <%= usdc(@report[:commission]) %> USDC
+<% if @report[:owed_to_sellers].to_i.positive? -%>
+Owed:        <%= usdc(@report[:owed_to_sellers]) %> USDC to sellers, not yet paid
+<% end -%>
 <% if @report[:delivered].any? -%>
 Delivered:   <%= @report[:delivered].map { |o| "L#{number_with_delimiter(o.amount_hnl)} to #{o.beneficiary_name}" }.join(", ") %>
 <% end -%>

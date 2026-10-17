@@ -24,6 +24,9 @@ class PagesController < ApplicationController
   def sign_in
   end
 
+  def seller_terms
+  end
+
   # /llms.txt — the agent-readable summary of this site. Rendered from the
   # catalog so it can never drift from what the endpoints actually charge
   # (the Bazaar enriches its listing from this file).

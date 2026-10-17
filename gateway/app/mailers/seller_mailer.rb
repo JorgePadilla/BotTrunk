@@ -50,4 +50,10 @@ class SellerMailer < ApplicationMailer
 
     mail(to: @listing.seller.email, subject: "About #{@listing.name} on BotTrunk")
   end
+
+  def payout_sent
+    @payout = params[:payout]
+
+    mail(to: @payout.seller.email, subject: "We sent you #{ActionController::Base.helpers.number_to_currency(BigDecimal(@payout.amount) / 1_000_000)} USDC")
+  end
 end

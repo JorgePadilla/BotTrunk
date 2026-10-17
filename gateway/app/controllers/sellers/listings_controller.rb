@@ -36,6 +36,7 @@ module Sellers
 
     def submit
       return redirect_to(seller_root_path, alert: "Add a payout address before submitting, so we know where your share goes.") if current_seller.payout_address.blank?
+      return redirect_to(seller_root_path(anchor: "terms"), alert: "Accept the seller terms before submitting.") unless current_seller.accepted_current_terms?
       return redirect_to(seller_root_path, alert: "#{@listing.name} cannot be submitted from #{@listing.status}.") unless @listing.editable?
 
       @listing.submit!

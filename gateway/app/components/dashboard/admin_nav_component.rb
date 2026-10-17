@@ -22,6 +22,7 @@ module Dashboard
         [ "Prices", "/admin/prices" ],
         [ @inquiries.to_i.positive? ? "Sellers · #{@inquiries} to review" : "Sellers", "/admin/inquiries" ],
         [ @listings.to_i.positive? ? "Listings · #{@listings} to review" : "Listings", "/admin/listings" ],
+        [ "Payouts", "/admin/payouts" ],
         [ @requests.to_i.positive? ? "Requests · #{@requests} to answer" : "Requests", "/admin/requests" ]
       ]
     end

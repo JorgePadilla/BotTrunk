@@ -13,6 +13,13 @@ module Sellers
       redirect_to seller_root_path(anchor: "secret"), notice: "New secret in place. Calls are signed with it from now on."
     end
 
+    def accept_terms
+      return redirect_to(seller_root_path, alert: "Tick the box to accept the seller terms.") unless params[:accept] == "1"
+
+      current_seller.accept_terms!
+      redirect_to seller_root_path, notice: "Seller terms accepted. You can submit APIs for review."
+    end
+
     def update
       if current_seller.update(params.require(:seller).permit(:name, :payout_address))
         redirect_to seller_root_path, notice: "Saved."

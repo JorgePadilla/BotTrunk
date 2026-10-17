@@ -31,6 +31,22 @@
     }) %>
   </section>
 
+  <% unless current_seller.accepted_current_terms? %>
+    <section id="terms" class="scroll-mt-24">
+      <%= render(Ui::CardComponent.new) do %>
+        <%= form_with url: seller_accept_terms_path, class: "flex flex-col gap-4" do |f| %>
+          <h2 class="font-semibold tracking-tight">Accept the seller terms</h2>
+          <p class="text-sm text-muted">Needed before you submit an API: you keep 85% of each settled call, paid monthly in USDC once you are owed at least <%= usdc(Seller::MIN_PAYOUT_ATOMIC) %>, and your listing describes your API truthfully.</p>
+          <label class="flex items-center gap-2 text-sm">
+            <%= f.check_box :accept, { class: "checkbox checkbox-sm" }, "1", "0" %>
+            <span>I accept the <%= link_to "seller terms", seller_terms_path, class: "link", target: "_blank" %> (version <span class="font-mono"><%= Seller::TERMS_VERSION %></span>).</span>
+          </label>
+          <%= render(Ui::ButtonComponent.new(variant: :primary, type: "submit", class: "self-start")) { "Accept" } %>
+        <% end %>
+      <% end %>
+    </section>
+  <% end %>
+
   <section class="flex flex-col gap-5">
     <div class="flex items-center justify-between gap-4">
       <h2 class="text-[22px] font-semibold tracking-tight">Your APIs</h2>

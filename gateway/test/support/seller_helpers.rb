@@ -5,7 +5,8 @@ module SellerHelpers
   PAYOUT = "SELLERPAYOUT#{'A' * 46}".freeze
 
   def build_seller(**overrides)
-    Seller.create!({ email: "seller-#{SecureRandom.hex(3)}@example.com", payout_address: PAYOUT }.merge(overrides))
+    Seller.create!({ email: "seller-#{SecureRandom.hex(3)}@example.com", payout_address: PAYOUT,
+                     terms_version: Seller::TERMS_VERSION, terms_accepted_at: Time.current }.merge(overrides))
   end
 
   def build_listing(seller: build_seller, **overrides)

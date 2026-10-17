@@ -1,0 +1,59 @@
+<% content_for :title, "Payouts — BotTrunk admin" %>
+
+<div class="flex flex-col gap-14 py-12 md:py-16">
+  <header class="flex flex-col gap-3">
+    <%= render Dashboard::AdminNavComponent.new(active: "Payouts") %>
+    <h1 class="text-4xl font-semibold tracking-[-0.03em]">What sellers are owed</h1>
+    <p class="text-muted">Send the USDC from the gateway wallet in your wallet app first, then record it here with the transaction id. The seller is emailed a link to it. Policy: monthly, once a seller is owed at least <%= usdc(Seller::MIN_PAYOUT_ATOMIC) %>.</p>
+    <% if flash[:notice] %><p class="text-sm text-success"><%= flash[:notice] %></p><% end %>
+    <% if flash[:alert] %><p class="text-sm text-error"><%= flash[:alert] %></p><% end %>
+  </header>
+
+  <section class="flex flex-col gap-5">
+    <% if @sellers.empty? %><p class="text-sm text-muted">No seller has a paid call yet.</p><% end %>
+    <% @sellers.each do |seller| %>
+      <%= render Ui::CardComponent.new(class: "flex flex-col gap-5") do %>
+        <div class="flex flex-col gap-2 min-w-0">
+          <div class="flex items-baseline gap-3 flex-wrap">
+            <span class="text-2xl font-medium font-mono"><%= usdc(seller.owed_atomic) %></span>
+            <span class="text-muted">owed to <%= seller.name.presence || seller.email %></span>
+            <% if seller.owed_atomic >= Seller::MIN_PAYOUT_ATOMIC %><span class="text-sm">· due</span><% end %>
+          </div>
+          <dl class="grid grid-cols-[auto_1fr] gap-x-6 gap-y-1 text-sm">
+            <dt class="text-muted">Send to</dt><dd class="font-mono break-all"><%= seller.payout_address || "no payout address set" %></dd>
+            <dt class="text-muted">Earned · paid</dt><dd class="font-mono"><%= usdc(seller.earned_atomic) %> · <%= usdc(seller.paid_atomic) %></dd>
+            <dt class="text-muted">Email</dt><dd><%= mail_to seller.email, seller.email, class: "link link-hover" %></dd>
+          </dl>
+        </div>
+        <% if seller.owed_atomic.positive? && seller.payout_address %>
+          <%= form_with url: admin_payouts_path, class: "flex flex-col md:flex-row gap-3 md:items-end border-t hairline pt-5" do |f| %>
+            <%= f.hidden_field :seller_id, value: seller.id %>
+            <label class="flex flex-col gap-1.5">
+              <span class="text-[13px] text-muted">Amount sent (USDC)</span>
+              <%= f.text_field :amount_usdc, class: "input font-mono w-36", inputmode: "decimal", placeholder: (BigDecimal(seller.owed_atomic) / 1_000_000).floor(2).to_s("F") %>
+            </label>
+            <label class="flex flex-col gap-1.5 grow">
+              <span class="text-[13px] text-muted">Algorand transaction id</span>
+              <%= f.text_field :transaction_id, class: "input font-mono w-full", placeholder: "52 characters" %>
+            </label>
+            <label class="flex flex-col gap-1.5 grow">
+              <span class="text-[13px] text-muted">Note (optional, shown to the seller)</span>
+              <%= f.text_field :notes, class: "input w-full", placeholder: "October" %>
+            </label>
+            <%= f.submit "Record payout", class: "btn btn-primary" %>
+          <% end %>
+        <% end %>
+      <% end %>
+    <% end %>
+  </section>
+
+  <section class="flex flex-col gap-5">
+    <h2 class="text-[22px] font-semibold tracking-tight">Recorded payouts</h2>
+    <%= render Dashboard::TableComponent.new(
+      columns: [ "Sent (UTC)", "Seller", "Amount", "Transaction" ], numeric: [ 2 ],
+      rows: @recent.map { |p| [ p.paid_at.utc.strftime("%Y-%m-%d %H:%M"), p.seller.email, usdc(p.amount),
+        link_to(short_address(p.transaction_id, head: 8, tail: 4), "https://allo.info/tx/#{p.transaction_id}", class: "link link-hover font-mono", target: "_blank", rel: "noopener") ] },
+      empty: "No payouts yet."
+    ) %>
+  </section>
+</div>

@@ -25,9 +25,8 @@ Open:
 
 - [ ] **Distribution — real usage from other people's agents.** The gate for the challenge and the point of the product. Never script self-calls. Target by Oct 31: 25 paid calls from 5 wallets that are not ours. Measured on `/admin/stats` → *Outside usage* and in the daily digest (Oct 17); our wallets are `config.x402.own_payers` plus `OWN_PAYER_ADDRESSES` on Render. Free first call (ADR 0010) built Oct 17; `bottrunk-mcp` support next.
 - [ ] **Judgment services** (ADR 0009): `injection-check`, `page-kind`, `tool-call-gate`, `page-fit` at 0.02 USDC, BotTrunk-written questions only, provider never named to buyers. Fulfillers, tests and catalog entries landed (Oct 17), `JUDGE_*` set on Render. Left: a production smoke call per service, then `bin/register-bazaar` to list them in the Bazaar. Stretch: `link-triage`.
-- [ ] **Seller sign-up and auth**: turns `SellerInquiry` into accounts; `Catalog::Service` moves from in-code seed to an ActiveRecord model (see `architecture.md` §3).
-- [ ] **Seller dashboard**: `stat_row`, `calls_table`, `endpoint_form`, `api_key_reveal` components (`architecture.md`).
-- [ ] **"Pay with wallet" for humans**: a wallet-connect button, since phone-wallet 24-word HD phrases can't be used by the SDKs.
+- [x] **Seller accounts, listings, dashboard and manual payouts** (Oct 17–18): email-link sign-in, `Listing` reviewed at `/admin/listings` and merged into the catalog (built-ins stay in code), `/seller` dashboard with signing secret, `/admin/payouts`, `/seller-terms`. Left: `bin/rails sellers:invite_approved`, one end-to-end run with a test seller on MainNet.
+- [ ] **"Pay with wallet" for humans**: a wallet-connect button, since phone-wallet 24-word HD phrases can't be used by the SDKs. Moved to Phase 2 (Oct 17).
 - [ ] **Hardening before real traffic** (`deploy.md`, `stack.md`):
   - [x] Rate limits with `rack-attack` on `/s/*`, `/mcp` and the public forms (Oct 1).
   - [x] Error tracking with Honeybadger through `Rails.error` (Oct 1). Key set on Render and a production smoke test reported on Oct 2.
