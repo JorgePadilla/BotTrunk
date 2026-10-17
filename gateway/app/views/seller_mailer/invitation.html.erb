@@ -1,0 +1,16 @@
+<p style="margin:0 0 16px 0;font-size:17px;font-weight:600;">Seller accounts are open.</p>
+
+<p style="margin:0 0 20px 0;">
+  We approved <%= @inquiry.service_name %> earlier. You can now sign in, list it yourself, and see every
+  call and what you are owed. A person still reviews each listing before it goes live.
+</p>
+
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 22px 0;">
+  <%= receipt_row "Sign in with", @inquiry.email, mono: true %>
+  <%= receipt_row "You keep", "85% of every settled call" %>
+  <%= receipt_row "Paid", "In USDC on Algorand, by hand, monthly" %>
+</table>
+
+<p style="margin:0 0 22px 0;"><%= mail_button "Sign in", @url %></p>
+
+<p style="margin:0;color:#666666;font-size:13px;">There is no password: we email you a link each time.</p>

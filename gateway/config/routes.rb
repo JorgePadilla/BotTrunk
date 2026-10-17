@@ -29,6 +29,17 @@ Rails.application.routes.draw do
   post "service-requests", to: "service_requests#create", as: :service_requests
   get "connect", to: "pages#connect"
   get "sign_in", to: "pages#sign_in"
+
+  # Sellers: email-link sign-in and their own pages (Sellers::*).
+  scope "seller", module: "sellers", as: "seller" do
+    get "/", to: "dashboard#show", as: :root
+    patch "/", to: "dashboard#update"
+    get "sign_in", to: "sessions#new"
+    post "sign_in", to: "sessions#create"
+    get "sign_in/:token", to: "sessions#confirm", as: :confirm_sign_in
+    post "sign_in/:token", to: "sessions#consume"
+    delete "sign_out", to: "sessions#destroy"
+  end
   get "llms.txt", to: "pages#llms", as: :llms, format: false
 
   # Agent-readable files the x402 facilitator probes at our origin, plus the

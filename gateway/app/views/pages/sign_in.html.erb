@@ -16,12 +16,12 @@
         <span class="text-sm font-medium inline-flex items-center gap-1.5 mt-1">Read the docs <%= icon("arrow-right", class: "size-3.5") %></span>
       </div>
     <% end %>
-    <%= render(Ui::CardComponent.new(href: sell_path(anchor: "early-access"))) do %>
+    <%= render(Ui::CardComponent.new(href: seller_sign_in_path)) do %>
       <div class="flex flex-col gap-3">
         <span class="size-9 rounded-full bg-base-200 flex items-center justify-center"><%= icon("wallet") %></span>
-        <h2 class="font-semibold tracking-tight">I want to sell a service</h2>
-        <p class="text-sm text-muted">Seller accounts, dashboards and payouts open in October. Request early access and we'll set you up first.</p>
-        <span class="text-sm font-medium inline-flex items-center gap-1.5 mt-1">Request access <%= icon("arrow-right", class: "size-3.5") %></span>
+        <h2 class="font-semibold tracking-tight">I sell an API</h2>
+        <p class="text-sm text-muted">Sign in with your email — no password. List your API, see every call, and what you are owed.</p>
+        <span class="text-sm font-medium inline-flex items-center gap-1.5 mt-1">Seller sign-in <%= icon("arrow-right", class: "size-3.5") %></span>
       </div>
     <% end %>
   </div>

@@ -153,6 +153,8 @@ Two validations are security, not tidiness. `upstream_url` is checked against `S
 
 Both of those, and the URL check, run **only when the value they judge is being set** (`if: :price_atomic_changed?`). Tightening a rule must never strand a row that predates it: an inquiry submitted under the old limits still has to be approved or rejected by a person, and failing that update with "price must be between…" leaves it stuck in the queue with no way out. That is not hypothetical — it happened the first time these limits landed.
 
+**Seller accounts (Oct 17, 2026).** A `Seller` signs in with an emailed link: `generates_token_for :sign_in` (15 minutes, built from `last_signed_in_at`, so a link works once). The email links to a page with a button, and only the POST signs in, because mail scanners open links and would spend a one-time link before the seller saw it. Asking for a link answers the same whether or not the address is known or suspended, and is rate-limited per network. Each seller has a `signing_secret` (encrypted) for signing the requests we forward to their API, and a `payout_address`. `bin/rails sellers:invite_approved` emails approved early-access sellers once, when accounts open.
+
 `Security::PublicUrl` is the single place that decides whether a URL is safe to fetch; `Fulfillers::Base` delegates to it (and forwards its `resolver` test seam), so the guard on the paid path and the guard on the seller form cannot drift apart.
 
 ## 7. Human-fulfilled orders (lempira deposits)

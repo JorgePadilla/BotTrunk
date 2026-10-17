@@ -1,0 +1,42 @@
+<% content_for :title, "Your account — BotTrunk" %>
+<% content_for :nav_active, "" %>
+
+<div class="flex flex-col gap-12 py-16 md:py-20">
+  <div class="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+    <div class="flex flex-col gap-3">
+      <h1 class="text-4xl md:text-[40px] font-semibold tracking-[-0.03em] leading-[1.15]"><%= current_seller.name.presence || "Your seller account" %></h1>
+      <p class="text-muted">Signed in as <span class="font-mono"><%= current_seller.email %></span></p>
+    </div>
+    <%= button_to "Sign out", seller_sign_out_path, method: :delete, class: "btn btn-ghost btn-sm" %>
+  </div>
+
+  <% if flash[:notice] %><p class="text-sm text-muted"><%= flash[:notice] %></p><% end %>
+
+  <section class="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_400px] gap-12 lg:gap-20 items-start">
+    <div class="flex flex-col gap-3.5">
+      <h2 class="text-[22px] font-semibold tracking-tight">Your APIs</h2>
+      <p class="text-muted">Listing an API is the next step and opens here shortly: you describe the endpoint and its price, a person reviews it, and once approved agents can pay for it per call. You keep 85% of every settled call.</p>
+    </div>
+
+    <%= render(Ui::CardComponent.new) do %>
+      <%= form_with model: current_seller, url: seller_path, method: :patch, class: "flex flex-col gap-4" do |f| %>
+        <div class="flex flex-col gap-1">
+          <h2 class="font-semibold tracking-tight">Account</h2>
+          <p class="text-sm text-muted">Payouts are sent in USDC on Algorand to this address.</p>
+        </div>
+        <% if current_seller.errors.any? %>
+          <p class="text-sm text-error"><%= current_seller.errors.full_messages.to_sentence %></p>
+        <% end %>
+        <label class="flex flex-col gap-1.5 text-sm">
+          <span class="font-medium">Name <span class="text-muted font-normal">(you or your company)</span></span>
+          <%= f.text_field :name, class: "input w-full", placeholder: "Acme Data" %>
+        </label>
+        <label class="flex flex-col gap-1.5 text-sm">
+          <span class="font-medium">Payout address</span>
+          <%= f.text_field :payout_address, class: "input w-full font-mono text-xs", placeholder: "58-character Algorand address, opted in to USDC" %>
+        </label>
+        <%= render(Ui::ButtonComponent.new(variant: :primary, type: "submit", class: "w-full")) { "Save" } %>
+      <% end %>
+    <% end %>
+  </section>
+</div>

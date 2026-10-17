@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
-# The one email a seller gets for now: proof their form submission landed
-# somewhere a person will read. Sign-up, keys and payouts come with Phase 1.
+# Emails to sellers: their early-access request, its review, and signing in.
 class SellerMailer < ApplicationMailer
   def acknowledgement
     @inquiry = params[:inquiry]
@@ -21,5 +20,22 @@ class SellerMailer < ApplicationMailer
     @inquiry = params[:inquiry]
 
     mail(to: @inquiry.email, subject: "About #{@inquiry.service_name} on BotTrunk")
+  end
+
+  # The link opens a page with a button (Sellers::SessionsController#confirm),
+  # so a mail scanner that follows it does not spend it.
+  def sign_in_link
+    @seller = params[:seller]
+    @url = seller_confirm_sign_in_url(token: params[:token])
+
+    mail(to: @seller.email, subject: "Your BotTrunk sign-in link")
+  end
+
+  # Sent once to sellers approved before accounts existed.
+  def invitation
+    @inquiry = params[:inquiry]
+    @url = seller_sign_in_url(email: @inquiry.email)
+
+    mail(to: @inquiry.email, subject: "Seller accounts are open on BotTrunk")
   end
 end

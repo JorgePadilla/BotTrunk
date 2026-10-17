@@ -179,11 +179,11 @@ class PagesControllerTest < ActionDispatch::IntegrationTest
     assert_select "form[action='/sell']", 1, "the seller form must still be there"
   end
 
-  test "sign_in explains agents need no account" do
+  test "sign_in explains agents need no account and sends sellers to their sign-in" do
     get sign_in_url
     assert_response :success
     assert_select "a[href='/connect']"
-    assert_select "a[href='/sell#early-access']"
+    assert_select "a[href='/seller/sign_in']"
   end
 
   test "every page carries a description and OpenGraph tags (the Bazaar reads them)" do

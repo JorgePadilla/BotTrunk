@@ -1,0 +1,31 @@
+<% content_for :title, "Seller sign-in — BotTrunk" %>
+<% content_for :nav_active, "" %>
+
+<div class="flex flex-col gap-10 py-16 md:py-24 max-w-md">
+  <div class="flex flex-col gap-4">
+    <h1 class="text-4xl md:text-[40px] font-semibold tracking-[-0.03em] leading-[1.15]">Seller sign-in</h1>
+    <p class="text-lg text-muted">For people selling an API on BotTrunk. Agents never sign in — <%= link_to "they pay per call", connect_path, class: "link" %>.</p>
+  </div>
+
+  <% if params[:sent] %>
+    <%= render(Ui::CardComponent.new) do %>
+      <div class="flex flex-col gap-3">
+        <span class="size-9 rounded-full bg-base-200 flex items-center justify-center"><%= icon("mail") %></span>
+        <h2 class="font-semibold tracking-tight">Check your email.</h2>
+        <p class="text-sm text-muted">If that address can sign in, a link is on its way. It works once, for <%= Seller::SIGN_IN_LINK_TTL.inspect %>. Nothing there? Check spam, or ask for another.</p>
+      </div>
+    <% end %>
+  <% else %>
+    <%= render(Ui::CardComponent.new) do %>
+      <%= form_with url: seller_sign_in_path, class: "flex flex-col gap-4" do |f| %>
+        <% if flash[:alert] %><p class="text-sm text-error"><%= flash[:alert] %></p><% end %>
+        <label class="flex flex-col gap-1.5 text-sm">
+          <span class="font-medium">Email</span>
+          <%= f.email_field :email, value: @email, class: "input w-full", placeholder: "you@company.com", required: true, autofocus: true %>
+        </label>
+        <%= render(Ui::ButtonComponent.new(variant: :primary, type: "submit", class: "w-full", icon: "arrow-right")) { "Email me a sign-in link" } %>
+        <p class="text-xs text-muted text-center">No password. New here? The same link creates your account.</p>
+      <% end %>
+    <% end %>
+  <% end %>
+</div>

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_26_010000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_17_200000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -112,6 +112,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_26_010000) do
     t.string "upstream_url", null: false
     t.index ["email"], name: "index_seller_inquiries_on_email"
     t.index ["status", "created_at"], name: "index_seller_inquiries_on_status_and_created_at"
+  end
+
+  create_table "sellers", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "email", null: false
+    t.datetime "last_signed_in_at"
+    t.string "name"
+    t.string "payout_address"
+    t.text "signing_secret", null: false
+    t.string "status", default: "active", null: false
+    t.datetime "updated_at", null: false
+    t.index ["email"], name: "index_sellers_on_email", unique: true
   end
 
   create_table "service_requests", force: :cascade do |t|

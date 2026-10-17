@@ -1,0 +1,12 @@
+<% content_for :title, "Sign in — BotTrunk" %>
+<% content_for :nav_active, "" %>
+
+<div class="flex flex-col gap-10 py-16 md:py-24 max-w-md">
+  <h1 class="text-4xl md:text-[40px] font-semibold tracking-[-0.03em] leading-[1.15]">Sign in to BotTrunk</h1>
+  <%= render(Ui::CardComponent.new) do %>
+    <%= form_with url: seller_confirm_sign_in_path(token: @token), method: :post, class: "flex flex-col gap-4" do %>
+      <p class="text-sm text-muted">One click to finish. The link works once.</p>
+      <%= render(Ui::ButtonComponent.new(variant: :primary, type: "submit", class: "w-full", icon: "arrow-right")) { "Sign in" } %>
+    <% end %>
+  <% end %>
+</div>
