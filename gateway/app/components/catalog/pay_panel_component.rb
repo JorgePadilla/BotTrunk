@@ -25,7 +25,7 @@ module Catalog
     def price_suffix = "USDC per call"
 
     def facts
-      rows = [ [ "Network", service.network ], [ "Asset", service.asset ], [ "Facilitator", service.facilitator ], [ "Provider", service.provider.delete_prefix("By ") ] ]
+      rows = [ [ "Network", Payments::BuildRequirements.network_names.join(", ") ], [ "Asset", service.asset ], [ "Facilitator", service.facilitator ], [ "Provider", service.provider.delete_prefix("By ") ] ]
       rows << [ "Priced in", "L#{helpers.number_with_delimiter(service.price_hnl)} at today's rate" ] if service.lempira?
       return rows unless metrics&.any?
 

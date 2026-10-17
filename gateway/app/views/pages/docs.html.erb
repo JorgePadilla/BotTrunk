@@ -48,9 +48,10 @@
             body = { url: "https://example.com/pricing" }.to_json
 
             r = api.post("/s/#{@example_service.slug}", body)                   # 1. ask → 402
-            requirements = JSON.parse(r.body).fetch("accepts").first    # amount, payTo, network, asset
+            accepts = JSON.parse(r.body).fetch("accepts")              # one entry per network
+            requirements = accepts.find { |a| a["network"] == MY_NETWORK } # amount, payTo, asset for yours
 
-            # 2. sign a USDC transfer for `requirements` with your Algorand key
+            # 2. sign a USDC transfer for `requirements` with that network's key
             #    (no Ruby x402 gem yet — until then run it through `npx bottrunk-mcp`
             #    or the TypeScript client above), then retry:
             payment = Base64.strict_encode64(signed_payload.to_json)

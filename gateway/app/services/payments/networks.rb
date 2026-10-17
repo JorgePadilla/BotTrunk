@@ -14,7 +14,9 @@ module Payments
       testnet: { caip2: "eip155:84532", usdc: "0x036CbD53842c5426634e7929541eC2318f3dCF7e", decimals: 6, extra: { name: "USDC", version: "2" } }
     }.freeze
 
-    SOLANA_FEE_PAYER = "8a8fFNfk2AGS7rgVv1BoqPUWnzQuoCrShJV8tSE6RAYi"
+    # The facilitator's Solana fee payer (GET /supported); overridable like
+    # X402_FEE_PAYER, in case GoPlausible rotates it.
+    SOLANA_FEE_PAYER = ENV.fetch("X402_SOLANA_FEE_PAYER", "8a8fFNfk2AGS7rgVv1BoqPUWnzQuoCrShJV8tSE6RAYi")
     SOLANA = {
       mainnet: { caip2: "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp", usdc: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", decimals: 6, extra: { feePayer: SOLANA_FEE_PAYER } },
       testnet: { caip2: "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1", usdc: "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU", decimals: 6, extra: { feePayer: SOLANA_FEE_PAYER } }

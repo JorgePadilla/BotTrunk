@@ -64,6 +64,22 @@ class MultiNetworkPaidCallsTest < ActionDispatch::IntegrationTest
     end
   end
 
+  test "pages and agent files tell agents every network and to pay the entry for theirs" do
+    get llms_path
+    assert_match "USDC on Algorand over x402", response.body, "only what is offered"
+
+    with_networks do
+      get llms_path
+      assert_match "USDC on Algorand, Base or Solana over x402", response.body
+      assert_match "Pay the entry whose `network` matches the wallet you hold USDC in", response.body
+      get agents_md_path
+      assert_match "Base Sepolia (`eip155:84532`)", response.body
+      assert_match "the `accepts` entry for the network", response.body
+      get service_path("scrape-markdown")
+      assert_match "Algorand, Base, Solana", response.body
+    end
+  end
+
   test "stats split payments and refusals by network" do
     with_networks do
       pay(BASE)

@@ -11,8 +11,8 @@ the payment is the credential.
 1. `POST https://api.bottrunk.com/s/<slug>` with a JSON body and no payment header.
    You get **402** with the requirements in the body and, base64-encoded, in the
    `PAYMENT-REQUIRED` header.
-2. Sign a USDC transfer for exactly `accepts[0].amount` (atomic, 6 decimals) to
-   `accepts[0].payTo`.
+2. Pick the `accepts` entry for the network you hold USDC on, and sign a USDC
+   transfer for exactly its `amount` (atomic, 6 decimals) to its `payTo`.
 3. Retry the same request with the `PAYMENT-SIGNATURE` header (`X-PAYMENT` is
    accepted for v1 clients). The receipt comes back in `PAYMENT-RESPONSE`.
 
@@ -24,7 +24,8 @@ hold an asset, the rest spare), opt it in to USDC asset
 cannot pay at all, and USDC sent before the opt-in fails. `npx bottrunk-mcp` opts
 in by itself once the ALGO lands. Nothing is charged when a call fails.
 
-- Network: Algorand MainNet (`<%= Payments::Networks.algorand(Rails.configuration.x402.network)[:caip2] %>`)
+- Networks: <%= Payments::Networks.offered.map { |n| "#{n[:name]} (`#{n[:id]}`)" }.join(", ") %>. The 402 `accepts` array has one entry for each; pay the one for the network you hold USDC on.
+- Algorand network: Algorand MainNet (`<%= Payments::Networks.algorand(Rails.configuration.x402.network)[:caip2] %>`)
 - Asset: USDC (`<%= Payments::Networks.algorand(Rails.configuration.x402.network)[:usdc_asa] %>`)
 - Settled by: <%= Rails.configuration.x402.facilitator_url %>
 

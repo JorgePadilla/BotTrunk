@@ -94,9 +94,10 @@ module Mcp
         endpoint: svc.endpoint_url,
         price_usdc: format("%.6f", svc.usd_price),
         payment_requirements: requirements.to_h,
+        accepts: built[:accepts].map(&:to_h),
         steps: [
           "POST the JSON body to the endpoint with no payment header. You get HTTP 402 with these requirements.",
-          "Sign an Algorand transfer of `amount` (atomic units, 6 decimals) of asset `asset` to `payTo` on `network`.",
+          "Pick the entry in `accepts` for the network you hold USDC on (#{Payments::BuildRequirements.network_names.join(', ')}), and sign a transfer of `amount` (atomic units, 6 decimals) of its `asset` to its `payTo`.",
           "Wrap it in an x402 v2 PaymentPayload — see `payload_shape` below — and base64 the JSON.",
           "Retry the same POST with header PAYMENT-SIGNATURE: <that base64>. X-PAYMENT is accepted as an alias.",
           "You get 200 with the result and a PAYMENT-RESPONSE header carrying the on-chain transaction id."
@@ -111,7 +112,7 @@ module Mcp
                       "Full worked example: https://bottrunk.com/docs#payment",
         easier: "Run `npx bottrunk-mcp` on the machine your agent controls — it creates a wallet, answers 402s and enforces your spending caps. Setup for twelve clients: https://bottrunk.com/connect",
         facilitator: Rails.configuration.x402.facilitator_url,
-        algo_required: "Build the transfer as an atomic group with extra.feePayer and the facilitator covers the network fee, so the call itself costs you USDC only; " \
+        algo_required: "On Algorand: build the transfer as an atomic group with extra.feePayer and the facilitator covers the network fee, so the call itself costs you USDC only; " \
                        "sign a plain transfer instead and you pay its ~0.001 ALGO yourself. Either way the paying account must be opted in to the USDC asset, " \
                        "which needs about 0.1 ALGO of Algorand minimum balance. Budget ~0.2 ALGO once, then USDC per call."
       )
