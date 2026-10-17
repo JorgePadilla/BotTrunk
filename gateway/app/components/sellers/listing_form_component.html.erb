@@ -1,0 +1,63 @@
+<%= form_with model: listing, url: url, method: method, scope: :listing, class: "flex flex-col gap-5" do |f| %>
+  <% if listing.errors.any? %>
+    <ul class="text-sm text-error flex flex-col gap-1">
+      <% listing.errors.full_messages.each do |message| %><li><%= message %></li><% end %>
+    </ul>
+  <% end %>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+    <label class="flex flex-col gap-1.5 text-sm">
+      <span class="font-medium">Name</span>
+      <%= f.text_field :name, class: "input w-full", placeholder: "Company lookup", required: true %>
+    </label>
+    <label class="flex flex-col gap-1.5 text-sm">
+      <span class="font-medium">Slug <span class="text-muted font-normal">— the URL: api.bottrunk.com/s/<em>slug</em></span></span>
+      <%= f.text_field :slug, class: "input w-full font-mono", placeholder: "company-lookup", required: true, disabled: locked? %>
+    </label>
+  </div>
+
+  <label class="flex flex-col gap-1.5 text-sm">
+    <span class="font-medium">Summary <span class="text-muted font-normal">— one line an agent reads before paying</span></span>
+    <%= f.text_field :summary, class: "input w-full", maxlength: 160, placeholder: "Legal name, status and address for a company registration number.", required: true %>
+  </label>
+
+  <label class="flex flex-col gap-1.5 text-sm">
+    <span class="font-medium">Description <span class="text-muted font-normal">(optional)</span></span>
+    <%= f.text_area :description, class: "textarea w-full", rows: 4, placeholder: "What it does, what it refuses, how fresh the data is." %>
+  </label>
+
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+    <label class="flex flex-col gap-1.5 text-sm">
+      <span class="font-medium">Category</span>
+      <%= f.select :category, categories, {}, class: "select w-full" %>
+    </label>
+    <label class="flex flex-col gap-1.5 text-sm">
+      <span class="font-medium">Price per call (USDC)</span>
+      <%= f.text_field :price_usdc, value: (listing.price_atomic ? listing.price_usdc.to_s("F") : nil), class: "input w-full font-mono", inputmode: "decimal", placeholder: "0.05", required: true, disabled: locked? %>
+    </label>
+    <label class="flex flex-col gap-1.5 text-sm md:col-span-1">
+      <span class="font-medium">Your endpoint</span>
+      <%= f.url_field :upstream_url, class: "input w-full font-mono", placeholder: "https://api.example.com/lookup", required: true %>
+    </label>
+  </div>
+  <% if locked? %>
+    <p class="text-[13px] text-muted">Slug and price are fixed: this listing has been live, and agents may have budgeted for it. To change the price, list it again under a new slug.</p>
+  <% end %>
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+    <label class="flex flex-col gap-1.5 text-sm">
+      <span class="font-medium">Inputs (JSON)</span>
+      <%= f.text_area :inputs_json, value: listing.inputs_json, class: "textarea w-full font-mono text-xs", rows: 10, spellcheck: false %>
+    </label>
+    <label class="flex flex-col gap-1.5 text-sm">
+      <span class="font-medium">Outputs (JSON)</span>
+      <%= f.text_area :outputs_json, value: listing.outputs_json, class: "textarea w-full font-mono text-xs", rows: 10, spellcheck: false %>
+    </label>
+  </div>
+  <p class="text-[13px] text-muted">Each field is <span class="font-mono">{"name", "type", "description", "example"}</span>; type is one of <span class="font-mono"><%= field_types %></span>. The first input is the one MCP marks required. We forward the agent's JSON body to your endpoint as-is.</p>
+
+  <div class="flex gap-3">
+    <%= render(Ui::ButtonComponent.new(variant: :primary, type: "submit")) { "Save draft" } %>
+    <%= link_to "Cancel", helpers.seller_root_path, class: "btn btn-ghost" %>
+  </div>
+<% end %>

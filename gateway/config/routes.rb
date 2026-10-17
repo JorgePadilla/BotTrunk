@@ -39,6 +39,12 @@ Rails.application.routes.draw do
     get "sign_in/:token", to: "sessions#confirm", as: :confirm_sign_in
     post "sign_in/:token", to: "sessions#consume"
     delete "sign_out", to: "sessions#destroy"
+    resources :listings, only: %i[new create edit update] do
+      member do
+        post :submit
+        post :pause
+      end
+    end
   end
   get "llms.txt", to: "pages#llms", as: :llms, format: false
 
@@ -72,6 +78,9 @@ Rails.application.routes.draw do
     get "inquiries", to: "inquiries#index"
     post "inquiries/:id/approve", to: "inquiries#approve", as: :approve_inquiry
     post "inquiries/:id/reject", to: "inquiries#reject", as: :reject_inquiry
+    get "listings", to: "listings#index"
+    post "listings/:id/approve", to: "listings#approve", as: :approve_listing
+    post "listings/:id/reject", to: "listings#reject", as: :reject_listing
     get "requests", to: "requests#index"
     post "requests/:id/answer", to: "requests#answer", as: :answer_request
     post "requests/:id/close", to: "requests#close", as: :close_request

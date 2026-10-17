@@ -9,7 +9,7 @@ module Catalog
   # `all`, `find(slug)`, and the readers below — so no component changes.
   class Service < Data.define(:slug, :name, :summary, :description, :category, :provider, :price_usdc,
                               :network, :asset, :facilitator, :inputs, :outputs, :upstream_url, :fulfiller,
-                              :status, :price_hnl, :family, :family_label, :family_summary, :behaviour, :job)
+                              :status, :price_hnl, :family, :family_label, :family_summary, :behaviour, :job, :seller_id)
     CATEGORIES = %w[Payments Data Verification Translation Procurement Software].freeze
 
     # live        — callable now, priced, in the Bazaar
@@ -36,7 +36,7 @@ module Catalog
     # it, `Fulfillers::HumanJob` serves the whole service and no new class is
     # written — the catalog entry *is* the service.
     def initialize(upstream_url: DEFAULT_UPSTREAM, fulfiller: nil, status: "live", price_hnl: nil, price_usdc: nil,
-                   family: nil, family_label: nil, family_summary: nil, behaviour: [], job: nil, **attrs) = super
+                   family: nil, family_label: nil, family_summary: nil, behaviour: [], job: nil, seller_id: nil, **attrs) = super
 
     # What a payer is actually buying, beyond the schema: the decisions this
     # service makes on their behalf. Published because the alternative is that
@@ -68,6 +68,9 @@ module Catalog
 
     def built_in? = fulfiller.present?
 
+    # An outside seller's API, proxied and signed with their secret.
+    def seller_listing? = seller_id.present?
+
     # Only live services take money. `on_request` ones are listed so people
     # can see what we do, but POST /s/:slug answers 503 for them.
     def live? = status == "live" || self.class.treat_all_live
@@ -81,7 +84,8 @@ module Catalog
     # until the catalog grew past it in one evening.
     def self.top_live_price_atomic = all.select(&:live?).map(&:price_atomic).max
 
-    def self.all = SEED + extra
+    # Ours, then live seller listings (Listing), then the test-only extras.
+    def self.all = SEED + Listing.catalog_services + extra
 
     def self.find(slug) = all.find { |s| s.slug == slug }
 

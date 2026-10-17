@@ -16,14 +16,19 @@ module Gateway
       @connection = connection || build_connection
     end
 
+    # What a seller's API checks: v1=HMAC-SHA256(secret, "<timestamp>.<body>").
+    def self.signature(secret, timestamp, body) = OpenSSL::HMAC.hexdigest("SHA256", secret, "#{timestamp}.#{body}")
+
     def call
       return fulfil_locally if @service.built_in?
+      return refuse_private_upstream if @service.seller_listing? && private_upstream?
 
       started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
       response = @connection.post(@service.upstream_url) do |req|
         FORWARDED_HEADERS.each { |h| req.headers[h] = @headers[h] if @headers[h] }
         req.headers["Content-Type"] ||= "application/json"
         req.body = @body
+        sign(req) if @service.seller_listing?
       end
       latency_ms = ((Process.clock_gettime(Process::CLOCK_MONOTONIC) - started) * 1000).round
 
@@ -36,6 +41,27 @@ module Gateway
     end
 
     private
+
+    # A seller's URL was public when it was approved; DNS can point it
+    # somewhere else since. Checked strictly, on every call, before any byte
+    # leaves. Nothing has been settled yet, so the agent is not charged.
+    def private_upstream?
+      _uri, problem = Security::PublicUrl.parse(@service.upstream_url, strict_dns: true)
+      problem.present?
+    end
+
+    def refuse_private_upstream
+      Result.failure("the seller's upstream does not resolve to a public address", code: :upstream_refused)
+    end
+
+    # Lets the seller refuse calls that did not come through the paywall.
+    def sign(req)
+      secret = Seller.find(@service.seller_id).signing_secret
+      timestamp = Time.current.to_i.to_s
+      req.headers["BotTrunk-Service"] = @service.slug
+      req.headers["BotTrunk-Timestamp"] = timestamp
+      req.headers["BotTrunk-Signature"] = "v1=#{self.class.signature(secret, timestamp, @body.to_s)}"
+    end
 
     # BotTrunk's own services run in-process; same Result shape as a proxied call.
     def fulfil_locally

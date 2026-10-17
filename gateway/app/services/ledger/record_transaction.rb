@@ -18,6 +18,7 @@ module Ledger
 
       call_row = Call.create!(
         service_slug: @service.slug,
+        seller_id: @service.seller_id,
         payer_address: @receipt.payer,
         pay_to: @requirements.pay_to,
         network: @requirements.network,

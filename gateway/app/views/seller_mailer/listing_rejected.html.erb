@@ -1,0 +1,9 @@
+<p style="margin:0 0 16px 0;font-size:17px;font-weight:600;">We did not list <%= @listing.name %>.</p>
+
+<% if @listing.review_notes.present? %>
+  <p style="margin:0 0 20px 0;"><%= @listing.review_notes %></p>
+<% end %>
+
+<p style="margin:0 0 22px 0;">You can edit it and submit it again from your account.</p>
+
+<p style="margin:0;"><%= mail_button "Open your account", seller_root_url %></p>

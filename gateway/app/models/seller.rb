@@ -11,6 +11,9 @@ class Seller < ApplicationRecord
   ALGORAND_ADDRESS = /\A[A-Z2-7]{58}\z/
   SIGN_IN_LINK_TTL = 15.minutes
 
+  has_many :listings, dependent: :restrict_with_error
+  has_many :calls, dependent: :restrict_with_error
+
   encrypts :signing_secret
 
   normalizes :email, with: ->(email) { email.strip.downcase }

@@ -1,0 +1,10 @@
+<% content_for :title, "List an API — BotTrunk" %>
+<% content_for :nav_active, "" %>
+
+<div class="flex flex-col gap-10 py-16 md:py-20 max-w-4xl">
+  <div class="flex flex-col gap-3">
+    <h1 class="text-4xl font-semibold tracking-[-0.03em]">List an API</h1>
+    <p class="text-muted">Saved as a draft. When you submit it, a person reviews it, and once approved agents can pay for it per call. You keep 85% of every settled call; a call your endpoint answers with an error is never charged.</p>
+  </div>
+  <%= render Sellers::ListingFormComponent.new(listing: @listing, url: seller_listings_path) %>
+</div>

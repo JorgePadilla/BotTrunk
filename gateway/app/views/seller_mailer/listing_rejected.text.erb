@@ -1,0 +1,8 @@
+We did not list <%= @listing.name %>.
+<% if @listing.review_notes.present? %>
+
+<%= @listing.review_notes %>
+<% end %>
+
+You can edit it and submit it again from your account:
+<%= seller_root_url %>

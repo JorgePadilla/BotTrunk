@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_17_200000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_18_090000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -23,12 +23,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_17_200000) do
     t.string "pay_to", null: false
     t.string "payer_address"
     t.bigint "seller_amount", null: false
+    t.bigint "seller_id"
     t.string "service_slug", null: false
     t.string "status", default: "settled", null: false
     t.string "transaction_id"
     t.datetime "updated_at", null: false
     t.integer "upstream_latency_ms"
     t.integer "upstream_status"
+    t.index ["seller_id"], name: "index_calls_on_seller_id"
     t.index ["service_slug"], name: "index_calls_on_service_slug"
     t.index ["transaction_id"], name: "index_calls_on_transaction_id", unique: true, where: "(transaction_id IS NOT NULL)"
   end
@@ -83,6 +85,29 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_17_200000) do
     t.decimal "rate", precision: 10, scale: 4, null: false
     t.string "source", null: false
     t.index ["pair", "fetched_at"], name: "index_exchange_rates_on_pair_and_fetched_at"
+  end
+
+  create_table "listings", force: :cascade do |t|
+    t.string "category", null: false
+    t.datetime "created_at", null: false
+    t.text "description"
+    t.jsonb "inputs", default: [], null: false
+    t.string "name", null: false
+    t.jsonb "outputs", default: [], null: false
+    t.bigint "price_atomic", null: false
+    t.text "review_notes"
+    t.datetime "reviewed_at"
+    t.bigint "seller_id", null: false
+    t.string "slug", null: false
+    t.string "status", default: "draft", null: false
+    t.datetime "submitted_at"
+    t.string "summary", null: false
+    t.datetime "updated_at", null: false
+    t.string "upstream_url", null: false
+    t.datetime "went_live_at"
+    t.index ["seller_id"], name: "index_listings_on_seller_id"
+    t.index ["slug"], name: "index_listings_on_slug", unique: true
+    t.index ["status", "submitted_at"], name: "index_listings_on_status_and_submitted_at"
   end
 
   create_table "local_prices", force: :cascade do |t|
@@ -161,5 +186,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_17_200000) do
     t.index ["token"], name: "index_work_orders_on_token", unique: true
   end
 
+  add_foreign_key "calls", "sellers"
   add_foreign_key "deposit_orders", "calls"
+  add_foreign_key "listings", "sellers"
 end

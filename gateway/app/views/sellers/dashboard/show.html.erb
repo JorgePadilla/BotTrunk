@@ -11,11 +11,33 @@
   </div>
 
   <% if flash[:notice] %><p class="text-sm text-muted"><%= flash[:notice] %></p><% end %>
+  <% if flash[:alert] %><p class="text-sm text-error"><%= flash[:alert] %></p><% end %>
 
   <section class="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_400px] gap-12 lg:gap-20 items-start">
-    <div class="flex flex-col gap-3.5">
-      <h2 class="text-[22px] font-semibold tracking-tight">Your APIs</h2>
-      <p class="text-muted">Listing an API is the next step and opens here shortly: you describe the endpoint and its price, a person reviews it, and once approved agents can pay for it per call. You keep 85% of every settled call.</p>
+    <div class="flex flex-col gap-5 min-w-0">
+      <div class="flex items-center justify-between gap-4">
+        <h2 class="text-[22px] font-semibold tracking-tight">Your APIs</h2>
+        <%= link_to new_seller_listing_path, class: "btn btn-sm" do %><%= icon("plus", class: "size-4") %> List an API<% end %>
+      </div>
+      <% listings = current_seller.listings.order(:created_at) %>
+      <% if listings.empty? %>
+        <p class="text-muted">Describe your endpoint and its price, submit it, and a person reviews it. Once approved, agents pay for it per call and you keep 85% of every settled call.</p>
+      <% else %>
+        <%= render Dashboard::TableComponent.new(
+          columns: [ "API", "Price", "Status", "" ], numeric: [ 1 ],
+          rows: listings.map { |l| [
+            safe_join([ (l.live? ? link_to(l.name, service_path(l.slug), class: "link link-hover") : l.name), tag.span(" /s/#{l.slug}", class: "font-mono text-muted text-xs") ]),
+            usdc(l.price_atomic),
+            safe_join([ l.status.humanize, (tag.span(" · #{l.review_notes}", class: "text-muted") if l.rejected? && l.review_notes.present?) ]),
+            safe_join([
+              (link_to("Edit", edit_seller_listing_path(l), class: "link link-hover") if l.editable?),
+              (button_to("Submit for review", submit_seller_listing_path(l), class: "link link-hover", form_class: "inline ml-3") if l.editable?),
+              (button_to("Pause", pause_seller_listing_path(l), class: "link link-hover", form_class: "inline") if l.live?)
+            ].compact)
+          ] },
+          empty: "No APIs yet."
+        ) %>
+      <% end %>
     </div>
 
     <%= render(Ui::CardComponent.new) do %>

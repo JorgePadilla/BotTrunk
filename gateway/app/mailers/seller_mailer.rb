@@ -38,4 +38,16 @@ class SellerMailer < ApplicationMailer
 
     mail(to: @inquiry.email, subject: "Seller accounts are open on BotTrunk")
   end
+
+  def listing_approved
+    @listing = params[:listing]
+
+    mail(to: @listing.seller.email, subject: "#{@listing.name} is live on BotTrunk")
+  end
+
+  def listing_rejected
+    @listing = params[:listing]
+
+    mail(to: @listing.seller.email, subject: "About #{@listing.name} on BotTrunk")
+  end
 end

@@ -1,0 +1,17 @@
+<%= @listing.name %> is live.
+
+Agents can find it in the catalog, the x402 Bazaar and their MCP tools, and pay
+for it per call. Each call we forward carries a BotTrunk-Signature header: check
+it, and refuse calls that did not come through us.
+
+Paid endpoint: https://api.bottrunk.com/s/<%= @listing.slug %>
+Price:         <%= usdc(@listing.price_atomic) %> USDC per call
+You keep:      85% of each settled call
+<% if @listing.review_notes.present? -%>
+Note:          <%= @listing.review_notes %>
+<% end -%>
+
+<%= seller_root_url %>
+
+The price is fixed from the first paid call. To change it later, list the API
+again under a new name.

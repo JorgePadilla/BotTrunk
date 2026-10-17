@@ -31,6 +31,13 @@ class AdminMailer < ApplicationMailer
     mail(to: admin, subject: "Seller inquiry — #{@inquiry.service_name}")
   end
 
+  def listing_submitted
+    @listing = params[:listing]
+    return if admin.blank?
+
+    mail(to: admin, subject: "Listing to review — #{@listing.name}, #{usdc(@listing.price_atomic)}")
+  end
+
   # A buyer asking for work. The subject says which kind, because a request
   # for something we do not list is the one that changes what we build next.
   def new_request

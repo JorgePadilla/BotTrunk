@@ -1,0 +1,9 @@
+A seller API is waiting for review.
+
+API:      <%= @listing.name %>
+Slug:     /s/<%= @listing.slug %>
+Price:    <%= usdc(@listing.price_atomic) %> USDC per call
+Endpoint: <%= @listing.upstream_url %>
+Seller:   <%= @listing.seller.email %>
+
+Review it: <%= admin_listings_url %>

@@ -1,0 +1,62 @@
+<% content_for :title, "Listings — BotTrunk admin" %>
+
+<div class="flex flex-col gap-14 py-12 md:py-16">
+  <header class="flex flex-col gap-3">
+    <%= render Dashboard::AdminNavComponent.new(active: "Listings", listings: @pending.size) %>
+    <h1 class="text-4xl font-semibold tracking-[-0.03em]">Seller APIs to review</h1>
+    <p class="text-muted">Approving puts the API in the catalog, the Bazaar and every agent's MCP tools at once. Call the endpoint yourself first. The seller is emailed either way.</p>
+    <% if flash[:notice] %><p class="text-sm text-success"><%= flash[:notice] %></p><% end %>
+    <% if flash[:alert] %><p class="text-sm text-error"><%= flash[:alert] %></p><% end %>
+  </header>
+
+  <section class="flex flex-col gap-5">
+    <h2 class="text-[22px] font-semibold tracking-tight">To review · <%= @pending.size %></h2>
+    <% if @pending.empty? %><p class="text-sm text-muted">Nothing waiting.</p><% end %>
+
+    <% @pending.each do |listing| %>
+      <%= render Ui::CardComponent.new(class: "flex flex-col gap-5") do %>
+        <div class="flex flex-col gap-2 min-w-0">
+          <div class="flex items-baseline gap-3 flex-wrap">
+            <span class="text-2xl font-medium"><%= listing.name %></span>
+            <span class="font-mono text-muted">/s/<%= listing.slug %> · <%= usdc(listing.price_atomic) %> per call · <%= listing.category %></span>
+          </div>
+          <p><%= listing.summary %></p>
+          <% if listing.description.present? %><p class="text-sm text-muted whitespace-pre-line"><%= listing.description %></p><% end %>
+          <dl class="grid grid-cols-[auto_1fr] gap-x-6 gap-y-1 text-sm">
+            <dt class="text-muted">Endpoint</dt><dd class="font-mono break-all"><%= listing.upstream_url %></dd>
+            <dt class="text-muted">Seller</dt><dd><%= listing.seller.name.presence || "—" %> · <%= mail_to listing.seller.email, listing.seller.email, class: "link link-hover" %></dd>
+            <dt class="text-muted">Payout to</dt><dd class="font-mono break-all"><%= listing.seller.payout_address || "not set" %></dd>
+            <dt class="text-muted">Split</dt><dd class="font-mono">they keep <%= usdc(listing.price_atomic - listing.price_atomic * Rails.configuration.x402.commission_bps / 10_000) %> · we keep <%= usdc(listing.price_atomic * Rails.configuration.x402.commission_bps / 10_000) %></dd>
+            <dt class="text-muted">Submitted</dt><dd><%= listing.submitted_at&.utc&.strftime("%Y-%m-%d %H:%M UTC") %></dd>
+          </dl>
+          <details class="text-sm"><summary class="cursor-pointer text-muted">Inputs and outputs</summary>
+            <pre class="font-mono text-xs whitespace-pre-wrap mt-2"><%= listing.inputs_json %></pre>
+            <pre class="font-mono text-xs whitespace-pre-wrap mt-2"><%= listing.outputs_json %></pre>
+          </details>
+        </div>
+        <div class="flex flex-col md:flex-row gap-3 md:items-end border-t hairline pt-5">
+          <%= form_with url: admin_approve_listing_path(listing), class: "flex flex-col sm:flex-row gap-3 sm:items-end grow" do |f| %>
+            <label class="flex flex-col gap-1.5 grow">
+              <span class="text-[13px] text-muted">Note to the seller (optional, sent verbatim)</span>
+              <%= f.text_field :review_notes, class: "input w-full" %>
+            </label>
+            <%= f.submit "Approve and list", class: "btn btn-primary", data: { turbo_confirm: "List #{listing.name} at #{usdc(listing.price_atomic)}? The price is fixed from its first paid call." } %>
+          <% end %>
+          <%= form_with url: admin_reject_listing_path(listing), class: "flex flex-col sm:flex-row gap-3 sm:items-end" do |f| %>
+            <%= f.text_field :review_notes, class: "input", placeholder: "Why (sent to the seller)" %>
+            <%= f.submit "Reject", class: "btn btn-ghost text-muted" %>
+          <% end %>
+        </div>
+      <% end %>
+    <% end %>
+  </section>
+
+  <section class="flex flex-col gap-5">
+    <h2 class="text-[22px] font-semibold tracking-tight">All other listings</h2>
+    <%= render Dashboard::TableComponent.new(
+      columns: [ "API", "Seller", "Price", "Status", "Updated" ], numeric: [ 2 ],
+      rows: @others.map { |l| [ safe_join([ l.name, tag.span(" /s/#{l.slug}", class: "font-mono text-muted text-xs") ]), l.seller.email, usdc(l.price_atomic), l.status, l.updated_at.utc.strftime("%m-%d %H:%M") ] },
+      empty: "No listings yet."
+    ) %>
+  </section>
+</div>
