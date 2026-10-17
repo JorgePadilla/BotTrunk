@@ -31,8 +31,8 @@ class Rack::Attack
   cache.store = RATE_LIMIT_STORE
 
   class Request < ::Rack::Request
-    # The same address TracksEvents records: the client Render's proxy saw,
-    # not a forwarded header the client wrote.
+    # The same address TracksEvents records: the caller as Cloudflare saw it
+    # (trusted proxies, config/application.rb), not a header the client wrote.
     def remote_ip = action_dispatch.remote_ip
 
     def paywall? = post? && path.match?(%r{\A/s/[^/]+/?\z})
