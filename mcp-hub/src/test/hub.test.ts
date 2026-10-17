@@ -159,6 +159,28 @@ describe("paid call through the real x402 client", () => {
     assert.equal(signed.txn.assetTransfer?.assetIndex, 10458941n);
   });
 
+  it("pays the Algorand option even when the 402 lists Base and Solana first", async () => {
+    gw.otherNetworksFirst = true;
+    try {
+      const home = tmpHome();
+      const config = configFor(gw, home);
+      const paid = createPayingFetch(config, createWallet(config), new SpendTracker(config));
+      const before = gw.payments.length;
+
+      const result = await paid(`${gw.url}/s/scrape-markdown`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: "https://example.com" }),
+      });
+
+      assert.equal(result.status, 200);
+      const envelope = gw.payments[before].body as { accepted: { network: string } };
+      assert.equal(envelope.accepted.network, TESTNET);
+    } finally {
+      gw.otherNetworksFirst = false;
+    }
+  });
+
   it("does not sign anything when the price is over the per-call cap", async () => {
     const home = tmpHome();
     const config = configFor(gw, home, { BOTTRUNK_MAX_PER_CALL: "0.001" });

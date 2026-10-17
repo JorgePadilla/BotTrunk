@@ -17,7 +17,7 @@ class PaidCallsController < ApplicationController
 
     payment_header = Payments::Payload.header_in(request.headers)
     result = handle(service, payment_header)
-    track_paywall(service, result, paid: payment_header.present?)
+    track_paywall(service, result, payment_header)
 
     data = result.data
     data[:headers]&.each { |k, v| response.set_header(k, v) }
@@ -55,11 +55,15 @@ class PaidCallsController < ApplicationController
   end
 
   # A 402 without a payment header is a probe (someone looked); a 402 with one
-  # is a rejected payment (someone tried). Settled calls are in `calls`.
-  def track_paywall(service, result, paid:)
+  # is a rejected payment (someone tried), kept with the network it was signed
+  # for, so /admin/stats can say which networks people try to pay on.
+  # Settled calls are in `calls`.
+  def track_paywall(service, result, payment_header)
     return unless result.code == :payment_required
+    return track_event("payment_required", service_slug: service.slug, reason: result.error) if payment_header.blank?
 
-    track_event(paid ? "payment_rejected" : "payment_required", service_slug: service.slug, reason: result.error)
+    track_event("payment_rejected", service_slug: service.slug, reason: result.error,
+                network: Payments::Payload.from_header(payment_header)&.network)
   end
 
   # Listed but not yet callable. These are jobs a person does, so we agree the

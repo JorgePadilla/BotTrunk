@@ -88,6 +88,16 @@
   </section>
 
   <section class="flex flex-col gap-4">
+    <h2 class="text-[22px] font-semibold tracking-tight">By network · last <%= @days %> days</h2>
+    <p class="text-[13px] text-muted">Where payments settle, and which network refused payments were signed for. A network with refusals and no settlements is one people try to pay on and cannot.</p>
+    <%= render Dashboard::TableComponent.new(
+      columns: [ "Network", "Settled", "From outside", "Volume", "Refused" ], numeric: [ 1, 2, 3, 4 ],
+      rows: r.networks.map { |n| [ safe_join([ n.name, tag.span(" #{n.network}", class: "font-mono text-muted text-xs") ]), n.settled, n.outside_settled, usdc(n.volume), n.rejected ] },
+      empty: "No payments yet."
+    ) %>
+  </section>
+
+  <section class="flex flex-col gap-4">
     <h2 class="text-[22px] font-semibold tracking-tight">Per service · last <%= @days %> days</h2>
     <%= render Dashboard::TableComponent.new(
       columns: [ "Service", "Status", "402 probes", "Rejected", "Settled", "Volume" ], numeric: [ 2, 3, 4, 5 ],

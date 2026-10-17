@@ -47,6 +47,10 @@ services:
         sync: false            # error tracking (docs/deploy.md); without it nothing is reported
       - key: OWN_PAYER_ADDRESSES
         sync: false            # comma-separated wallets of our own agents; their calls are not counted as outside usage
+      - key: BASE_PAY_TO
+        sync: false            # 0x address that receives USDC on Base; unset = Base not offered (docs/x402-algorand.md)
+      - key: SOLANA_PAY_TO
+        sync: false            # Solana address with a USDC token account; unset = Solana not offered
       # BCH_TCR_INDICATOR_ID (optional, default 97) · HNL_PER_USD (optional): pin the rate by hand
       - key: DATABASE_URL
         fromDatabase:

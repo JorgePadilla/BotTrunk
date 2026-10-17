@@ -4,11 +4,11 @@ require "test_helper"
 
 module Payments
   module Adapters
-    class AlgorandTest < ActiveSupport::TestCase
+    class FacilitatorTest < ActiveSupport::TestCase
       FACILITATOR = "https://facilitator.test"
 
       setup do
-        @adapter = Algorand.new(base_url: FACILITATOR)
+        @adapter = Facilitator.new(base_url: FACILITATOR)
         @payload = Payload.from_header(payment_header)
         @requirements = requirements_for
       end

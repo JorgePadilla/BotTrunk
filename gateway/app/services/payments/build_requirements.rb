@@ -1,8 +1,10 @@
 # frozen_string_literal: true
 
 module Payments
-  # Builds the payment requirements for one service: the `accepts` entry of the
-  # 402 body. Pure — no HTTP, no chain access.
+  # Builds the payment requirements for one service: the `accepts` entries of
+  # the 402 body, one per network we take USDC on. Algorand always, first;
+  # Base and Solana once their receiving address is configured. Pure — no
+  # HTTP, no chain access.
   class BuildRequirements
     include MoneyHelper
 
@@ -16,7 +18,7 @@ module Payments
         name: "BotTrunk",
         website: "https://bottrunk.com",
         logo: "https://bottrunk.com/icon.png",
-        categories: [ "web data", "developer tools", "human services", "payments", "algorand" ]
+        categories: [ "web data", "developer tools", "human services", "payments", "algorand", "base", "solana" ]
       },
       schema: {
         "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -36,24 +38,21 @@ module Payments
       @config = config
     end
 
+    # `accepts` is every option, in the order the 402 lists them;
+    # `requirements` is the first (Algorand), for callers that show one.
     def call
       return Result.failure("payTo address is not configured", code: :not_configured) if @config.pay_to.blank?
 
-      net = Networks.algorand(@config.network)
-      requirements = Requirements.new(
-        scheme: "exact",
-        network: net[:caip2],
-        asset: net[:usdc_asa],
-        amount: @service.price_atomic,
-        pay_to: @config.pay_to,
-        max_timeout_seconds: @config.max_timeout_seconds,
-        resource: "#{@config.public_host}/s/#{@service.slug}",
-        description: listing_description,
-        mime_type: "application/json",
-        extra: { decimals: net[:decimals], tag: @config.tag, feePayer: @config.fee_payer }.compact
-      )
-      Result.success(requirements: requirements)
+      accepts = Networks.offered(@config).each_with_index.map do |net, i|
+        # Algorand's extra keeps the field order it has always had.
+        extra = i.zero? ? { decimals: net[:decimals], tag: @config.tag, **net[:extra] } : { tag: @config.tag, **net[:extra] }
+        option(net[:id], net[:asset], net[:pay_to], extra)
+      end
+      Result.success(accepts: accepts, requirements: accepts.first)
     end
+
+    # The networks this gateway takes, by name, for messages and pages.
+    def self.network_names(config = Rails.configuration.x402) = Networks.offered(config).map { |n| n[:name].sub(" TestNet", "").sub(" Sepolia", "").sub(" devnet", "") }
 
     # What the Bazaar shows an agent deciding whether to call us. The one-line
     # summary read like a tagline next to listings that say what you get, what
@@ -61,7 +60,8 @@ module Payments
     # the price and the terms.
     def listing_description
       "#{@service.description} #{usdc(@service.price_atomic).delete_prefix('$')} USDC per call, " \
-        "paid over x402 on Algorand. No account or API key; a call that fails is not charged."
+        "paid over x402 on #{self.class.network_names(@config).to_sentence(last_word_connector: ' or ', two_words_connector: ' or ')}. " \
+        "No account or API key; a call that fails is not charged."
     end
 
     # The full 402 body: requirements + Bazaar discovery extension, shaped
@@ -69,11 +69,12 @@ module Payments
     # a JSON Schema for it). The facilitator's catalog validator is strict:
     # `type` pinned by const, closed `input`, output with `type` + `example`.
     def self.body_for(service:, requirements:)
+      options = Array(requirements)
       {
         x402Version: 2,
         error: "Payment required",
-        resource: requirements.resource_info,
-        accepts: [ requirements.to_h ], # spec fields + resource fields kept for v1-style clients
+        resource: options.first.resource_info,
+        accepts: options.map(&:to_h), # spec fields + resource fields kept for v1-style clients
         extensions: extensions_for(service)
       }
     end
@@ -121,6 +122,16 @@ module Payments
           required: %w[input]
         }
       }
+    end
+
+    private
+
+    def option(network, asset, pay_to, extra)
+      Requirements.new(
+        scheme: "exact", network: network, asset: asset, amount: @service.price_atomic, pay_to: pay_to,
+        max_timeout_seconds: @config.max_timeout_seconds, resource: "#{@config.public_host}/s/#{@service.slug}",
+        description: listing_description, mime_type: "application/json", extra: extra.compact
+      )
     end
   end
 end

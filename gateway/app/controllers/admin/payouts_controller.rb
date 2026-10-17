@@ -8,6 +8,9 @@ module Admin
     def index
       @sellers = Seller.joins(:calls).distinct.includes(:payouts).sort_by { |s| -s.owed_atomic }
       @recent = Payout.includes(:seller).order(paid_at: :desc).limit(50)
+      # Sellers are paid on Algorand; USDC taken on Base or Solana lands in
+      # those wallets and has to be moved by hand when Algorand runs short.
+      @received = Call.group(:network).sum(:amount)
     end
 
     def create

@@ -1,5 +1,5 @@
 <% content_for :title, "#{@service.name} — BotTrunk" %>
-<% content_for :description, "#{@service.summary} #{@service.usd_price.to_s("F")} USDC per call, paid over x402 on Algorand." %>
+<% content_for :description, "#{@service.summary} #{@service.usd_price.to_s("F")} USDC per call, paid over x402 on #{networks_phrase}." %>
 <% content_for :nav_active, "Catalog" %>
 
 <div id="overview" class="flex flex-col gap-12 py-12 md:py-16 scroll-mt-24">

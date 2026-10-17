@@ -33,7 +33,7 @@ module Gateway
       built = Payments::BuildRequirements.new(service: @service).call
       return built if built.failure?
 
-      body = Payments::BuildRequirements.body_for(service: @service, requirements: built[:requirements]).merge(error: reason)
+      body = Payments::BuildRequirements.body_for(service: @service, requirements: built[:accepts]).merge(error: reason)
       Result.failure(reason, code: :payment_required, data: { status: 402, body: body.to_json, content_type: "application/json" })
     end
   end

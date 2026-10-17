@@ -48,6 +48,16 @@
   </section>
 
   <section class="flex flex-col gap-5">
+    <h2 class="text-[22px] font-semibold tracking-tight">Received, by network</h2>
+    <p class="text-sm text-muted">All time. Payouts go out on Algorand, so when Base or Solana holds most of it, move some across before paying.</p>
+    <%= render Dashboard::TableComponent.new(
+      columns: [ "Network", "Received" ], numeric: [ 1 ],
+      rows: @received.sort_by { |_, v| -v }.map { |net, amount| [ safe_join([ Payments::Networks.name_for(net), tag.span(" #{net}", class: "font-mono text-muted text-xs") ]), usdc(amount) ] },
+      empty: "Nothing received yet."
+    ) %>
+  </section>
+
+  <section class="flex flex-col gap-5">
     <h2 class="text-[22px] font-semibold tracking-tight">Recorded payouts</h2>
     <%= render Dashboard::TableComponent.new(
       columns: [ "Sent (UTC)", "Seller", "Amount", "Transaction" ], numeric: [ 2 ],

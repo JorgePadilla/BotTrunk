@@ -1,6 +1,6 @@
 # BotTrunk
 
-Pay-per-call marketplace for AI agents over x402 (HTTP 402 + USDC on Algorand via the GoPlausible facilitator; the payment layer is an adapter so other chains can follow). We take 10–15% per transaction.
+Pay-per-call marketplace for AI agents over x402 (HTTP 402 + USDC via the GoPlausible facilitator: Algorand always, Base and Solana when their receiving address is set, ADR 0011). We take 10–15% per transaction.
 
 Monorepo: `gateway/` (Rails 8.1 — registry, x402 paywall + proxy, catalog, ledger) · `mcp-hub/` (TypeScript MCP server, npm `bottrunk-mcp` — one tool per live service, pays from the agent's own wallet).
 

@@ -14,3 +14,4 @@ One file per decision. Format: Context → Decision → Consequences. Status is 
 | [0008](0008-paywall-in-controller.md) | The x402 paywall is `PaidCallsController` + `Gateway::HandlePaidCall`, not Rack middleware |
 | [0009](0009-judgment-services.md) | Judgment services use a hosted judge model, with questions we write and the provider never named |
 | [0010](0010-free-first-call.md) | One free call per caller, opt-in, with nothing settled |
+| [0011](0011-usdc-on-base-and-solana.md) | Take USDC on Base and Solana as well as Algorand |

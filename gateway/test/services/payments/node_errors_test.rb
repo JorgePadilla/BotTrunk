@@ -32,7 +32,7 @@ module Payments
     test "the adapter explains a rejection instead of forwarding the raw string" do
       stub_request(:post, %r{/verify}).to_return(status: 200, body: { isValid: false, invalidReason: MISSING_OPT_IN }.to_json,
                                                  headers: { "Content-Type" => "application/json" })
-      result = Adapters::Algorand.new.verify(payload: Payload.from_header(payment_header), requirements: requirements_for)
+      result = Adapters::Facilitator.new.verify(payload: Payload.from_header(payment_header), requirements: requirements_for)
 
       assert result.failure?
       assert_match "not opted in to USDC", result.error

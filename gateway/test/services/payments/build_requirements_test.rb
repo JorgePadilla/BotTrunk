@@ -20,6 +20,34 @@ module Payments
       assert_equal Rails.configuration.x402.fee_payer, req.extra[:feePayer]
     end
 
+    test "with Base and Solana configured, the 402 offers all three, Algorand first" do
+      with_networks do
+        accepts = BuildRequirements.new(service: service).call[:accepts]
+        assert_equal [ TESTNET[:caip2], "eip155:84532", "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1" ], accepts.map(&:network)
+
+        base = accepts[1]
+        assert_equal "0x036CbD53842c5426634e7929541eC2318f3dCF7e", base.asset
+        assert_equal NetworkHelpers::BASE_PAY_TO, base.pay_to
+        assert_equal({ tag: "x402-global-challenge", name: "USDC", version: "2" }, base.extra)
+        assert_equal 90_000, base.amount, "the same µUSDC price on every network"
+
+        solana = accepts[2]
+        assert_equal "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU", solana.asset
+        assert_equal Networks::SOLANA_FEE_PAYER, solana.extra[:feePayer]
+        assert_includes solana.description, "on Algorand, Base or Solana"
+
+        body = BuildRequirements.body_for(service: service, requirements: accepts)
+        assert_equal 3, body[:accepts].size
+      end
+    end
+
+    test "without Base or Solana configured, the 402 is exactly one Algorand option, as before" do
+      accepts = BuildRequirements.new(service: service).call[:accepts]
+      assert_equal [ TESTNET[:caip2] ], accepts.map(&:network)
+      assert_equal %i[decimals tag feePayer], accepts.first.extra.keys
+      assert_includes accepts.first.description, "paid over x402 on Algorand."
+    end
+
     test "serializes with x402 field names and a string amount" do
       h = requirements_for.to_h
       assert_equal "90000", h[:amount]

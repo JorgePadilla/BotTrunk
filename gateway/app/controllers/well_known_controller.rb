@@ -9,16 +9,13 @@
 # JSON, never the HTML 404 page. Rails' SPA-less routing gives us that for
 # free as long as these routes exist.
 class WellKnownController < ApplicationController
-  DESCRIPTION = "Services an AI agent can buy on its own, paid per call in USDC over x402 on Algorand. " \
-                "Data utilities and work done by real people. No accounts, no API keys, no subscriptions."
-
   # A static index of the paid endpoints, for agents that want prices before
   # spending a request to discover them.
   def x402
     render json: {
       x402Version: 2,
       name: "BotTrunk",
-      description: DESCRIPTION,
+      description: description,
       resources: live_services.map do |service|
         {
           url: service.endpoint_url,
@@ -27,7 +24,8 @@ class WellKnownController < ApplicationController
           network: net[:caip2],
           asset: net[:usdc_asa],
           amount: service.price_atomic.to_s,
-          payTo: pay_to
+          payTo: pay_to,
+          accepts: offered.map { |n| { network: n[:id], asset: n[:asset].to_s, payTo: n[:pay_to] } }
         }
       end
     }
@@ -37,7 +35,7 @@ class WellKnownController < ApplicationController
   def agent_card
     render json: {
       name: "BotTrunk",
-      description: DESCRIPTION,
+      description: description,
       url: "https://bottrunk.com",
       version: "1.0.0",
       capabilities: { streaming: false },
@@ -57,10 +55,10 @@ class WellKnownController < ApplicationController
   def agent_manifest
     render json: {
       name: "BotTrunk",
-      description: DESCRIPTION,
+      description: description,
       url: "https://bottrunk.com",
       documentation: "https://bottrunk.com/llms.txt",
-      payments: { protocol: "x402", network: "algorand", asset: "USDC" }
+      payments: { protocol: "x402", network: "algorand", networks: offered.map { |n| n[:name].downcase }, asset: "USDC" }
     }
   end
 
@@ -99,7 +97,14 @@ class WellKnownController < ApplicationController
 
   def live_services = Catalog::Service.all.select(&:live?)
 
+  def description
+    "Services an AI agent can buy on its own, paid per call in USDC over x402 on #{helpers.networks_phrase}. " \
+      "Data utilities and work done by real people. No accounts, no API keys, no subscriptions."
+  end
+
   def net = Payments::Networks.algorand(Rails.configuration.x402.network)
+
+  def offered = @offered ||= Payments::Networks.offered
 
   def pay_to = Rails.configuration.x402.pay_to
 

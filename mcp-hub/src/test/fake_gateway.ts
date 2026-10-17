@@ -21,6 +21,8 @@ export interface FakeGateway {
   catalogFails: boolean;
   /** Make /api/v1/catalog slow, the way a cold start is. */
   catalogDelayMs: number;
+  /** List Base and Solana options ahead of Algorand in the 402, as a gateway taking all three might. */
+  otherNetworksFirst: boolean;
 }
 
 const GENESIS_HASH = TESTNET.split(":")[1];
@@ -72,6 +74,7 @@ export async function startFakeGateway(priceAtomic = "5000"): Promise<FakeGatewa
     simulateFails: false,
     catalogFails: false,
     catalogDelayMs: 0,
+    otherNetworksFirst: false,
     extraServices: [] as CatalogService[],
     account: { amount: 2_000_000, assets: [{ "asset-id": 10458941, amount: 1_500_000 }] } as FakeGateway["account"],
   };
@@ -139,7 +142,13 @@ export async function startFakeGateway(priceAtomic = "5000"): Promise<FakeGatewa
         x402Version: 2,
         error: "Payment required",
         resource: { url: `${base}/s/scrape-markdown`, description: "Scrape", mimeType: "application/json" },
-        accepts: [requirements],
+        accepts: state.otherNetworksFirst
+          ? [
+              { ...requirements, network: "eip155:84532", asset: "0x036CbD53842c5426634e7929541eC2318f3dCF7e", payTo: "0x1111111111111111111111111111111111111111", extra: { name: "USDC", version: "2" } },
+              { ...requirements, network: "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1", asset: "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU", payTo: "So1anaPayTo111111111111111111111111111111", extra: {} },
+              requirements,
+            ]
+          : [requirements],
         extensions: { bazaar: { info: { input: { type: "http", method: "POST" } } } },
       };
       const header = req.headers["payment-signature"] ?? req.headers["x-payment"];
@@ -196,6 +205,12 @@ export async function startFakeGateway(priceAtomic = "5000"): Promise<FakeGatewa
     },
     set catalogDelayMs(v: number) {
       state.catalogDelayMs = v;
+    },
+    get otherNetworksFirst() {
+      return state.otherNetworksFirst;
+    },
+    set otherNetworksFirst(v: boolean) {
+      state.otherNetworksFirst = v;
     },
     get extraServices() {
       return state.extraServices;

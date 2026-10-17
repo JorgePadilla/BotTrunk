@@ -31,11 +31,17 @@ module Api
         end
       end
 
+      # Every network the 402 offers. `network` above stays the Algorand one,
+      # because bottrunk-mcp (Algorand-only) reads it to check its wallet.
+      def networks
+        @networks ||= Payments::Networks.offered.map { |n| { id: n[:id], name: n[:name], asset: n[:asset].to_s } }
+      end
+
       def serialize(s)
         {
           slug: s.slug, name: s.name, summary: s.summary, description: s.description, category: s.category,
           provider: s.provider, endpoint: s.endpoint_url, method: "POST", status: s.status,
-          network: network,
+          network: network, networks: networks,
           price: { amount: s.price_atomic.to_s, asset: "USDC", decimals: 6 },
           inputs: s.inputs.map(&:to_h), outputs: s.outputs.map(&:to_h),
           behaviour: s.documented_behaviour.map { |label, body| { topic: label, detail: body.delete("`") } }

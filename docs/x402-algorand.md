@@ -30,6 +30,19 @@ Best-practice order from the Algorand guide: respond 402 → verify → fulfil �
 | Algorand MainNet | `algorand:wGHE2Pwdvd7S12BL5FaOP20EGYesN73ktiC1qzkkit8=` | `algorand-mainnet` | `31566704` | 6 |
 | Algorand TestNet | `algorand:SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI=` | `algorand-testnet` | `10458941` | 6 |
 
+### Base and Solana (accepted alongside Algorand since Oct 18, 2026)
+
+Most x402 payments run on Solana and Base, so the 402 offers them too when their receiving address is set (`BASE_PAY_TO`, `SOLANA_PAY_TO`). The same GoPlausible facilitator settles both: its `GET /supported` lists `exact` for `eip155:8453`, `eip155:84532`, `solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp` and `solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1` (checked Oct 18, 2026). USDC values are from Coinbase's x402 source (`mechanisms/evm/src/defaultAssets.ts`, `mechanisms/svm/src/defaultAssets.ts` and `constants.ts`).
+
+| Network | CAIP-2 | USDC | Decimals | `extra` the exact scheme needs |
+|---|---|---|---|---|
+| Base | `eip155:8453` | `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913` | 6 | `name: "USD Coin"`, `version: "2"` (EIP-712 domain) |
+| Base Sepolia | `eip155:84532` | `0x036CbD53842c5426634e7929541eC2318f3dCF7e` | 6 | `name: "USDC"`, `version: "2"` |
+| Solana | `solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp` | `EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v` | 6 | `feePayer: "8a8fFNfk2AGS7rgVv1BoqPUWnzQuoCrShJV8tSE6RAYi"` (from `/supported`) |
+| Solana devnet | `solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1` | `4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU` | 6 | same fee payer |
+
+A Solana `payTo` needs a USDC token account before it can receive; receiving any USDC once creates it. A Base address needs nothing. All three USDCs have 6 decimals, so amounts stay µUSDC in the ledger.
+
 Public algod nodes (no token): `https://testnet-api.algonode.cloud`, `https://mainnet-api.algonode.cloud`.
 
 Amounts are strings in **atomic units**: `$0.09` USDC = `"90000"`.
@@ -89,7 +102,7 @@ Learned the hard way on Sept 11: three MainNet settles landed with a perfect 402
 }
 ```
 
-Strict v2 clients build this themselves. Our gateway (`Payments::Adapters::Algorand#envelope`) fills `resource`, `accepted` and `extensions` when a payer omitted them, so v1-style clients (`X-PAYMENT` with only `payload`) are still tagged and cataloged. The 402 body likewise carries a top-level `resource` object per spec (`accepts[]` keeps the resource fields too, for older clients). `paymentRequirements` in the facilitator request is the spec shape (`Requirements#to_spec_h`, no resource fields).
+Strict v2 clients build this themselves. Our gateway (`Payments::Adapters::Facilitator#envelope`) fills `resource`, `accepted` and `extensions` when a payer omitted them, so v1-style clients (`X-PAYMENT` with only `payload`) are still tagged and cataloged. The 402 body likewise carries a top-level `resource` object per spec (`accepts[]` keeps the resource fields too, for older clients). `paymentRequirements` in the facilitator request is the spec shape (`Requirements#to_spec_h`, no resource fields).
 
 ## `/verify` and `/settle`
 

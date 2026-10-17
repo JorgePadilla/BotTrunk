@@ -10,7 +10,8 @@ module Stats
                          :outside_settled, :outside_payers, :outside_volume, :trials, :trial_callers)
     Day = Data.define(:date, :page_views, :probes, :settled, :volume)
     ServiceRow = Data.define(:slug, :name, :probes, :rejected, :settled, :volume, :status)
-    Report = Data.define(:generated_at, :windows, :days, :services, :referrers, :pages, :clients, :countries, :cities, :recent_calls, :recent_probes)
+    NetworkRow = Data.define(:network, :name, :settled, :volume, :outside_settled, :rejected)
+    Report = Data.define(:generated_at, :windows, :days, :services, :referrers, :pages, :clients, :countries, :cities, :recent_calls, :recent_probes, :networks)
 
     WINDOWS = { "24 hours" => 1, "7 days" => 7, "30 days" => 30, "All time" => nil }.freeze
 
@@ -31,7 +32,8 @@ module Stats
         countries: top(Event.since(from), :country),
         cities: top(Event.since(from), :city),
         recent_calls: Call.order(created_at: :desc).limit(20).to_a,
-        recent_probes: Event.where(name: %w[payment_required payment_rejected coming_soon]).order(created_at: :desc).limit(20).to_a
+        recent_probes: Event.where(name: %w[payment_required payment_rejected coming_soon]).order(created_at: :desc).limit(20).to_a,
+        networks: per_network
       ))
     end
 
@@ -87,6 +89,21 @@ module Stats
                        probes: probes[s.slug] || 0, rejected: rejected[s.slug] || 0,
                        settled: settled[s.slug] || 0, volume: volume[s.slug] || 0)
       end.sort_by { |r| [ -r.volume, -r.probes ] }
+    end
+
+    # Which networks people pay on, and try to: every network offered today,
+    # plus any other a refused payment was signed for.
+    def per_network
+      calls = Call.since(from)
+      settled = calls.group(:network).count
+      volume = calls.group(:network).sum(:amount)
+      outside = calls.outside.group(:network).count
+      rejected = Event.named("payment_rejected").since(from).group(Arel.sql("properties->>'network'")).count
+      ids = (Payments::Networks.offered.map { |n| n[:id] } + settled.keys + rejected.keys.compact).uniq
+      ids.map do |id|
+        NetworkRow.new(network: id, name: Payments::Networks.name_for(id), settled: settled[id] || 0, volume: volume[id] || 0,
+                       outside_settled: outside[id] || 0, rejected: rejected[id] || 0)
+      end
     end
 
     def top(relation, column, limit: 10)

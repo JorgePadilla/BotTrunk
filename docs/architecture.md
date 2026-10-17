@@ -58,7 +58,7 @@ POST /s/:slug/:path
   │    │                     └─▶ 402, body {x402Version, accepts:[requirements], extensions.bazaar, error}
   │    └─ X-PAYMENT ─────▶ Payments::Payload.from_header  (base64 JSON → Payments::Payload)
   │                         Payments::VerifyPayment(payload, requirements)
-  │                           └─▶ Adapters::Algorand#verify → POST facilitator /verify
+  │                           └─▶ Adapters::Facilitator#verify → POST facilitator /verify
   │                               failure ──▶ 402 again with error reason
   ▼
   Gateway::ProxyCall(endpoint, request)      Faraday → upstream, timeout from endpoint, timed

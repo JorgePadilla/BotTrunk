@@ -22,13 +22,17 @@ module Gateway
       built = Payments::BuildRequirements.new(service: @service).call
       return built if built.failure?
 
-      requirements = built[:requirements]
+      accepts = built[:accepts]
       payload = Payments::Payload.from_header(@payment_header)
-      return payment_required(requirements, "Payment required", offer_trial: true) if payload.nil?
+      return payment_required(accepts, "Payment required", offer_trial: true) if payload.nil?
+
+      # The option this payment is for: the one on the network it was signed for.
+      requirements = accepts.find { |r| r.network == payload.network }
+      return payment_required(accepts, "This endpoint takes USDC on #{networks_sentence}; the payment was for #{payload.network.presence || 'no network'}.") unless requirements
 
       extensions = Payments::BuildRequirements.extensions_for(@service)
       verified = Payments::VerifyPayment.new(payload: payload, requirements: requirements, extensions: extensions, adapter: @adapter).call
-      return payment_required(requirements, verified.error) if verified.failure?
+      return payment_required(accepts, verified.error) if verified.failure?
 
       upstream = Gateway::ProxyCall.new(service: @service, body: @body, headers: @headers).call
       return Result.failure(upstream.error, code: upstream.code, data: { status: 502, body: { error: upstream.error }.to_json }) if upstream.failure?
@@ -37,7 +41,7 @@ module Gateway
       settled = Payments::SettlePayment.new(payload: payload, requirements: requirements, extensions: extensions, adapter: @adapter).call
       if settled.failure?
         cancel_order(upstream[:order])
-        return payment_required(requirements, settled.error)
+        return payment_required(accepts, settled.error)
       end
 
       receipt = settled[:receipt]
@@ -109,8 +113,10 @@ module Gateway
       Rails.error.report(error, handled: true, context: { service: @service.slug, **context })
     end
 
-    def payment_required(requirements, error, offer_trial: false)
-      body = Payments::BuildRequirements.body_for(service: @service, requirements: requirements).merge(error: error)
+    def networks_sentence = Payments::BuildRequirements.network_names.to_sentence(last_word_connector: " or ", two_words_connector: " or ")
+
+    def payment_required(accepts, error, offer_trial: false)
+      body = Payments::BuildRequirements.body_for(service: @service, requirements: accepts).merge(error: error)
       data = { status: 402, content_type: "application/json" }
       if offer_trial && @trial&.available?
         body[:trial] = { available: true, how: "Repeat this request with the header #{Gateway::GrantTrial::HEADER}: 1 for one free call." }
