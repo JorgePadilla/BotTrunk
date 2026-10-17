@@ -16,7 +16,7 @@ The provider's customer agreement allows its API inside applications we build an
 ## Decision
 - **Built-in fulfillers** (`injection-check`, `page-kind`, `tool-call-gate`, `page-fit`) call one client, `Judgment::Judge`. The provider, endpoint, model and key are configuration (`JUDGE_API_URL`, `JUDGE_MODEL`, `JUDGE_API_KEY`), not code.
 - **BotTrunk writes every question.** They live in `Judgment::Rubrics`, along with the thresholds and the code deny rules. Buyers send only the data the questions are about. We never list a service that takes buyer-written questions or labels and returns raw answers to them.
-- **Responses never name the provider or the model.** They carry `Rubrics::VERSION`, which changes whenever a question or threshold changes. Listings say only that input is sent to a third-party model provider that does not train on requests.
+- **Responses never name the provider or the model.** They carry `Rubrics::VERSION`, which changes whenever a question or threshold changes. Listings say only that input is sent to a third-party model provider, with questions we wrote.
 - **Verdicts are advisory.** Exact rules (the gate's `DENY` list) run in code before the judge, and nothing it answers can loosen them. Buyer input always goes into its own named field in the state.
 - **No training.** Judge answers are never stored for training or distillation.
 

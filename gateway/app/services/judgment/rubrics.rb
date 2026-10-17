@@ -105,12 +105,12 @@ module Judgment
       "listing" => "Search results, a category or a list of many items linking elsewhere",
       "docs" => "Technical documentation, a reference or a how-to",
       "landing" => "A home or marketing page describing a company or product",
-      "login_wall" => "Asks the visitor to sign in before showing the content",
+      "login_wall" => "A sign-in or sign-up form is the main thing on the page, whether it guards other content or the page exists only to sign in",
       "paywall" => "Asks the visitor to subscribe or pay before showing the content",
       "consent_wall" => "Mostly a cookie, age or consent prompt blocking the content",
       "soft_404" => "Says the page was not found or no longer exists",
       "parked_domain" => "A parked domain, a domain-for-sale page or a placeholder",
-      "error_page" => "A server error, maintenance or access-denied message",
+      "error_page" => "A server error, maintenance or access-denied message, with no form to sign in",
       "other" => "None of the above"
     }.freeze
 

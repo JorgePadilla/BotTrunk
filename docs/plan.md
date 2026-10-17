@@ -24,7 +24,7 @@ Done:
 Open:
 
 - [ ] **Distribution — real usage from other people's agents.** The gate for the challenge and the point of the product. Never script self-calls.
-- [ ] **Judgment services** (ADR 0009): `injection-check`, `page-kind`, `tool-call-gate`, `page-fit` at 0.02 USDC, BotTrunk-written questions only, provider never named to buyers. Fulfillers and tests landed (Oct 17); to list them: set `JUDGE_*` on Render, then add the catalog entries. Stretch: `link-triage`.
+- [ ] **Judgment services** (ADR 0009): `injection-check`, `page-kind`, `tool-call-gate`, `page-fit` at 0.02 USDC, BotTrunk-written questions only, provider never named to buyers. Fulfillers, tests and catalog entries landed (Oct 17), `JUDGE_*` set on Render. Left: a production smoke call per service, then `bin/register-bazaar` to list them in the Bazaar. Stretch: `link-triage`.
 - [ ] **Seller sign-up and auth**: turns `SellerInquiry` into accounts; `Catalog::Service` moves from in-code seed to an ActiveRecord model (see `architecture.md` §3).
 - [ ] **Seller dashboard**: `stat_row`, `calls_table`, `endpoint_form`, `api_key_reveal` components (`architecture.md`).
 - [ ] **"Pay with wallet" for humans**: a wallet-connect button, since phone-wallet 24-word HD phrases can't be used by the SDKs.

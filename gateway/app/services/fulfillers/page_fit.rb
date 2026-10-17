@@ -3,13 +3,16 @@
 module Fulfillers
   # Built-in service: does this page answer my question, and where? The
   # page is split into paragraphs and the judge picks the one that answers; the
-  # `evidence` returned is that paragraph exactly as it appears on the page,
-  # copied by code, never written by a model.
+  # `evidence` returned is that paragraph's text as it appears on the page,
+  # copied by code, never written by a model. Markdown syntax (images, link
+  # targets, table pipes, footnote marks) is removed first: an infobox row is
+  # unreadable with it, and the judge reads the same plain text.
   # Input: { url, question }. Output: { answers, relevance, evidence,
   # evidence_confidence, title, url, truncated, version }.
   class PageFit < Judged
     MAX_PARAGRAPHS = 254   # a Choice takes 255 options; one is `none`
     MIN_CHARS = 20         # shorter blocks are headings and buttons, not evidence
+    MAX_CHARS = 1_500      # longer blocks are cut at line breaks into pieces about this size
     QUESTION_CHARS = 1_000
 
     def call
@@ -40,8 +43,28 @@ module Fulfillers
 
     # { "p0" => "…", "p1" => "…" }: opaque ids for the Choice, text in the state.
     def split(text)
-      blocks = text.split(/\n{2,}/).map(&:strip).select { |b| b.length >= MIN_CHARS }
-      blocks.first(MAX_PARAGRAPHS).each_with_index.to_h { |block, i| [ "p#{i}", block ] }
+      blocks = text.split(/\n{2,}/).flat_map { |block| pieces(block) }.map { |block| plain(block) }
+      blocks.select { |b| b.length >= MIN_CHARS }.first(MAX_PARAGRAPHS).each_with_index.to_h { |block, i| [ "p#{i}", block ] }
+    end
+
+    def pieces(block)
+      return [ block ] if block.length <= MAX_CHARS
+
+      block.lines.each_with_object([ +"" ]) do |line, out|
+        out << +"" if out.last.length + line.length > MAX_CHARS && out.last.present?
+        out.last << line
+      end
+    end
+
+    def plain(markdown)
+      markdown
+        .gsub(/!\[[^\]]*\]\([^)]*\)/, "")             # images
+        .gsub(/\[\d+\]/, "")                           # footnote marks, before their links
+        .gsub(/\[([^\]]*)\]\([^)]*\)/, '\1')          # links keep their text
+        .gsub(/^[\s|:-]*-[\s|:-]*$/, "")               # table separator rows
+        .gsub("&nbsp;", " ").delete("​﻿")
+        .gsub(/(?:\s*\|)+\s*/, " | ").squish                 # empty cells collapse into one separator
+        .delete_prefix("| ").delete_suffix(" |").strip
     end
   end
 end

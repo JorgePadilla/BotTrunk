@@ -51,6 +51,42 @@ module Fulfillers
       end
     end
 
+    test "reads an infobox as plain text: no image, link targets, footnote marks or empty cells" do
+      infobox = <<~HTML
+        <html><body><main><table>
+          <tr><td><a href="/wiki/File:Map.svg"><img src="//img.example/map.png" alt="Location of Honduras"></a></td></tr>
+          <tr><th>Capital<br>and largest city</th><td><a href="/wiki/Tegucigalpa" title="Tegucigalpa">Tegucigalpa</a><sup><a href="#cite-1">[1]</a></sup></td></tr>
+          <tr><th>Currency</th><td>Lempira&nbsp;(HNL)</td></tr>
+        </table></main></body></html>
+      HTML
+      stub_request(:get, "https://example.com/honduras").to_return(status: 200, body: infobox, headers: { "Content-Type" => "text/html" })
+
+      with_judge_key do
+        stub_answers(0.99, "p0")
+        evidence = JSON.parse(fit[:body])["evidence"]
+
+        assert_includes evidence, "Capital and largest city | Tegucigalpa"
+        assert_includes evidence, "Currency | Lempira (HNL)"
+        assert_no_match(/\]\(|map\.png|\[1\]|\| \||&nbsp;/, evidence)
+        assert_equal evidence, judge_request_body.dig("state", "page", "paragraphs", "p0")
+      end
+    end
+
+    test "cuts a block too long to be evidence into pieces at line breaks" do
+      lines = (1..60).map { |i| "<li>Item #{i}: #{"a fact about the country " * 2}</li>" }.join
+      stub_request(:get, "https://example.com/honduras").to_return(status: 200, body: "<html><body><main><ul>#{lines}</ul></main></body></html>", headers: { "Content-Type" => "text/html" })
+
+      with_judge_key do
+        stub_answers(0.99, "p0")
+        fit
+
+        paragraphs = judge_request_body.dig("state", "page", "paragraphs").values
+        assert_operator paragraphs.size, :>, 1
+        assert paragraphs.all? { |p| p.length <= PageFit::MAX_CHARS }
+        assert_includes paragraphs.last, "Item 60"
+      end
+    end
+
     test "returns no evidence when the page does not answer" do
       with_judge_key do
         stub_answers(0.2)

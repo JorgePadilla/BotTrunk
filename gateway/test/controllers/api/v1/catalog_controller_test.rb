@@ -29,6 +29,22 @@ module Api
         assert_equal "live", services.find { |s| s["slug"] == "deposit-bac-1000" }["status"]
       end
 
+      test "a judgment service lists the judge's terms, not the fetch limits it never hits" do
+        get api_v1_catalog_url
+        services = response.parsed_body["services"]
+
+        check = services.find { |s| s["slug"] == "injection-check" }
+        assert_equal "20000", check["price"]["amount"]
+        assert_equal "text", check["inputs"][0]["name"]
+        topics = check["behaviour"].map { |b| b["topic"] }
+        assert_includes topics, "Who judges"
+        assert_includes topics, "Method"
+        assert_not_includes topics, "Private addresses"
+
+        page = services.find { |s| s["slug"] == "page-kind" }
+        assert_includes page["behaviour"].map { |b| b["topic"] }, "Private addresses"
+      end
+
       test "the four deposit tiers are priced from the day's rate" do
         get api_v1_catalog_url(category: "Payments")
         tiers = response.parsed_body["services"].select { |s| s["slug"].start_with?("deposit-bac") }

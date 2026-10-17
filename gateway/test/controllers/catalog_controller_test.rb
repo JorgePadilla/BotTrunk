@@ -195,6 +195,18 @@ class CatalogControllerTest < ActionDispatch::IntegrationTest
     assert_match "render_js", response.body
   end
 
+  test "a judgment service page says who judges and that the verdict is advisory" do
+    %w[injection-check tool-call-gate page-kind page-fit].each do |slug|
+      get service_url(slug)
+      assert_response :success
+      assert_match "third-party model provider to be judged", response.body, slug
+      assert_match "Probabilities, not proof", response.body, slug
+    end
+
+    get service_url("injection-check")
+    assert_no_match "BotTrunk/0.1", response.body, "a text check fetches nothing, so it has no fetch limits to publish"
+  end
+
   test "a human-fulfilled service has no built-in limits to publish" do
     get service_url("test-on-request")
 
