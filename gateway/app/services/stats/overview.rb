@@ -7,7 +7,7 @@ module Stats
   # numbers leave out our own wallets (`Call.outside`).
   class Overview
     Window = Data.define(:label, :page_views, :visitors, :probes, :rejected, :settled, :payers, :volume, :commission,
-                         :outside_settled, :outside_payers, :outside_volume)
+                         :outside_settled, :outside_payers, :outside_volume, :trials, :trial_callers)
     Day = Data.define(:date, :page_views, :probes, :settled, :volume)
     ServiceRow = Data.define(:slug, :name, :probes, :rejected, :settled, :volume, :status)
     Report = Data.define(:generated_at, :windows, :days, :services, :referrers, :pages, :clients, :countries, :cities, :recent_calls, :recent_probes)
@@ -55,7 +55,9 @@ module Stats
         commission: calls.sum(:commission),
         outside_settled: calls.outside.count,
         outside_payers: calls.outside.distinct.count(:payer_address),
-        outside_volume: calls.outside.sum(:amount)
+        outside_volume: calls.outside.sum(:amount),
+        trials: events.named(Gateway::GrantTrial::EVENT).count,
+        trial_callers: events.named(Gateway::GrantTrial::EVENT).distinct.count(Arel.sql("properties->>'trial_key'"))
       )
     end
 

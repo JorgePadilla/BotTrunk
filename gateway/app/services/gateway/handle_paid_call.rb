@@ -9,8 +9,9 @@ module Gateway
     # answer; we are the ones out of sync, and only a person can reconcile it.
     class UnrecordedSettlement < StandardError; end
 
-    def initialize(service:, payment_header:, body:, headers: {}, adapter: Payments::Adapters.current)
+    def initialize(service:, payment_header:, body:, headers: {}, trial: nil, adapter: Payments::Adapters.current)
       @service = service
+      @trial = trial
       @payment_header = payment_header
       @body = body
       @headers = headers
@@ -23,7 +24,7 @@ module Gateway
 
       requirements = built[:requirements]
       payload = Payments::Payload.from_header(@payment_header)
-      return payment_required(requirements, "Payment required") if payload.nil?
+      return payment_required(requirements, "Payment required", offer_trial: true) if payload.nil?
 
       extensions = Payments::BuildRequirements.extensions_for(@service)
       verified = Payments::VerifyPayment.new(payload: payload, requirements: requirements, extensions: extensions, adapter: @adapter).call
@@ -108,9 +109,14 @@ module Gateway
       Rails.error.report(error, handled: true, context: { service: @service.slug, **context })
     end
 
-    def payment_required(requirements, error)
+    def payment_required(requirements, error, offer_trial: false)
       body = Payments::BuildRequirements.body_for(service: @service, requirements: requirements).merge(error: error)
-      Result.failure(error, code: :payment_required, data: { status: 402, body: body.to_json, content_type: "application/json" })
+      data = { status: 402, content_type: "application/json" }
+      if offer_trial && @trial&.available?
+        body[:trial] = { available: true, how: "Repeat this request with the header #{Gateway::GrantTrial::HEADER}: 1 for one free call." }
+        data[:headers] = { "BotTrunk-Trial" => "available" }
+      end
+      Result.failure(error, code: :payment_required, data: data.merge(body: body.to_json))
     end
   end
 end

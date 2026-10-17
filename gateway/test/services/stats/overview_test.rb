@@ -52,6 +52,17 @@ module Stats
       assert_equal 25_000, today.outside_volume
     end
 
+    test "free trials are counted per caller, apart from money" do
+      [ "K1", "K1", "K2" ].each_with_index do |key, i|
+        Event.create!(name: "trial_call", service_slug: "page-kind", properties: { trial_key: key }, created_at: @now - (i + 1).hours)
+      end
+
+      today = Overview.new(days: 30, now: @now).call[:report].windows.find { |w| w.label == "24 hours" }
+      assert_equal 3, today.trials
+      assert_equal 2, today.trial_callers
+      assert_equal 1, today.outside_settled, "trials never count as outside usage"
+    end
+
     test "daily series has one entry per day ending today" do
       report = Overview.new(days: 7, now: @now).call[:report]
       assert_equal 7, report.days.size

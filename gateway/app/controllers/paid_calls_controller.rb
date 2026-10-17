@@ -16,12 +16,7 @@ class PaidCallsController < ApplicationController
     return coming_soon(service) unless service.live?
 
     payment_header = Payments::Payload.header_in(request.headers)
-    result = Gateway::HandlePaidCall.new(
-      service: service,
-      payment_header: payment_header,
-      body: request.raw_post,
-      headers: { "Content-Type" => request.content_type, "Accept" => request.headers["Accept"] }.compact
-    ).call
+    result = handle(service, payment_header)
     track_paywall(service, result, paid: payment_header.present?)
 
     data = result.data
@@ -43,6 +38,21 @@ class PaidCallsController < ApplicationController
   end
 
   private
+
+  # A request with a payment is always a paid call. Without one, the trial
+  # header asks for the one free call (ADR 0010).
+  def handle(service, payment_header)
+    trial = Gateway::GrantTrial.new(service: service, ip: request.remote_ip)
+    body = request.raw_post
+    headers = { "Content-Type" => request.content_type, "Accept" => request.headers["Accept"] }.compact
+    if payment_header.blank? && Gateway::GrantTrial.requested?(request.headers)
+      result = Gateway::HandleTrialCall.new(service: service, trial: trial, body: body, headers: headers).call
+      track_event(Gateway::GrantTrial::EVENT, service_slug: service.slug, trial_key: result[:trial_key]) if result.success?
+      result
+    else
+      Gateway::HandlePaidCall.new(service: service, payment_header: payment_header, body: body, headers: headers, trial: trial).call
+    end
+  end
 
   # A 402 without a payment header is a probe (someone looked); a 402 with one
   # is a rejected payment (someone tried). Settled calls are in `calls`.
@@ -76,8 +86,8 @@ class PaidCallsController < ApplicationController
   def cors_headers
     response.set_header("Access-Control-Allow-Origin", "*")
     response.set_header("Access-Control-Allow-Methods", "POST, OPTIONS")
-    response.set_header("Access-Control-Allow-Headers", "Content-Type, Accept, PAYMENT-SIGNATURE, X-PAYMENT")
-    response.set_header("Access-Control-Expose-Headers", "PAYMENT-REQUIRED, PAYMENT-RESPONSE, X-PAYMENT-RESPONSE")
+    response.set_header("Access-Control-Allow-Headers", "Content-Type, Accept, PAYMENT-SIGNATURE, X-PAYMENT, #{Gateway::GrantTrial::HEADER}")
+    response.set_header("Access-Control-Expose-Headers", "PAYMENT-REQUIRED, PAYMENT-RESPONSE, X-PAYMENT-RESPONSE, BotTrunk-Trial, BotTrunk-Fund")
     response.set_header("Access-Control-Max-Age", "86400")
   end
 end

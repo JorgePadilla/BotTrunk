@@ -60,6 +60,11 @@
     <%= render Dashboard::StatRowComponent.new(stats: r.windows.map { |w|
       { label: w.label, value: w.outside_settled, hint: "#{w.outside_payers} #{"payer".pluralize(w.outside_payers)} · #{usdc(w.outside_volume)}" }
     }) %>
+    <h3 class="text-[13px] uppercase tracking-wide text-muted mt-4">Free trials</h3>
+    <p class="text-[13px] text-muted">One free call per caller every 30 days (ADR 0010). Not money, so not in the numbers above.</p>
+    <%= render Dashboard::StatRowComponent.new(stats: r.windows.map { |w|
+      { label: w.label, value: w.trials, hint: "#{w.trial_callers} #{"caller".pluralize(w.trial_callers)}" }
+    }) %>
   </section>
 
   <section class="flex flex-col gap-8">
