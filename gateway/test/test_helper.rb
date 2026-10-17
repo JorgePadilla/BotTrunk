@@ -56,6 +56,7 @@ module ActiveSupport
     include ActiveJob::TestHelper
     include ActionMailer::TestHelper
     include MailHelpers
+    include JudgeHelpers
 
     # Run tests in parallel with specified workers
     parallelize(workers: :number_of_processors)

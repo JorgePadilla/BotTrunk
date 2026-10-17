@@ -37,6 +37,12 @@ services:
         sync: false            # Browser Rendering ("Browser Run" permission): scrape-markdown-js, screenshot-url, pdf-url
       - key: CLOUDFLARE_ACCOUNT_ID
         sync: false            # the account the renders are billed to; it goes in the API path, not a header
+      - key: JUDGE_API_URL
+        sync: false            # hosted judge model behind the judgment services (ADR 0009); value in the password manager
+      - key: JUDGE_MODEL
+        sync: false            # pinned model id the thresholds in Judgment::Rubrics were tuned against
+      - key: JUDGE_API_KEY
+        sync: false            # without all three JUDGE_* the judgment services answer 502 and charge nothing
       - key: HONEYBADGER_API_KEY
         sync: false            # error tracking (docs/deploy.md); without it nothing is reported
       # BCH_TCR_INDICATOR_ID (optional, default 97) · HNL_PER_USD (optional): pin the rate by hand
