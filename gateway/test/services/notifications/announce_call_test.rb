@@ -28,6 +28,16 @@ module Notifications
       end
     end
 
+    test "a call from one of our own wallets says so, so a test buy is not mistaken for a customer" do
+      with_admin_email do
+        perform_enqueued_jobs { AnnounceCall.new(call: build_call(payer_address: PAYER)).call }
+        assert_match(/KPFQ \(ours\)\z/, ActionMailer::Base.deliveries.last.subject)
+
+        perform_enqueued_jobs { AnnounceCall.new(call: build_call(payer_address: "OUTSIDEWALLET")).call }
+        assert_no_match(/ours/, ActionMailer::Base.deliveries.last.subject)
+      end
+    end
+
     # An anonymous payer is not a new customer — we cannot tell one from another.
     test "a call with no payer address is never announced as a new payer" do
       with_admin_email do

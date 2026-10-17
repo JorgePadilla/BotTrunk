@@ -10,4 +10,12 @@ class Call < ApplicationRecord
   validates :status, inclusion: { in: STATUSES }
 
   scope :since, ->(time) { where(created_at: time..) }
+
+  # Paid by someone else's wallet: the number the Phase 1 milestone is about.
+  # A call with no payer reported is left out, since nobody can say whose it was.
+  scope :outside, -> { where.not(payer_address: [ nil, "", *own_payers ]) }
+
+  def self.own_payers = Rails.configuration.x402.own_payers
+
+  def own_payer? = self.class.own_payers.include?(payer_address)
 end

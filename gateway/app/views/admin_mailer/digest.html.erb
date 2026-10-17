@@ -35,6 +35,7 @@
 
 <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 22px 0;">
   <%= receipt_row "Paid calls", @report[:calls].to_s %>
+  <%= receipt_row "From outside wallets", "#{@report[:outside_calls]} from #{pluralize(@report[:outside_payers], "payer")}" %>
   <%= receipt_row "Volume", "#{usdc(@report[:volume])} USDC", mono: true %>
   <%= receipt_row "Our share", "#{usdc(@report[:commission])} USDC", mono: true %>
   <%= receipt_row "Delivered", @report[:delivered].map { |o| "#{hnl(o.amount_hnl)} to #{o.beneficiary_name}" }.join(", ") %>

@@ -32,6 +32,22 @@ module Notifications
       assert_match(/day/, report.oldest_job)
     end
 
+    test "paid calls from outside wallets are counted apart from ours" do
+      payers = [ Rails.configuration.x402.own_payers.first, "OUTSIDE-1", "OUTSIDE-1", "OUTSIDE-2" ]
+      payers.each_with_index do |payer, i|
+        Call.create!(service_slug: "page-kind", pay_to: "GATEWAY", network: "algorand:x", asset: "31566704", amount: 20_000,
+                     commission: 3_000, seller_amount: 17_000, payer_address: payer, transaction_id: "D#{i}", status: "settled")
+      end
+
+      with_admin_email do
+        report = DailyDigest.new.call[:report]
+        assert_equal 4, report.calls
+        assert_equal 3, report.outside_calls
+        assert_equal 2, report.outside_payers
+      end
+      assert_match "3 from 2 payers", ActionMailer::Base.deliveries.last.text_part.body.to_s
+    end
+
     test "an empty day still produces a report and an email" do
       with_admin_email do
         report = DailyDigest.new.call[:report]

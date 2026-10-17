@@ -22,6 +22,7 @@ Queue is empty.
 
 LAST 24 HOURS
 Paid calls:  <%= @report[:calls] %>
+Outside:     <%= @report[:outside_calls] %> from <%= pluralize(@report[:outside_payers], "payer") %>
 Volume:      <%= usdc(@report[:volume]) %> USDC
 Our share:   <%= usdc(@report[:commission]) %> USDC
 <% if @report[:delivered].any? -%>

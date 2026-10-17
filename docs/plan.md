@@ -23,7 +23,7 @@ Done:
 
 Open:
 
-- [ ] **Distribution — real usage from other people's agents.** The gate for the challenge and the point of the product. Never script self-calls.
+- [ ] **Distribution — real usage from other people's agents.** The gate for the challenge and the point of the product. Never script self-calls. Target by Oct 31: 25 paid calls from 5 wallets that are not ours. Measured on `/admin/stats` → *Outside usage* and in the daily digest (Oct 17); our wallets are `config.x402.own_payers` plus `OWN_PAYER_ADDRESSES` on Render.
 - [ ] **Judgment services** (ADR 0009): `injection-check`, `page-kind`, `tool-call-gate`, `page-fit` at 0.02 USDC, BotTrunk-written questions only, provider never named to buyers. Fulfillers, tests and catalog entries landed (Oct 17), `JUDGE_*` set on Render. Left: a production smoke call per service, then `bin/register-bazaar` to list them in the Bazaar. Stretch: `link-triage`.
 - [ ] **Seller sign-up and auth**: turns `SellerInquiry` into accounts; `Catalog::Service` moves from in-code seed to an ActiveRecord model (see `architecture.md` §3).
 - [ ] **Seller dashboard**: `stat_row`, `calls_table`, `endpoint_form`, `api_key_reveal` components (`architecture.md`).

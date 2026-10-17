@@ -76,7 +76,7 @@ class AdminMailer < ApplicationMailer
   end
 
   def call_subject
-    who = @call.payer_address.present? ? " from #{short_address(@call.payer_address)}" : ""
+    who = @call.payer_address.present? ? " from #{short_address(@call.payer_address)}#{' (ours)' if @call.own_payer?}" : ""
     "#{@first_from_payer ? 'New payer' : 'Paid call'} — #{@call.service_slug}, #{usdc(@call.amount)}#{who}"
   end
 

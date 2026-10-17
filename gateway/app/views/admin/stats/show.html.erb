@@ -54,6 +54,14 @@
     </div>
   </section>
 
+  <section class="flex flex-col gap-4">
+    <h2 class="text-[22px] font-semibold tracking-tight">Outside usage</h2>
+    <p class="text-[13px] text-muted">Settled calls paid by wallets that are not ours (<code>config.x402.own_payers</code>). The Phase 1 milestone.</p>
+    <%= render Dashboard::StatRowComponent.new(stats: r.windows.map { |w|
+      { label: w.label, value: w.outside_settled, hint: "#{w.outside_payers} #{"payer".pluralize(w.outside_payers)} · #{usdc(w.outside_volume)}" }
+    }) %>
+  </section>
+
   <section class="flex flex-col gap-8">
     <% r.windows.each do |w| %>
       <div class="flex flex-col gap-4">
@@ -114,7 +122,7 @@
     <%= render Dashboard::TableComponent.new(
       columns: [ "When (UTC)", "Service", "Payer", "Amount", "Commission", "Upstream", "Txn" ], numeric: [ 3, 4 ],
       rows: r.recent_calls.map { |c| [
-        c.created_at.utc.strftime("%m-%d %H:%M"), c.service_slug, tag.span(short_address(c.payer_address), class: "font-mono"),
+        c.created_at.utc.strftime("%m-%d %H:%M"), c.service_slug, safe_join([ tag.span(short_address(c.payer_address), class: "font-mono"), (" · ours" if c.own_payer?) ]),
         usdc(c.amount), usdc(c.commission), "#{c.upstream_status} · #{c.upstream_latency_ms} ms",
         (c.transaction_id ? link_to(short_address(c.transaction_id, head: 8, tail: 4), "https://allo.info/tx/#{c.transaction_id}", class: "link link-hover font-mono", target: "_blank", rel: "noopener") : "—")
       ] },

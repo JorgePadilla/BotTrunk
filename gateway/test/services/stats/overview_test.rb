@@ -38,6 +38,20 @@ module Stats
       assert_equal 1, all.rejected
     end
 
+    test "outside usage leaves out our own wallets and calls with no payer" do
+      own = Rails.configuration.x402.own_payers.first
+      [ [ own, "T3" ], [ nil, "T4" ], [ "PAYER-B", "T5" ] ].each do |payer, txn|
+        Call.create!(service_slug: "page-fit", pay_to: "GATEWAY", network: "algorand:x", asset: "31566704", amount: 20_000,
+                     commission: 3_000, seller_amount: 17_000, payer_address: payer, transaction_id: txn, status: "settled", created_at: @now - 1.hour)
+      end
+
+      today = Overview.new(days: 30, now: @now).call[:report].windows.find { |w| w.label == "24 hours" }
+      assert_equal 4, today.settled
+      assert_equal 2, today.outside_settled, "PAYER-A and PAYER-B, not ours and not the anonymous one"
+      assert_equal 2, today.outside_payers
+      assert_equal 25_000, today.outside_volume
+    end
+
     test "daily series has one entry per day ending today" do
       report = Overview.new(days: 7, now: @now).call[:report]
       assert_equal 7, report.days.size

@@ -19,4 +19,13 @@ Rails.application.configure do
   config.x402.commission_bps = 1500 # 15% of every call, in basis points
   config.x402.adapter = "Payments::Adapters::Algorand"
   config.x402.public_host = ENV.fetch("BOTTRUNK_PUBLIC_HOST", "https://api.bottrunk.com")
+  # Wallets that are ours: the test payer `bin/pay` signs with, the "bank" that
+  # funds it, and whatever OWN_PAYER_ADDRESSES adds (our own agents). Their
+  # calls are real money but not traction, so Stats counts them apart.
+  # Addresses are public; nothing here is a secret.
+  config.x402.own_payers = [
+    "LQAWG3WUMKWTFGEFCCOET6JGPRKD2JFYPIJ6HPIRYAC6QDUJSBDVMCKPFQ",
+    "ABEAGNREVBDSINTSOWXYXOANZDRTLBWDGULA3SALTWRMXNEED2LWZNSADE",
+    *ENV.fetch("OWN_PAYER_ADDRESSES", "").split(",").map(&:strip)
+  ].compact_blank.uniq.freeze
 end

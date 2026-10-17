@@ -3,9 +3,11 @@
 module Stats
   # Everything the admin stats page shows, computed in a handful of grouped
   # queries over `events` (traffic, probes) and `calls` (money). Amounts are
-  # integer µUSDC, as everywhere else; the view formats them.
+  # integer µUSDC, as everywhere else; the view formats them. The `outside_*`
+  # numbers leave out our own wallets (`Call.outside`).
   class Overview
-    Window = Data.define(:label, :page_views, :visitors, :probes, :rejected, :settled, :payers, :volume, :commission)
+    Window = Data.define(:label, :page_views, :visitors, :probes, :rejected, :settled, :payers, :volume, :commission,
+                         :outside_settled, :outside_payers, :outside_volume)
     Day = Data.define(:date, :page_views, :probes, :settled, :volume)
     ServiceRow = Data.define(:slug, :name, :probes, :rejected, :settled, :volume, :status)
     Report = Data.define(:generated_at, :windows, :days, :services, :referrers, :pages, :clients, :countries, :cities, :recent_calls, :recent_probes)
@@ -50,7 +52,10 @@ module Stats
         settled: calls.count,
         payers: calls.distinct.count(:payer_address),
         volume: calls.sum(:amount),
-        commission: calls.sum(:commission)
+        commission: calls.sum(:commission),
+        outside_settled: calls.outside.count,
+        outside_payers: calls.outside.distinct.count(:payer_address),
+        outside_volume: calls.outside.sum(:amount)
       )
     end
 

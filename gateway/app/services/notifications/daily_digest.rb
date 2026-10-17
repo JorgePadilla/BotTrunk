@@ -11,7 +11,8 @@ module Notifications
   class DailyDigest
     WINDOW = 24.hours
 
-    Report = Data.define(:generated_at, :queue, :oldest, :delivered, :refunded, :calls, :volume, :commission, :inquiries, :owed_hnl, :jobs, :oldest_job)
+    Report = Data.define(:generated_at, :queue, :oldest, :delivered, :refunded, :calls, :volume, :commission, :inquiries, :owed_hnl, :jobs, :oldest_job,
+                         :outside_calls, :outside_payers)
 
     def initialize(now: Time.current)
       @now = now
@@ -39,6 +40,8 @@ module Notifications
         delivered: DepositOrder.where(status: "delivered", delivered_at: since..).order(:delivered_at).to_a,
         refunded: DepositOrder.where(status: "refunded", refunded_at: since..).order(:refunded_at).to_a,
         calls: calls.count,
+        outside_calls: calls.outside.count,
+        outside_payers: calls.outside.distinct.count(:payer_address),
         volume: calls.sum(:amount),
         commission: calls.sum(:commission),
         inquiries: SellerInquiry.where(created_at: since..).order(:created_at).to_a,

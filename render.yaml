@@ -45,6 +45,8 @@ services:
         sync: false            # without all three JUDGE_* the judgment services answer 502 and charge nothing
       - key: HONEYBADGER_API_KEY
         sync: false            # error tracking (docs/deploy.md); without it nothing is reported
+      - key: OWN_PAYER_ADDRESSES
+        sync: false            # comma-separated wallets of our own agents; their calls are not counted as outside usage
       # BCH_TCR_INDICATOR_ID (optional, default 97) · HNL_PER_USD (optional): pin the rate by hand
       - key: DATABASE_URL
         fromDatabase:
@@ -95,6 +97,8 @@ services:
         sync: false            # same value as the web service
       - key: HONEYBADGER_API_KEY
         sync: false            # same value as the web service: a crashing digest is reported too
+      - key: OWN_PAYER_ADDRESSES
+        sync: false            # same value as the web service: the digest counts outside calls too
       - key: DATABASE_URL
         fromDatabase:
           name: bottrunk-db

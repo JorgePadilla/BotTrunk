@@ -45,6 +45,9 @@ module Admin
       assert_select "td", text: "news.ycombinator.com"
       assert_select "td", text: "bottrunk-mcp"
       assert_select "a[href='https://allo.info/tx/JJZEUY73ABCD']"
+      assert_select "h2", text: "Outside usage"
+      assert_select "td", text: /KPFQ · ours/, message: "our own test payer is marked, and not counted as outside usage"
+      assert_select "dt", text: /0 payers · \$0/
       assert_select "svg[role=img]", 3
       assert_select "h2", text: "Countries"
       assert_select "p", text: /No GeoIP database/
